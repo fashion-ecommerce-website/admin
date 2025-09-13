@@ -19,7 +19,7 @@ export const AdminLoginContainer: React.FC = () => {
       // Mock login - replace with real API call later
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      if (credentials.email === 'admin@example.com' && credentials.password === 'password') {
+      if (credentials.email === 'admin@fashion.com' && credentials.password === 'password123') {
         // Mock successful login - using consistent token key
         const mockToken = 'mock-admin-token-' + Date.now();
         const userData = {

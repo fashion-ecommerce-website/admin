@@ -13,8 +13,8 @@ export const AdminLoginPresenter: React.FC<AdminLoginPresenterProps> = ({
   loading,
   error,
 }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin@fashion.com');
+  const [password, setPassword] = useState('password123');
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -87,7 +87,7 @@ export const AdminLoginPresenter: React.FC<AdminLoginPresenterProps> = ({
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="appearance-none block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-2xl placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
-                    placeholder="admin@example.com"
+                    placeholder="admin@fashion.com"
                   />
                 </div>
               </div>
@@ -170,14 +170,7 @@ export const AdminLoginPresenter: React.FC<AdminLoginPresenterProps> = ({
                 </button>
               </div>
 
-              {/* Demo Credentials */}
-              <div className="mt-6 p-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl">
-                <p className="text-xs text-amber-800 font-medium mb-2">🔑 Thông tin đăng nhập demo:</p>
-                <div className="text-xs text-amber-700 space-y-1">
-                  <p><strong>Email:</strong> admin@example.com</p>
-                  <p><strong>Password:</strong> password</p>
-                </div>
-              </div>
+
             </form>
           </div>
         </div>
