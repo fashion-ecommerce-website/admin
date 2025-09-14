@@ -4,7 +4,7 @@ export interface User {
   name: string;
   email: string;
   role: string;
-  status: 'Active' | 'Inactive' | 'Blocked';
+  status: 'Active' | 'Inactive' | 'Blocked' | 'Temporary Lock' | 'Permanent Lock';
   joinDate: string;
   lastLogin: string;
   totalOrders: number;
@@ -14,6 +14,12 @@ export interface User {
   lastName?: string;
   avatar?: string;
   username?: string;
+  // Enhanced lock properties
+  lockType?: 'NONE' | 'TEMPORARY' | 'PERMANENT';
+  lockReason?: string;
+  lockedAt?: string;
+  lockExpiresAt?: string;
+  lockedByAdminId?: number;
 }
 
 // Backend User interface (from API response)
@@ -59,10 +65,45 @@ export const convertBackendUserToUser = (backendUser: BackendUser): User => {
   const primaryRole = backendUser.roles.includes('ADMIN') ? 'Admin' : 
                      backendUser.roles.includes('VIP') ? 'VIP Customer' : 'Customer';
   
-  // Map active status to frontend status format
-  // If active is false, we consider it as Blocked (locked by admin)
-  // If active is true, we consider it as Active
-  const status: 'Active' | 'Inactive' | 'Blocked' = backendUser.active ? 'Active' : 'Blocked';
+  // Import lock service to check lock status
+  let lockType: 'NONE' | 'TEMPORARY' | 'PERMANENT' = 'NONE';
+  let lockReason: string | undefined;
+  let lockedAt: string | undefined;
+  let lockExpiresAt: string | undefined;
+  let lockedByAdminId: number | undefined;
+  
+  // Check if user is locked using lock service
+  if (typeof window !== 'undefined') {
+    try {
+      const { userLockService } = require('../services/userLockService');
+      const userLock = userLockService.getUserLock(backendUser.id);
+      if (userLock) {
+        lockType = userLock.lockType;
+        lockReason = userLock.reason;
+        lockedAt = userLock.lockedAt;
+        lockExpiresAt = userLock.lockExpiresAt;
+        lockedByAdminId = userLock.lockedByAdminId;
+      }
+    } catch (error) {
+      console.warn('Lock service not available:', error);
+    }
+  }
+  
+  // Determine status based on active flag and lock type
+  let status: 'Active' | 'Inactive' | 'Blocked' | 'Temporary Lock' | 'Permanent Lock';
+  
+  if (backendUser.active) {
+    status = 'Active';
+  } else {
+    // User is inactive, check lock type
+    if (lockType === 'TEMPORARY') {
+      status = 'Temporary Lock';
+    } else if (lockType === 'PERMANENT') {
+      status = 'Permanent Lock';
+    } else {
+      status = 'Blocked'; // Default for inactive users without specific lock type
+    }
+  }
   
   return {
     id: backendUser.id,
@@ -79,6 +120,12 @@ export const convertBackendUserToUser = (backendUser: BackendUser): User => {
     lastName: '', // Not available in API response
     avatar: backendUser.avatarUrl || '',
     username: backendUser.username || '',
+    // Enhanced lock properties
+    lockType: lockType,
+    lockReason: lockReason,
+    lockedAt: lockedAt,
+    lockExpiresAt: lockExpiresAt,
+    lockedByAdminId: lockedByAdminId,
   };
 };
 

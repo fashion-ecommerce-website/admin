@@ -1,13 +1,15 @@
 'use client';
 
 import { AdminLayout } from '@/components/layout/AdminLayout';
-import { AddUserModal, ViewUserModal, EditUserModal, LockUserModal } from '@/components/modals/UserModals';
+import { AddUserModal, ViewUserModal, EditUserModal } from '@/components/modals/UserModals';
+import { EnhancedLockModal } from '@/components/modals/EnhancedLockModal';
 import { useState, useMemo, useEffect } from 'react';
 import { useToast } from '@/providers/ToastProvider';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { userApi } from '@/services/api/userApi';
 import { User, convertBackendUserToUser } from '@/types/user.types';
+import { cronJobManager } from '@/services/cronJobManager';
 
 export default function UsersPage() {
   const { showSuccess, showError, showWarning } = useToast();
@@ -67,6 +69,18 @@ export default function UsersPage() {
   // Fetch users on component mount
   useEffect(() => {
     fetchUsers();
+    
+    // Listen for lock changes from cron job
+    const handleLockChange = () => {
+      console.log('Lock status changed, refreshing user list...');
+      fetchUsers();
+    };
+    
+    window.addEventListener('userLockChanged', handleLockChange);
+    
+    return () => {
+      window.removeEventListener('userLockChanged', handleLockChange);
+    };
   }, []);
 
   // Filter and Sort states
@@ -100,7 +114,7 @@ export default function UsersPage() {
         const matchesStatus = statusFilter === '' || 
                              (statusFilter === 'active' && user.status === 'Active') ||
                              (statusFilter === 'inactive' && user.status === 'Inactive') ||
-                             (statusFilter === 'blocked' && user.status === 'Blocked');
+                             (statusFilter === 'blocked' && (user.status === 'Blocked' || user.status === 'Temporary Lock' || user.status === 'Permanent Lock'));
         const matchesRole = roleFilter === '' ||
                            (roleFilter === 'customer' && user.role === 'Customer') ||
                            (roleFilter === 'vip' && user.role === 'VIP Customer');
@@ -179,7 +193,9 @@ export default function UsersPage() {
         'Vai trò': user.role === 'Admin' ? 'Quản trị viên' : 
                   user.role === 'Manager' ? 'Quản lý' : 'Khách hàng',
         'Trạng thái': user.status === 'Active' ? 'Hoạt động' : 
-                     user.status === 'Inactive' ? 'Không hoạt động' : 'Đã khóa',
+                     user.status === 'Inactive' ? 'Không hoạt động' : 
+                     user.status === 'Temporary Lock' ? 'Khóa tạm thời' :
+                     user.status === 'Permanent Lock' ? 'Khóa vĩnh viễn' : 'Đã khóa',
         'Ngày tham gia': new Date(user.joinDate).toLocaleDateString('vi-VN'),
         'Lần đăng nhập cuối': new Date(user.lastLogin).toLocaleDateString('vi-VN'),
         'Tổng đơn hàng': user.totalOrders,
@@ -588,7 +604,7 @@ export default function UsersPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-2">Bị khóa</p>
-                  <p className="text-3xl font-bold text-gray-900">{users.filter(u => u.status === 'Blocked').length}</p>
+                  <p className="text-3xl font-bold text-gray-900">{users.filter(u => u.status === 'Blocked' || u.status === 'Temporary Lock' || u.status === 'Permanent Lock').length}</p>
                   <div className="flex items-center space-x-1 text-sm font-medium text-red-600 mt-1">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
@@ -1030,18 +1046,27 @@ export default function UsersPage() {
                           <button
                             onClick={() => handleToggleUserStatus(user.id, user.status)}
                             className={`group relative p-2.5 rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-md border ${
-                              user.status === 'Blocked'
+                              user.status === 'Blocked' || user.status === 'Permanent Lock'
+                                ? 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border-red-100 hover:border-red-200'
+                                : user.status === 'Temporary Lock'
                                 ? 'bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700 border-orange-100 hover:border-orange-200'
                                 : 'bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 border-green-100 hover:border-green-200'
                             }`}
                           >
-                            {user.status === 'Blocked' ? (
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
-                              </svg>
-                            ) : (
+                            {user.status === 'Blocked' || user.status === 'Permanent Lock' ? (
+                              // Permanent lock - red locked icon
                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                              </svg>
+                            ) : user.status === 'Temporary Lock' ? (
+                              // Temporary lock - orange clock icon
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            ) : (
+                              // Active - green unlock icon
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
                               </svg>
                             )}
                           </button>
@@ -1193,7 +1218,7 @@ export default function UsersPage() {
           user={selectedUser}
         />
 
-        <LockUserModal
+        <EnhancedLockModal
           isOpen={lockModalOpen}
           onClose={() => setLockModalOpen(false)}
           user={selectedUser}
