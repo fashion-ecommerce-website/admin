@@ -60,7 +60,9 @@ export const convertBackendUserToUser = (backendUser: BackendUser): User => {
                      backendUser.roles.includes('VIP') ? 'VIP Customer' : 'Customer';
   
   // Map active status to frontend status format
-  const status: 'Active' | 'Inactive' | 'Blocked' = backendUser.active ? 'Active' : 'Inactive';
+  // If active is false, we consider it as Blocked (locked by admin)
+  // If active is true, we consider it as Active
+  const status: 'Active' | 'Inactive' | 'Blocked' = backendUser.active ? 'Active' : 'Blocked';
   
   return {
     id: backendUser.id,

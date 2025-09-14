@@ -380,14 +380,52 @@ export default function UsersPage() {
     }
   };
 
-  const handleLockAction = (userId: number, action: 'lock' | 'unlock') => {
-    const newStatus: 'Active' | 'Inactive' | 'Blocked' = action === 'lock' ? 'Blocked' : 'Active';
-    setUsers(prev => prev.map(user => 
-      user.id === userId ? { ...user, status: newStatus } : user
-    ));
-    console.log(`${action} user:`, userId);
-    // Optionally update via API
-    // userApi.updateUserStatus(userId, newStatus);
+  const handleLockAction = async (userId: number, action: 'lock' | 'unlock') => {
+    try {
+      // Call the API to toggle user active status
+      const isActive = action === 'unlock'; // If unlocking, set isActive to true
+      const response = await userApi.toggleUserActiveStatus(userId, isActive);
+      
+      if (response.success && response.data) {
+        // Convert the backend response to frontend User format
+        const updatedBackendUser = response.data;
+        const convertedUser = convertBackendUserToUser(updatedBackendUser);
+        
+        // Update local state with the converted user data
+        setUsers(prev => prev.map(user => 
+          user.id === userId ? convertedUser : user
+        ));
+        
+        // Show success message
+        if (action === 'lock') {
+          showWarning(
+            'Khóa tài khoản thành công!',
+            `Đã khóa tài khoản của người dùng.`
+          );
+        } else {
+          showSuccess(
+            'Mở khóa thành công!',
+            `Đã mở khóa tài khoản của người dùng.`
+          );
+        }
+        
+        console.log(`${action} user ${userId} successfully:`, {
+          original: updatedBackendUser,
+          converted: convertedUser
+        });
+      } else {
+        showError(
+          'Có lỗi xảy ra',
+          response.message || 'Không thể thực hiện thao tác này. Vui lòng thử lại.'
+        );
+      }
+    } catch (error) {
+      console.error(`Error ${action} user:`, error);
+      showError(
+        'Lỗi hệ thống',
+        'Có lỗi xảy ra khi thực hiện thao tác. Vui lòng thử lại sau.'
+      );
+    }
   };
 
   const handleDeleteUser = (userId: number) => {
@@ -411,6 +449,16 @@ export default function UsersPage() {
 
   return (
     <AdminLayout>
+      <style jsx global>{`
+        /* Hide scrollbars only for specific elements */
+        .scrollbar-hide {
+          scrollbar-width: none; /* Firefox */
+          -ms-overflow-style: none; /* Internet Explorer 10+ */
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none; /* Safari and Chrome for specific elements */
+        }
+      `}</style>
       <div className="space-y-8 animate-fadeInUp">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -706,7 +754,13 @@ export default function UsersPage() {
             </div>
           </div>
           
-          <div className="overflow-x-auto">
+          <div 
+            className="overflow-x-auto scrollbar-hide" 
+            style={{
+              scrollbarWidth: 'none', /* Firefox */
+              msOverflowStyle: 'none', /* Internet Explorer 10+ */
+            }}
+          >
             <table className="w-full">
               <thead className="bg-gray-50/50">
                 <tr>
@@ -977,8 +1031,8 @@ export default function UsersPage() {
                             onClick={() => handleToggleUserStatus(user.id, user.status)}
                             className={`group relative p-2.5 rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-md border ${
                               user.status === 'Blocked'
-                                ? 'bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 border-green-100 hover:border-green-200'
-                                : 'bg-amber-50 text-amber-600 hover:bg-amber-100 hover:text-amber-700 border-amber-100 hover:border-amber-200'
+                                ? 'bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700 border-orange-100 hover:border-orange-200'
+                                : 'bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 border-green-100 hover:border-green-200'
                             }`}
                           >
                             {user.status === 'Blocked' ? (

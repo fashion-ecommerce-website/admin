@@ -424,39 +424,29 @@ export const EditUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user,
 // Lock/Unlock Confirmation Modal
 interface LockModalProps extends BaseModalProps {
   user?: User | null;
-  onConfirm?: (userId: number, action: 'lock' | 'unlock') => void;
+  onConfirm?: (userId: number, action: 'lock' | 'unlock') => Promise<void>;
 }
 
 export const LockUserModal: React.FC<LockModalProps> = ({ isOpen, onClose, user, onConfirm }) => {
-  const { showSuccess, showWarning } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
   
   if (!user) return null;
 
   const isLocked = user.status === 'Blocked';
   const action = isLocked ? 'unlock' : 'lock';
   
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    if (!onConfirm) return;
+    
     try {
-      if (onConfirm) {
-        onConfirm(user.id, action);
-        if (isLocked) {
-          showSuccess(
-            'Mở khóa thành công!',
-            `Đã mở khóa tài khoản của ${user.name}.`
-          );
-        } else {
-          showWarning(
-            'Khóa tài khoản thành công!',
-            `Đã khóa tài khoản của ${user.name}.`
-          );
-        }
-      }
+      setIsLoading(true);
+      await onConfirm(user.id, action);
       onClose();
     } catch (error) {
-      showWarning(
-        'Có lỗi xảy ra',
-        'Không thể thực hiện thao tác này. Vui lòng thử lại.'
-      );
+      console.error('Error in lock modal:', error);
+      // Error handling is done in the parent component
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -464,14 +454,14 @@ export const LockUserModal: React.FC<LockModalProps> = ({ isOpen, onClose, user,
     <Modal isOpen={isOpen} onClose={onClose} title={isLocked ? 'Mở khóa người dùng' : 'Khóa người dùng'}>
       <div className="text-center space-y-4">
         <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center ${
-          isLocked ? 'bg-green-100' : 'bg-yellow-100'
+          isLocked ? 'bg-green-100' : 'bg-orange-100'
         }`}>
           {isLocked ? (
             <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
             </svg>
           ) : (
-            <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           )}
@@ -494,19 +484,26 @@ export const LockUserModal: React.FC<LockModalProps> = ({ isOpen, onClose, user,
         <div className="flex justify-center space-x-3 pt-4">
           <button
             onClick={onClose}
-            className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 font-medium transition-colors duration-200"
+            disabled={isLoading}
+            className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Hủy
           </button>
           <button
             onClick={handleConfirm}
-            className={`px-6 py-3 text-white rounded-xl font-medium transition-all duration-200 transform hover:scale-105 ${
+            disabled={isLoading}
+            className={`px-6 py-3 text-white rounded-xl font-medium transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 ${
               isLocked 
                 ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700'
-                : 'bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700'
+                : 'bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700'
             }`}
           >
-            {isLocked ? 'Mở khóa' : 'Khóa tài khoản'}
+            {isLoading && (
+              <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            )}
+            <span>{isLoading ? 'Đang xử lý...' : (isLocked ? 'Mở khóa' : 'Khóa tài khoản')}</span>
           </button>
         </div>
       </div>

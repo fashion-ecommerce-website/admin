@@ -143,6 +143,27 @@ class UserApi {
   }
 
   /**
+   * Toggle user active status (lock/unlock)
+   */
+  async toggleUserActiveStatus(
+    userId: number, 
+    isActive: boolean
+  ): Promise<ApiResponse<BackendUser>> {
+    try {
+      return await adminApiClient.put<BackendUser>('/users/status', { 
+        userId, 
+        isActive 
+      });
+    } catch (error) {
+      return {
+        success: false,
+        data: null,
+        message: error instanceof Error ? error.message : 'Failed to toggle user status',
+      };
+    }
+  }
+
+  /**
    * Bulk update users
    */
   async bulkUpdateUsers(
