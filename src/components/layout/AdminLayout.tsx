@@ -65,6 +65,15 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       )
     },
     { 
+      name: 'Quản lý loại sản phẩm', 
+      href: '/categories', 
+      icon: (
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M10 2L3 7v11a1 1 0 001 1h12a1 1 0 001-1V7l-7-5zM6 9.5a.5.5 0 01.5-.5h7a.5.5 0 010 1h-7a.5.5 0 01-.5-.5zm.5 2.5a.5.5 0 000 1h7a.5.5 0 000-1h-7z" clipRule="evenodd"/>
+        </svg>
+      )
+    },
+    { 
       name: 'Đơn hàng', 
       href: '/orders', 
       icon: (
@@ -164,7 +173,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200 backdrop-blur-sm bg-white/90">
+        <header className="shadow-sm border-b border-gray-200 backdrop-blur-sm bg-white/90">
           <div className="flex items-center justify-between h-16 px-6">
             <div className="flex items-center space-x-4">
               <button

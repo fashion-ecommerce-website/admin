@@ -19,7 +19,8 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
       const isProtectedRoute = pathname.startsWith('/dashboard') ||
                               pathname.startsWith('/users') ||
                               pathname.startsWith('/products') ||
-                              pathname.startsWith('/orders');
+                              pathname.startsWith('/orders') ||
+                              pathname.startsWith('/categories');
       
       const isAuthRoute = pathname.startsWith('/auth');
 
