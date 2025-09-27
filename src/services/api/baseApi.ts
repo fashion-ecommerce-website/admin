@@ -143,7 +143,10 @@ class AdminBaseApi {
   ): Promise<ApiResponse<T>> {
     try {
       // Proactively check and refresh token if needed (only for authenticated endpoints)
-      if (!endpoint.includes('/auth/') && !endpoint.includes('/public/')) {
+      if (!endpoint.includes('/auth/') && 
+          !endpoint.includes('/public/') && 
+          !endpoint.includes('/categories') && 
+          !endpoint.includes('/products')) {
         const tokenValid = await this.ensureValidToken();
         if (!tokenValid) {
           return {
@@ -157,9 +160,15 @@ class AdminBaseApi {
       const url = `${this.baseUrl}${endpoint}`;
       const headers = {
         'Content-Type': 'application/json',
-        ...this.getAuthHeaders(),
         ...options.headers,
       };
+
+      // Only add auth headers for authenticated endpoints
+      if (!endpoint.includes('/auth/') && 
+          !endpoint.includes('/public/') && 
+          !endpoint.includes('/categories')) {
+        Object.assign(headers, this.getAuthHeaders());
+      }
 
       const config: RequestInit = {
         method: options.method,
