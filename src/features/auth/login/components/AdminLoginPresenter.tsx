@@ -13,7 +13,7 @@ export const AdminLoginPresenter: React.FC<AdminLoginPresenterProps> = ({
   loading,
   error,
 }) => {
-  const [email, setEmail] = useState('admin@fashion.com');
+  const [email, setEmail] = useState('admin@fit.com');
   const [password, setPassword] = useState('password123');
   const [showPassword, setShowPassword] = useState(false);
 
@@ -108,7 +108,7 @@ export const AdminLoginPresenter: React.FC<AdminLoginPresenterProps> = ({
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="appearance-none block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-2xl placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
-                    placeholder="admin@fashion.com"
+                    placeholder="admin@fit.com"
                   />
                 </div>
               </div>

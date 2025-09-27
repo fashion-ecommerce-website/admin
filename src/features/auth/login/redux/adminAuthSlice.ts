@@ -3,21 +3,19 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 export interface AdminAuthState {
   isAuthenticated: boolean;
   admin: AdminUser | null;
-  tokens: {
-    accessToken: string | null;
-    refreshToken: string | null;
-  };
+  accessToken: string | null;
+  refreshToken: string | null;
+  tokenType: string | null;
+  expiresIn: number | null;
   loading: boolean;
   error: string | null;
 }
 
 export interface AdminUser {
-  id: string;
-  email: string;
   username: string;
-  role: 'ADMIN' | 'SUPER_ADMIN';
-  permissions: string[];
-  lastLoginAt: string;
+  email: string;
+  role?: 'ADMIN' | 'SUPER_ADMIN';
+  permissions?: string[];
 }
 
 export interface AdminLoginRequest {
@@ -26,20 +24,21 @@ export interface AdminLoginRequest {
 }
 
 export interface AdminLoginResponse {
-  admin: AdminUser;
-  tokens: {
-    accessToken: string;
-    refreshToken: string;
-  };
+  accessToken: string;
+  refreshToken: string;
+  tokenType: string | null;
+  expiresIn: number;
+  username: string;
+  email: string;
 }
 
 const initialState: AdminAuthState = {
   isAuthenticated: false,
   admin: null,
-  tokens: {
-    accessToken: null,
-    refreshToken: null,
-  },
+  accessToken: null,
+  refreshToken: null,
+  tokenType: null,
+  expiresIn: null,
   loading: false,
   error: null,
 };
@@ -56,23 +55,38 @@ export const adminAuthSlice = createSlice({
     loginSuccess: (state, action: PayloadAction<AdminLoginResponse>) => {
       state.loading = false;
       state.isAuthenticated = true;
-      state.admin = action.payload.admin;
-      state.tokens = action.payload.tokens;
+      state.admin = {
+        username: action.payload.username,
+        email: action.payload.email,
+      };
+      state.accessToken = action.payload.accessToken;
+      state.refreshToken = action.payload.refreshToken;
+      state.tokenType = action.payload.tokenType;
+      state.expiresIn = action.payload.expiresIn;
       state.error = null;
     },
     loginFailure: (state, action: PayloadAction<string>) => {
       state.loading = false;
       state.isAuthenticated = false;
       state.admin = null;
-      state.tokens = { accessToken: null, refreshToken: null };
+      state.accessToken = null;
+      state.refreshToken = null;
+      state.tokenType = null;
+      state.expiresIn = null;
       state.error = action.payload;
     },
     
-    // Logout action
+    // Logout actions
+    logoutRequest: (state) => {
+      state.loading = true;
+    },
     logout: (state) => {
       state.isAuthenticated = false;
       state.admin = null;
-      state.tokens = { accessToken: null, refreshToken: null };
+      state.accessToken = null;
+      state.refreshToken = null;
+      state.tokenType = null;
+      state.expiresIn = null;
       state.loading = false;
       state.error = null;
     },
@@ -88,8 +102,9 @@ export const {
   loginRequest, 
   loginSuccess, 
   loginFailure, 
+  logoutRequest,
   logout, 
-  clearError 
+  clearError
 } = adminAuthSlice.actions;
 
 export const adminAuthReducer = adminAuthSlice.reducer;

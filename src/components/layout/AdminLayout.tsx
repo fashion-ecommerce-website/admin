@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { clsx } from 'clsx';
 import { useToast } from '@/providers/ToastProvider';
+import { useAppDispatch } from '@/hooks/redux';
+import { logoutRequest } from '@/features/auth/login';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -14,24 +16,22 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const { showSuccess } = useToast();
 
   const handleLogout = () => {
     try {
-      // Clear any stored authentication data
-      localStorage.removeItem('admin_token');
-      localStorage.removeItem('admin_user');
-      sessionStorage.clear();
+      dispatch(logoutRequest());
       
-      // Clear cookies
-      document.cookie = 'admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+      showSuccess(
+        'Đăng xuất thành công!',
+        'Bạn đã đăng xuất khỏi hệ thống quản trị.'
+      );
       
-      // Immediate redirect - clean and fast
       router.push('/auth/login');
-      router.refresh(); // Force refresh
+      router.refresh(); 
     } catch (error) {
       console.error('Logout error:', error);
-      // Force redirect even if error occurs
       router.push('/auth/login');
     }
   };

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { useAppSelector, useAppDispatch } from '@/hooks/redux';
+import { logout } from '@/features/auth/login';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -9,13 +11,24 @@ interface AuthGuardProps {
 
 export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const pathname = usePathname();
   const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+  
+  const { isAuthenticated, accessToken } = useAppSelector(state => state.adminAuth);
 
   useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isClient) return;
+
     const checkAuth = () => {
-      const token = localStorage.getItem('admin_token');
+      const tokenFromStorage = localStorage.getItem('admin_access_token');
+      const hasValidToken = accessToken || tokenFromStorage;
+      
       const isProtectedRoute = pathname.startsWith('/dashboard') ||
                               pathname.startsWith('/users') ||
                               pathname.startsWith('/products') ||
@@ -23,26 +36,26 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
       
       const isAuthRoute = pathname.startsWith('/auth');
 
-      if (token) {
-        setIsAuthenticated(true);
-        // If on auth route with valid token, redirect to dashboard
+      if (isAuthenticated && !tokenFromStorage) {
+        dispatch(logout());
+        router.push('/auth/login');
+        return;
+      }
+
+      if (hasValidToken) {
         if (isAuthRoute) {
           router.push('/dashboard');
           return;
         }
-        // If on root with valid token, redirect to dashboard
         if (pathname === '/') {
           router.push('/dashboard');
           return;
         }
       } else {
-        setIsAuthenticated(false);
-        // If on protected route without token, redirect to login
         if (isProtectedRoute) {
           router.push('/auth/login');
           return;
         }
-        // If on root without token, redirect to login
         if (pathname === '/') {
           router.push('/auth/login');
           return;
@@ -53,9 +66,9 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     };
 
     checkAuth();
-  }, [pathname, router]);
+  }, [pathname, router, isClient, isAuthenticated, accessToken, dispatch]);
 
-  if (isLoading) {
+  if (!isClient || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
