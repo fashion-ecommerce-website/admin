@@ -22,12 +22,38 @@ export interface UpdateCategoryRequest {
   parentId: number | null;
 }
 
+export interface CategoryListResponse {
+  items: CategoryBackend[];
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+
+export interface GetCategoriesRequest {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
+}
+
 class CategoryApi {
   private readonly endpoint = '/categories';
 
-  async getAllCategories(): Promise<ApiResponse<CategoryBackend[]>> {
+  async getAllCategories(params?: GetCategoriesRequest): Promise<ApiResponse<CategoryListResponse>> {
     try {
-      return await adminApiClient.get<CategoryBackend[]>(`${this.endpoint}`);
+      const query = new URLSearchParams();
+      if (params?.page !== undefined) query.append('page', String(params.page));
+      if (params?.pageSize !== undefined) query.append('pageSize', String(params.pageSize));
+      if (params?.search) query.append('search', params.search);
+      if (params?.sortBy) query.append('sortBy', params.sortBy);
+      if (params?.sortDirection) query.append('sortDirection', params.sortDirection);
+
+      const suffix = query.toString() ? `?${query.toString()}` : '';
+      return await adminApiClient.get<CategoryListResponse>(`${this.endpoint}${suffix}`);
     } catch (error) {
       return {
         success: false,

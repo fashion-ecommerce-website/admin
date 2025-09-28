@@ -158,10 +158,14 @@ class AdminBaseApi {
       }
 
       const url = `${this.baseUrl}${endpoint}`;
-      const headers = {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      };
+
+      // Build headers but do not set Content-Type when sending FormData so the browser
+      // can set the appropriate multipart/form-data boundary.
+      const headers: Record<string, string> = { ...(options.headers || {}) };
+      if (!(options.body instanceof FormData)) {
+        // Only set default Content-Type for non-FormData bodies
+        headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+      }
 
       // Only add auth headers for authenticated endpoints
       if (!endpoint.includes('/auth/') && 
@@ -176,7 +180,8 @@ class AdminBaseApi {
       };
 
       if (options.body && options.method !== 'GET') {
-        config.body = options.body;
+        // If body is FormData, pass it through as-is. For JSON strings, pass string.
+        config.body = options.body as BodyInit;
       }
 
       const response = await fetch(url, config);
@@ -228,36 +233,39 @@ class AdminBaseApi {
 
   async post<T>(
     endpoint: string,
-    body?: Record<string, unknown> | unknown,
+    body?: Record<string, unknown> | FormData | unknown,
     headers?: Record<string, string>
   ): Promise<ApiResponse<T>> {
+    const requestBody = body instanceof FormData ? body : body ? JSON.stringify(body) : undefined;
     return this.makeRequest<T>(endpoint, { 
       method: 'POST', 
-      body: body ? JSON.stringify(body) : undefined, 
+      body: requestBody, 
       headers 
     });
   }
 
   async put<T>(
     endpoint: string,
-    body?: Record<string, unknown> | unknown,
+    body?: Record<string, unknown> | FormData | unknown,
     headers?: Record<string, string>
   ): Promise<ApiResponse<T>> {
+    const requestBody = body instanceof FormData ? body : body ? JSON.stringify(body) : undefined;
     return this.makeRequest<T>(endpoint, { 
       method: 'PUT', 
-      body: body ? JSON.stringify(body) : undefined, 
+      body: requestBody, 
       headers 
     });
   }
 
   async patch<T>(
     endpoint: string,
-    body?: Record<string, unknown> | unknown,
+    body?: Record<string, unknown> | FormData | unknown,
     headers?: Record<string, string>
   ): Promise<ApiResponse<T>> {
+    const requestBody = body instanceof FormData ? body : body ? JSON.stringify(body) : undefined;
     return this.makeRequest<T>(endpoint, { 
       method: 'PATCH', 
-      body: body ? JSON.stringify(body) : undefined, 
+      body: requestBody, 
       headers 
     });
   }
