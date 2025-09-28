@@ -71,11 +71,12 @@ class ProductApi {
   }
 
   /**
-   * Create a new product
+   * Create a new product. Accepts either a JSON payload (CreateProductRequest) or a FormData
+   * where the 'product' part is JSON and file parts are detail_<colorId>.
    */
-  async createProduct(productData: CreateProductRequest): Promise<ApiResponse<Product>> {
+  async createProduct(productData: CreateProductRequest | FormData): Promise<ApiResponse<Product>> {
     try {
-      const response = await adminApiClient.post<Product>(this.endpoint, productData);
+      const response = await adminApiClient.post<Product>(`${this.endpoint}/admin`, productData as any);
       
       return {
         success: response.success,
@@ -95,11 +96,26 @@ class ProductApi {
   /**
    * Update an existing product
    */
-  async updateProduct(productData: UpdateProductRequest): Promise<ApiResponse<Product>> {
+  async updateProduct(productData: UpdateProductRequest | FormData & { id: number }): Promise<ApiResponse<Product>> {
     try {
-      const { id, ...updateData } = productData;
-      const response = await adminApiClient.put<Product>(`${this.endpoint}/${id}`, updateData);
-      
+      // If productData is a FormData, it must include 'id' separately via the endpoint path
+      if (productData instanceof FormData) {
+        const id = (productData as any).get('id') as number | string | null;
+        // Prefer explicit id param if set on the FormData; otherwise the caller should pass id in endpoint
+        const idValue = id ?? (productData as any).id;
+        if (!idValue) {
+          throw new Error('Missing product id for update');
+        }
+        const response = await adminApiClient.put<Product>(`${this.endpoint}/${idValue}`, productData as any);
+        return {
+          success: response.success,
+          data: response.data,
+          message: response.message || 'Product updated successfully',
+        };
+      }
+
+      const { id, ...updateData } = productData as UpdateProductRequest;
+      const response = await adminApiClient.put<Product>(`${this.endpoint}/${id}`, updateData as any);
       return {
         success: response.success,
         data: response.data,

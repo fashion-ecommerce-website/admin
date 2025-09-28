@@ -267,12 +267,17 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
                   {products.map((product: any) => (
                     <tr key={product.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
-                        <img 
-                          src={product.thumbnail || '/placeholder-product.jpg'} 
+                        {/* Use an inline SVG data URL as a reliable placeholder to avoid missing static asset 404s */}
+                        <img
+                          src={product.thumbnail || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-family="Arial, Helvetica, sans-serif" font-size="14">No image</text></svg>'}
                           alt={product.title || 'Product image'}
                           className="w-12 h-12 object-cover rounded-lg"
                           onError={(e) => {
-                            e.currentTarget.src = '/placeholder-product.jpg';
+                            // Only fallback once to avoid infinite loop trying to load a missing static file
+                            const fallback = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-family="Arial, Helvetica, sans-serif" font-size="14">No image</text></svg>';
+                            if (e.currentTarget.src !== fallback) {
+                              e.currentTarget.src = fallback;
+                            }
                           }}
                         />
                       </td>

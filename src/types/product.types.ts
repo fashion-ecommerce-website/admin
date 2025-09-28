@@ -14,10 +14,17 @@ export interface VariantSize {
 // Product detail interface for form handling
 export interface ProductDetail {
   color: VariantColor;
-  sizes: number[]; // Array of size IDs
+  sizes: number[]; // Array of size IDs (legacy)
   images: string[]; // Array of image URLs for this color variant (up to 5)
-  price: number; // Price for this variant
-  quantity: number; // Available quantity for this variant
+  // New: per-size variants with individual price and quantity
+  sizeVariants?: Array<{
+    sizeId: number;
+    price: number;
+    quantity: number;
+  }>;
+  // Deprecated/legacy fields (kept for compatibility)
+  price: number; // Price for this variant (color-level default)
+  quantity: number; // Available quantity for this variant (color-level default)
 }
 
 // Main product interface (from API response)
