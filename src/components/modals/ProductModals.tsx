@@ -203,17 +203,18 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
   }, [dropdownOpen]);
 
   // Helper function to ensure productDetail has images array
-  const normalizeProductDetail = (productDetail: any): ProductDetail => {
+  const normalizeProductDetail = (productDetail: Partial<ProductDetail>): ProductDetail => {
     return {
       ...productDetail,
+      color: productDetail.color as VariantColor,
+      sizes: Array.isArray(productDetail.sizes) ? (productDetail.sizes as number[]) : [],
       images: Array.isArray(productDetail.images)
-        ? productDetail.images
-        : productDetail.image
-        ? [productDetail.image]
+        ? (productDetail.images as string[])
         : [],
-      price: productDetail.price || 0,
-      quantity: productDetail.quantity || 0,
-    };
+      price: typeof productDetail.price === 'number' ? productDetail.price : 0,
+      quantity: typeof productDetail.quantity === 'number' ? productDetail.quantity : 0,
+      sizeVariants: Array.isArray(productDetail.sizeVariants) ? (productDetail.sizeVariants as ProductDetail['sizeVariants']) : undefined,
+    } as ProductDetail;
   };
 
   useEffect(() => {
@@ -335,7 +336,12 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
     try {
       // Build the product JSON according to required schema
       // Product must include title (<=500 chars), non-empty categoryIds, and productDetails with colorId and sizeVariants
-      const productJson: any = {
+      const productJson: {
+        title: string;
+        description?: string;
+        categoryIds: number[];
+        productDetails: Array<{ colorId: number; sizeVariants: Array<{ sizeId: number; price: number; quantity: number }> }>;
+      } = {
         title: formData.title.trim(),
         description: formData.description?.trim() || undefined,
         categoryIds: [formData.categoryId],
@@ -406,26 +412,24 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
 
       // Use centralized productApi which will forward FormData to adminApiClient (which supports FormData)
       // Create product only
-      const resp = await (await import("@/services/api/productApi")).productApi.createProduct(fd as any);
+      const resp = await (await import("@/services/api/productApi")).productApi.createProduct(fd);
       if (!resp.success) throw new Error(resp.message || "Failed to create product");
 
       // If API returned created product, try to fetch full product from server
-      if (resp.data && (resp.data as any).id) {
-        const createdId = (resp.data as any).id as number;
+      if (resp.data && 'id' in resp.data && typeof resp.data.id === 'number') {
+        const createdId = resp.data.id;
         try {
           const full = await productApi.getProductById(createdId);
           if (full.success && full.data) {
-            dispatch(createProductSuccess({ product: full.data } as any));
+            dispatch(createProductSuccess({ product: full.data }));
           } else {
-            // fallback to response data if full fetch fails
-            dispatch(createProductSuccess({ product: resp.data } as any));
+            dispatch(createProductSuccess({ product: resp.data as Product }));
           }
         } catch (e) {
-          dispatch(createProductSuccess({ product: resp.data } as any));
+    dispatch(createProductSuccess({ product: resp.data as Product }));
         }
       } else if (resp.data) {
-        // No id provided, just dispatch what we have
-        dispatch(createProductSuccess({ product: resp.data } as any));
+  dispatch(createProductSuccess({ product: resp.data as Product }));
       }
 
       // Silent re-fetch to refresh list/page counts without showing global loading

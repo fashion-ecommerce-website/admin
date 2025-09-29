@@ -31,8 +31,9 @@ function* handleLogin(action: PayloadAction<AdminLoginRequest>) {
     localStorage.setItem('admin_access_token', mockResponse.tokens.accessToken);
     localStorage.setItem('admin_refresh_token', mockResponse.tokens.refreshToken);
     
-  } catch (error: any) {
-    yield put(loginFailure(error.message || 'Login failed'));
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    yield put(loginFailure(message || 'Login failed'));
   }
 }
 

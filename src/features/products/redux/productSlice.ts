@@ -182,10 +182,10 @@ const productSlice = createSlice({
       if (index !== -1) {
         // Merge existing product with updated fields to avoid dropping arrays like variantColors
         const existing = state.products[index];
-        state.products[index] = { ...existing, ...updated } as any;
+        state.products[index] = { ...existing, ...updated } as Product;
       }
       if (state.currentProduct?.id === updated.id) {
-        state.currentProduct = { ...state.currentProduct, ...updated } as any;
+        state.currentProduct = { ...state.currentProduct, ...updated } as Product;
       }
       state.error = null;
     },

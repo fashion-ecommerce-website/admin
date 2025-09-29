@@ -9,8 +9,14 @@ export interface DashboardStats {
   productGrowth?: number;
   orderGrowth?: number;
   revenueGrowth?: number;
-  chartData?: any[];
+  chartData?: ChartPoint[];
   recentActivities?: RecentActivity[];
+}
+
+export interface ChartPoint {
+  name: string;
+  orders: number;
+  revenue: number;
 }
 
 export interface RecentActivity {
