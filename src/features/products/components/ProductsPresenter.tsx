@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { categoryApi, CategoryBackend } from '../../../services/api/categoryApi';
-import { Product, ProductState } from '../../../types/product.types';
+import { Product, ProductState, VariantColor, VariantSize } from '../../../types/product.types';
 
 interface ProductsPresenterProps {
   products: Product[];
@@ -15,6 +15,7 @@ interface ProductsPresenterProps {
   onPageChange: (page: number) => void;
   onCreateProduct: () => void;
   onEditProduct: (product: Product) => void;
+  onEditVariant?: (product: Product) => void;
   onDeleteProduct: (productId: number) => void;
   onClearError: () => void;
 }
@@ -30,6 +31,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
   onPageChange,
   onCreateProduct,
   onEditProduct,
+  onEditVariant,
   onDeleteProduct,
   onClearError,
 }) => {
@@ -299,7 +301,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
-                  {products.map((product: any) => (
+                  {products.map((product) => (
                     <tr key={product.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
                         {/* Use an inline SVG data URL as a reliable placeholder to avoid missing static asset 404s */}
@@ -328,7 +330,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-1">
                           {product.variantColors && product.variantColors.length > 0 ? (
-                            product.variantColors.slice(0, 3).map((color: any) => (
+                            product.variantColors.slice(0, 3).map((color: VariantColor) => (
                               <div
                                 key={color.id}
                                 className="w-6 h-6 rounded-full border border-gray-300"
@@ -349,7 +351,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-1">
                           {product.variantSizes && product.variantSizes.length > 0 ? (
-                            product.variantSizes.slice(0, 4).map((size: any) => (
+                            product.variantSizes.slice(0, 4).map((size: VariantSize) => (
                               <span
                                 key={size.id}
                                 className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800 border border-gray-300"
@@ -374,6 +376,12 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
                             className="text-sm px-3 py-1 border border-black rounded text-black bg-white"
                           >
                             Edit
+                          </button>
+                          <button
+                            onClick={() => onEditVariant && onEditVariant(product)}
+                            className="text-sm px-3 py-1 border border-indigo-600 rounded text-indigo-600 bg-white"
+                          >
+                            Edit Variant
                           </button>
                           <button
                             onClick={() => onDeleteProduct(product.id)}

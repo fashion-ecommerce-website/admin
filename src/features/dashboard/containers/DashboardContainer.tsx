@@ -2,18 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { DashboardPresenter } from '../components/DashboardPresenter';
-
-interface DashboardStats {
-  totalUsers: number;
-  totalProducts: number;
-  todayOrders: number;
-  todayRevenue: number;
-  userGrowth?: number;
-  productGrowth?: number;
-  orderGrowth?: number;
-  revenueGrowth?: number;
-  recentActivities?: any[];
-}
+import type { DashboardStats } from '../redux/dashboardSlice';
 
 export const DashboardContainer: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);

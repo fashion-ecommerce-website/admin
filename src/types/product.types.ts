@@ -11,6 +11,48 @@ export interface VariantSize {
   label: string;
 }
 
+// Admin-side per-size variant returned by admin endpoints
+export interface SizeVariantAdmin {
+  // Unique identifier for this detail on the server (used by admin PUT /products/admin/details/{id})
+  detailId: number;
+  // Reference to the size metadata
+  size: VariantSize;
+  // Optional alternate shape returned by some endpoints
+  sizeId?: number;
+  sizeName?: string;
+  // Price and quantity for this specific size variant
+  price: number;
+  quantity: number;
+}
+
+// Admin-side product-detail which may represent a color-level detail or a size-level detail
+export interface ProductDetailAdmin {
+  // Unique identifier for this detail on the server (used by admin endpoints)
+  detailId: number;
+  // Color metadata for the detail
+  color: VariantColor;
+  // Color-level default price/quantity (may be used when size-level variants are not present)
+  price: number;
+  quantity: number;
+  // Optional per-size variants
+  sizeVariants?: SizeVariantAdmin[];
+  // Optional images for this detail
+  images?: string[];
+  // Optional fields that some admin endpoints may return for convenience
+  // Keep them optional so the type stays strict while allowing API variations
+  productTitle?: string;
+  title?: string;
+  colorName?: string;
+  sizeName?: string;
+  // When a detail represents a single-size variant, backend may include a `size` field
+  size?: VariantSize | string;
+}
+
+// Admin view of a Product returned by admin GET endpoints
+export interface ProductAdmin extends Product {
+  productDetails?: ProductDetailAdmin[];
+}
+
 // Product detail interface for form handling
 export interface ProductDetail {
   color: VariantColor;
