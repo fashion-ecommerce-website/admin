@@ -193,13 +193,22 @@ interface EditCategoryModalProps {
     slug: string;
     parentId: number | null;
   }) => Promise<void>;
+  // the category being edited; backend should include parentId if available
   category: {
     id: number;
     name: string;
     slug: string;
     isActive: boolean;
+    parentId?: number | null;
     children: any;
   } | null;
+  // optional full category tree used to select a parent
+  categories?: {
+    id: number;
+    name: string;
+    slug: string;
+    children?: any;
+  }[];
 }
 
 export const EditCategoryModal: React.FC<EditCategoryModalProps> = ({
@@ -208,6 +217,7 @@ export const EditCategoryModal: React.FC<EditCategoryModalProps> = ({
   onSuccess,
   onSubmit,
   category,
+  categories,
 }) => {
   const { showError } = useToast();
   const [formData, setFormData] = useState({
@@ -223,7 +233,8 @@ export const EditCategoryModal: React.FC<EditCategoryModalProps> = ({
       setFormData({
         name: category.name,
         slug: category.slug,
-        parentId: null, // parentId not in current data structure
+        // initialize parentId from category.parentId if provided, otherwise null
+        parentId: category.parentId !== undefined ? category.parentId : null,
       });
     }
   }, [category, isOpen]);
@@ -332,6 +343,49 @@ export const EditCategoryModal: React.FC<EditCategoryModalProps> = ({
             <p className="text-xs text-gray-500 mt-1">
               Slug will be auto-generated from name
             </p>
+          </div>
+
+          {/* Parent category selector */}
+          <div>
+            <label className="block text-sm font-medium text-black mb-1">
+              Parent category
+            </label>
+            <select
+              value={formData.parentId ?? ""}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  parentId: e.target.value === "" ? null : Number(e.target.value),
+                }))
+              }
+              disabled={isSubmitting}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-800"
+            >
+              <option value="">-- No parent (top level) --</option>
+              {/**
+               * Render a flat list of provided categories. The caller should pass
+               * a tree; here we flatten it but exclude the current category to
+               * avoid self-parenting.
+               */}
+              {categories &&
+                (function flatten(nodes: any[] = []) {
+                  const list: any[] = [];
+                  const walk = (items: any[], prefix = "") => {
+                    for (const it of items) {
+                      list.push(it);
+                      if (it.children && it.children.length) walk(it.children, prefix + "-");
+                    }
+                  };
+                  walk(nodes);
+                  return list;
+                })(categories)
+                  .filter((c) => c.id !== category?.id)
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+            </select>
           </div>
 
           <div className="flex items-center gap-3 pt-4">

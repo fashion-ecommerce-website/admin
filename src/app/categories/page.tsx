@@ -80,7 +80,23 @@ export default function CategoriesPage() {
   };
 
   const handleEditCategory = (category: CategoryBackend) => {
-    setSelectedCategory(category);
+    // find parentId by traversing the tree
+    const findParentId = (nodes: CategoryBackend[], targetId: number): number | null => {
+      for (const node of nodes) {
+        if (node.children && node.children.some((c) => c.id === targetId)) {
+          return node.id;
+        }
+        if (node.children && node.children.length) {
+          const found = findParentId(node.children, targetId);
+          if (found !== null) return found;
+        }
+      }
+      return null;
+    };
+
+    const parentId = findParentId(categories, category.id);
+
+    setSelectedCategory({ ...(category as any), parentId } as any);
     setShowEditModal(true);
   };
 
@@ -466,6 +482,7 @@ export default function CategoriesPage() {
         }}
         onSubmit={handleUpdateCategory}
         category={selectedCategory}
+        categories={categories}
       />
 
       <ConfirmModal

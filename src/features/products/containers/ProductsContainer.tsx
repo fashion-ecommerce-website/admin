@@ -81,14 +81,6 @@ const ProductsContainer: React.FC = () => {
     filters.sortDirection,
   ]);
 
-  // Load initial products
-  useEffect(() => {
-    dispatch(fetchProductsRequest({
-      page: 0,
-      pageSize: 12,
-    }));
-  }, [dispatch]);
-
   const handleSearch = useCallback((searchTerm: string) => {
     dispatch(setFilters({ filters: { title: searchTerm } }));
     // Reset to first page when searching
