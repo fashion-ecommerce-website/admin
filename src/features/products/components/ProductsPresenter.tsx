@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { categoryApi, CategoryBackend } from '../../../services/api/categoryApi';
 import { Product, ProductState } from '../../../types/product.types';
 
 interface ProductsPresenterProps {
@@ -32,6 +33,40 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
   onDeleteProduct,
   onClearError,
 }) => {
+  const [categoryMap, setCategoryMap] = useState<Record<number, string>>({});
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadCategories() {
+      try {
+        const res = await categoryApi.getTree();
+        if (!mounted) return;
+        if (res.success && res.data) {
+          const map: Record<number, string> = {};
+          const walk = (items: CategoryBackend[] | null) => {
+            if (!items) return;
+            for (const it of items) {
+              map[it.id] = it.name;
+              if (it.children) walk(it.children);
+            }
+          };
+          walk(res.data);
+          setCategoryMap(map);
+        }
+      } catch (e) {
+        // ignore - presenter should not crash the page for category fetch failures
+        // Optionally you could set an error state and show it in the UI
+      }
+    }
+
+    loadCategories();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onSearch(e.target.value);
   };
@@ -46,7 +81,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
 
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
-    const isActive = value === '' ? null : value === 'active';
+    const isActive = value === 'active';
     onFilterChange({ isActive });
   };
 
@@ -61,7 +96,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
     pages.push(
       <button
         key="prev"
-        className="px-4 py-2 mx-1 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+        className="px-4 py-2 mx-1 text-sm text-black bg-white border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium"
         onClick={() => onPageChange(pagination.page - 1)}
         disabled={!pagination.hasPrevious}
       >
@@ -80,7 +115,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
           className={`px-4 py-2 mx-1 text-sm border rounded-lg font-medium ${
             i === currentPage
               ? 'bg-black text-white border-black'
-              : 'border-gray-300 bg-white'
+              : 'border-gray-300 bg-white text-black'
           }`}
           onClick={() => onPageChange(i - 1)} // Convert to 0-based
         >
@@ -93,7 +128,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
     pages.push(
       <button
         key="next"
-        className="px-4 py-2 mx-1 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+        className="px-4 py-2 mx-1 text-sm text-black bg-white border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium"
         onClick={() => onPageChange(pagination.page + 1)}
         disabled={!pagination.hasNext}
       >
@@ -131,9 +166,6 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
           <h1 className="text-4xl font-bold text-black">
             Product Management
           </h1>
-          <p className="text-gray-600 mt-2">
-            Showing {pagination.totalItems} products
-          </p>
         </div>
         <button
           onClick={onCreateProduct}
@@ -148,7 +180,13 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
 
       {/* Filters */}
       <div className="bg-white p-6 rounded-lg shadow border border-gray-200 mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/*
+          Using Tailwind arbitrary grid template columns to control column widths.
+          - First column (Search) is ~3fr (three parts) so it appears around 3/5 width
+          - Second and third columns are 1fr each and share the remaining 2/5
+          To adjust ratios, change the values in grid-cols-[3fr_1fr_1fr] (e.g. [4fr_1fr_1fr])
+        */}
+        <div className="grid grid-cols-[3fr_1fr_1fr] gap-6">
           {/* Search */}
           <div>
             <label htmlFor="search" className="block text-sm font-semibold text-black mb-2">
@@ -161,7 +199,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
                 value={filters.title}
                 onChange={handleSearchChange}
                 placeholder="Enter product name..."
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                className="w-full h-[10%] pl-10 text-black pr-4 py-3 border border-gray-300 rounded-lg focus:border-black"
               />
               <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -178,7 +216,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
               id="sort"
               value={`${filters.sortBy}:${filters.sortDirection}`}
               onChange={handleSortChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+              className="w-full px-4 py-3 text-black border border-gray-300 rounded-lg focus:border-black"
             >
               <option value="createdAt:desc">Newest First</option>
               <option value="createdAt:asc">Oldest First</option>
@@ -195,11 +233,10 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
             </label>
             <select
               id="status"
-              value={filters.isActive === null ? '' : filters.isActive ? 'active' : 'inactive'}
+              value={filters.isActive ? 'active' : 'inactive'}
               onChange={handleStatusChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+              className="w-full text-black px-4 py-3 border border-gray-300 rounded-lg focus:border-black"
             >
-              <option value="">All Products</option>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
             </select>
@@ -228,12 +265,10 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
             </svg>
           </div>
           <h3 className="text-xl font-semibold text-gray-800 mb-2">No products found</h3>
-          <p className="text-gray-600 mb-6">
-            {filters.title || filters.categorySlug || filters.isActive !== null 
+          <p className="text-gray-600 mb-6">{filters.title || filters.categorySlug || filters.isActive === false 
               ? 'Try adjusting your search or filter criteria'
-              : 'Get started by creating your first product'}
-          </p>
-          {(!filters.title && !filters.categorySlug && filters.isActive === null) && (
+              : 'Get started by creating your first product'}</p>
+          {(!filters.title && !filters.categorySlug && filters.isActive === true) && (
             <button
               onClick={onCreateProduct}
               className="bg-black text-white px-6 py-3 rounded-lg font-medium"
@@ -288,7 +323,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">
-                        Category {product.categoryId || 'N/A'}
+                        {product.categoryId ? (categoryMap[product.categoryId] ?? product.categoryId) : 'N/A'}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-1">

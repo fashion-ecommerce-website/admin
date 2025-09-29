@@ -111,6 +111,7 @@ function* handleUploadImage(action: PayloadAction<productSlice.UploadImageReques
 // Root product saga
 export function* productSaga() {
   yield takeEvery(productSlice.fetchProductsRequest.type, handleFetchProducts);
+  yield takeEvery(productSlice.fetchProductsSilentRequest.type, handleFetchProducts);
   yield takeEvery(productSlice.fetchProductByIdRequest.type, handleFetchProductById);
   yield takeLeading(productSlice.createProductRequest.type, handleCreateProduct);
   yield takeLeading(productSlice.updateProductRequest.type, handleUpdateProduct);
