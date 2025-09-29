@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useToast } from "@/providers/ToastProvider";
 import {
   Product,
@@ -16,8 +16,9 @@ import {
   deleteProductSuccess,
   uploadImageRequest,
   createProductSuccess,
-  updateProductSuccess,
 } from "@/features/products/redux/productSlice";
+import { fetchProductsSilentRequest } from '@/features/products/redux/productSlice';
+import { RootState } from '@/store';
 import { productApi } from "@/services/api/productApi";
 
 interface BaseModalProps {
@@ -25,9 +26,7 @@ interface BaseModalProps {
   onClose: () => void;
 }
 
-interface ProductModalProps extends BaseModalProps {
-  product?: Product | null;
-}
+interface ProductModalProps extends BaseModalProps {}
 
 interface DeleteProductModalProps extends BaseModalProps {
   product?: Product | null;
@@ -113,17 +112,15 @@ const Modal: React.FC<
 };
 
 // Create/Edit Product Modal
-export const ProductModal: React.FC<ProductModalProps> = ({
-  isOpen,
-  onClose,
-  product,
-}) => {
+export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
+  const { pagination, filters } = useSelector((s: RootState) => s.product);
   const { showSuccess, showError } = useToast();
   const [loading, setLoading] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
   const [categories, setCategories] = useState<CategoryBackend[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [categoryLabels, setCategoryLabels] = useState<Record<number, string>>({});
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const [formData, setFormData] = useState<ProductFormData>({
@@ -139,17 +136,40 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Load categories function
+  // Load categories using tree endpoint and build leaf labels (like EditProductAdminModal)
   const loadCategories = async () => {
     setCategoriesLoading(true);
     try {
-      const response = await categoryApi.getAllCategories();
-      if (response.success && response.data) {
-        // response.data may be paginated { items: [...] }
-        const items = Array.isArray(response.data)
-          ? response.data
-          : (response.data as any).items || [];
-        setCategories(items as CategoryBackend[]);
+      const res = await categoryApi.getTree();
+      if (res.success && res.data && Array.isArray(res.data)) {
+        const items: CategoryBackend[] = res.data as CategoryBackend[];
+
+        const leafItemsWithLabels: Array<{ node: CategoryBackend; label: string }> = [];
+        const traverse = (nodes: CategoryBackend[] = [], parents: string[] = []) => {
+          for (const n of nodes) {
+            const currentPath = [...parents, n.name];
+            const isLeaf = n.children === null || (Array.isArray(n.children) && n.children.length === 0);
+            if (isLeaf) {
+              leafItemsWithLabels.push({ node: n, label: currentPath.join(' > ') });
+            } else if (Array.isArray(n.children) && n.children.length > 0) {
+              traverse(n.children, currentPath);
+            }
+          }
+        };
+        traverse(items);
+
+        const leafItems = leafItemsWithLabels.map((x) => x.node);
+        const labelsMap: Record<number, string> = {};
+        for (const it of leafItemsWithLabels) labelsMap[it.node.id] = it.label;
+
+        setCategories(leafItems);
+        setCategoryLabels(labelsMap);
+
+        // if no category selected yet, choose first leaf
+        setFormData((prev) => ({
+          ...prev,
+          categoryId: prev.categoryId || (leafItems.length > 0 ? leafItems[0].id : prev.categoryId),
+        }));
       } else {
         showError("Failed to load categories");
       }
@@ -197,34 +217,16 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   };
 
   useEffect(() => {
-    if (product) {
-      // Convert existing product data to new productDetail structure
-      const existingProductDetails = product.variantColors.map((color) => ({
-        color,
-        sizes: product.variantSizes.map((s) => s.id),
-        images: product.thumbnail ? [product.thumbnail] : [], // Use main thumbnail as first image
-        price: 0, // Default price - in real app this would come from API
-        quantity: 0, // Default quantity - in real app this would come from API
-      }));
-
-      setFormData({
-        title: product.title,
-        description: product.description || "",
-        thumbnail: product.thumbnail,
-        categoryId: product.categoryId,
-        productDetails: existingProductDetails,
-      });
-    } else {
-      setFormData({
-        title: "",
-        description: "",
-        thumbnail: "",
-        categoryId: categories.length > 0 ? categories[0].id : 1,
-        productDetails: [],
-      });
-    }
+    // Initialize form for creating a new product
+    setFormData({
+      title: "",
+      description: "",
+      thumbnail: "",
+      categoryId: categories.length > 0 ? categories[0].id : 1,
+      productDetails: [],
+    });
     setErrors({});
-  }, [product, isOpen, categories]);
+  }, [isOpen, categories]);
 
   // Normalize productDetails to ensure they have images array
   useEffect(() => {
@@ -403,31 +405,45 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       }
 
       // Use centralized productApi which will forward FormData to adminApiClient (which supports FormData)
-      if (product) {
-        // Update product - endpoint expects id in the path; productApi.updateProduct handles FormData by sending to /products/{id}
-        fd.append("id", String(product.id));
-        const resp = await (
-          await import("@/services/api/productApi")
-        ).productApi.updateProduct(fd as any);
-        if (!resp.success)
-          throw new Error(resp.message || "Failed to update product");
-        // If backend returns updated product data, dispatch success to update redux store
-        if (resp.data) {
-          dispatch(updateProductSuccess({ product: resp.data } as any));
-        }
-        showSuccess("Product updated successfully!");
-      } else {
-        const resp = await (
-          await import("@/services/api/productApi")
-        ).productApi.createProduct(fd as any);
-        if (!resp.success)
-          throw new Error(resp.message || "Failed to create product");
-        // If backend returns created product data, dispatch success to add to redux store
-        if (resp.data) {
+      // Create product only
+      const resp = await (await import("@/services/api/productApi")).productApi.createProduct(fd as any);
+      if (!resp.success) throw new Error(resp.message || "Failed to create product");
+
+      // If API returned created product, try to fetch full product from server
+      if (resp.data && (resp.data as any).id) {
+        const createdId = (resp.data as any).id as number;
+        try {
+          const full = await productApi.getProductById(createdId);
+          if (full.success && full.data) {
+            dispatch(createProductSuccess({ product: full.data } as any));
+          } else {
+            // fallback to response data if full fetch fails
+            dispatch(createProductSuccess({ product: resp.data } as any));
+          }
+        } catch (e) {
           dispatch(createProductSuccess({ product: resp.data } as any));
         }
-        showSuccess("Product created successfully!");
+      } else if (resp.data) {
+        // No id provided, just dispatch what we have
+        dispatch(createProductSuccess({ product: resp.data } as any));
       }
+
+      // Silent re-fetch to refresh list/page counts without showing global loading
+      try {
+        dispatch(fetchProductsSilentRequest({
+          page: pagination.page,
+          pageSize: pagination.pageSize,
+          title: filters.title || undefined,
+          categorySlug: filters.categorySlug || undefined,
+          isActive: filters.isActive ?? undefined,
+          sortBy: filters.sortBy,
+          sortDirection: filters.sortDirection,
+        }));
+      } catch (e) {
+        // ignore
+      }
+
+      showSuccess("Product created successfully!");
 
       onClose();
     } catch (error) {
@@ -693,11 +709,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   // };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={product ? "Edit Product" : "Create New Product"}
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title={"Create New Product"}>
       <form onSubmit={handleSubmit} className="p-6 space-y-6">
         {/* Product Title */}
         <div>
@@ -802,7 +814,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                           : ""
                       }`}
                     >
-                      {category.name}
+                      {categoryLabels[category.id] ?? category.name}
                     </button>
                   ))
                 ) : (
@@ -1124,7 +1136,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                 />
               </svg>
             )}
-            <span>{product ? "Update Product" : "Create Product"}</span>
+            <span>Create Product</span>
           </button>
         </div>
       </form>
@@ -1141,6 +1153,7 @@ export const DeleteProductModal: React.FC<DeleteProductModalProps> = ({
   const dispatch = useDispatch();
   const { showSuccess, showError } = useToast();
   const [loading, setLoading] = useState(false);
+  const { pagination, filters } = useSelector((s: RootState) => s.product);
 
   const handleDelete = async () => {
     if (!product) return;
@@ -1148,11 +1161,25 @@ export const DeleteProductModal: React.FC<DeleteProductModalProps> = ({
     setLoading(true);
 
     try {
-      // Call API directly; backend may return 204 No Content (no body)
-      const res = await productApi.deleteProduct(product.id);
+      // Call admin delete API
+      const res = await productApi.deleteProductAdmin(product.id);
       if (res.success) {
         // Update redux store
         dispatch(deleteProductSuccess({ id: product.id }));
+        // Silent re-fetch to refresh list/page counts without global loading
+        try {
+          dispatch(fetchProductsSilentRequest({
+            page: pagination.page,
+            pageSize: pagination.pageSize,
+            title: filters.title || undefined,
+            categorySlug: filters.categorySlug || undefined,
+            isActive: filters.isActive ?? undefined,
+            sortBy: filters.sortBy,
+            sortDirection: filters.sortDirection,
+          }));
+        } catch (e) {
+          // ignore
+        }
         showSuccess("Product deleted successfully!");
         onClose();
       } else {

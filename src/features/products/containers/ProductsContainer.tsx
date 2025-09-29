@@ -11,6 +11,7 @@ import {
 } from '../redux/productSlice';
 import ProductsPresenter from '../components/ProductsPresenter';
 import { ProductModal, DeleteProductModal } from '../../../components/modals/ProductModals';
+import EditProductAdminModal from '../../../components/modals/EditProductAdminModal';
 import { Product, ProductState } from '../../../types/product.types';
 
 const ProductsContainer: React.FC = () => {
@@ -151,13 +152,18 @@ const ProductsContainer: React.FC = () => {
       <ProductModal
         isOpen={isCreateModalOpen}
         onClose={handleCloseModals}
-        product={null}
       />
 
-      <ProductModal
+      {/* Edit (admin JSON) modal */}
+      <EditProductAdminModal
         isOpen={isEditModalOpen}
         onClose={handleCloseModals}
-        product={selectedProduct}
+        productId={selectedProduct?.id ?? 0}
+        initial={{
+          title: selectedProduct?.title ?? undefined,
+          description: selectedProduct?.description ?? undefined,
+          categoryIds: selectedProduct ? [selectedProduct.categoryId] : undefined,
+        }}
       />
 
       <DeleteProductModal

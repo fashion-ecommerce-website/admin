@@ -132,6 +132,28 @@ class ProductApi {
   }
 
   /**
+   * Update an existing product via admin path with JSON body
+   * This mirrors the backend route POST/PUT /products/admin/{id} which accepts JSON (not multipart)
+   */
+  async updateProductAdmin(id: number, updateBody: Partial<UpdateProductRequest>): Promise<ApiResponse<Product>> {
+    try {
+      const response = await adminApiClient.put<Product>(`${this.endpoint}/admin/${id}`, updateBody as any);
+      return {
+        success: response.success,
+        data: response.data,
+        message: response.message || 'Product updated successfully',
+      };
+    } catch (error) {
+      console.error('Error updating product via admin endpoint:', error);
+      return {
+        success: false,
+        data: null,
+        message: error instanceof Error ? error.message : 'Failed to update product (admin)',
+      };
+    }
+  }
+
+  /**
    * Delete a product
    */
   async deleteProduct(id: number): Promise<ApiResponse<null>> {
@@ -149,6 +171,29 @@ class ProductApi {
         success: false,
         data: null,
         message: error instanceof Error ? error.message : 'Failed to delete product',
+      };
+    }
+  }
+
+  /**
+   * Delete a product via admin endpoint
+   * DELETE /products/admin/{id}
+   */
+  async deleteProductAdmin(id: number): Promise<ApiResponse<null>> {
+    try {
+      const response = await adminApiClient.delete(`${this.endpoint}/admin/${id}`);
+
+      return {
+        success: response.success,
+        data: null,
+        message: response.message || 'Product deleted successfully',
+      };
+    } catch (error) {
+      console.error('Error deleting product (admin):', error);
+      return {
+        success: false,
+        data: null,
+        message: error instanceof Error ? error.message : 'Failed to delete product (admin)',
       };
     }
   }
