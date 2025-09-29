@@ -87,6 +87,30 @@ class CategoryApi {
       };
     }
   }
+
+  async getTree(): Promise<ApiResponse<CategoryBackend[]>> {
+    try {
+      return await adminApiClient.get<CategoryBackend[]>(`${this.endpoint}/tree`);
+    } catch (error) {
+      return {
+        success: false,
+        data: null,
+        message: error instanceof Error ? error.message : 'Failed to fetch category tree',
+      };
+    }
+  }
+
+  async deleteCategory(id: number): Promise<ApiResponse<null>> {
+    try {
+      return await adminApiClient.delete<null>(`${this.endpoint}/${id}`);
+    } catch (error) {
+      return {
+        success: false,
+        data: null,
+        message: error instanceof Error ? error.message : 'Failed to delete category',
+      };
+    }
+  }
 }
 
 export const categoryApi = new CategoryApi();

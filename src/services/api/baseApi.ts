@@ -201,20 +201,56 @@ class AdminBaseApi {
         }
       }
 
-      const data = await response.json();
+      // Handle 204 No Content or empty responses: do not attempt to parse JSON
+      let parsedData: any = null;
+
+      // If status is 204 No Content, there's intentionally no body
+      if (response.status === 204) {
+        parsedData = null;
+      } else {
+        // Try to parse JSON; if parsing fails (non-JSON body), fall back to null
+        try {
+          // Some responses may have empty body even if status != 204 (Content-Length: 0)
+          // So guard by checking content-length header when available
+          const contentLength = response.headers.get('content-length');
+          const hasBody = contentLength ? parseInt(contentLength, 10) > 0 : true;
+
+          if (hasBody) {
+            // Attempt to parse JSON; if it fails we'll catch and keep parsedData = null
+            parsedData = await response.json();
+          } else {
+            parsedData = null;
+          }
+        } catch (jsonError) {
+          // If response isn't JSON, we don't want to throw here. Keep data null and
+          // return message based on status or text if available.
+          try {
+            const text = await response.text();
+            parsedData = text ? text : null;
+          } catch (_) {
+            parsedData = null;
+          }
+        }
+      }
 
       if (!response.ok) {
+        // If parsedData is an object and has a message property, prefer that
+        const message = parsedData && typeof parsedData === 'object' && 'message' in parsedData
+          ? parsedData.message
+          : `HTTP Error: ${response.status}`;
+
         return {
           success: false,
           data: null,
-          message: data.message || `HTTP Error: ${response.status}`,
+          message,
         };
       }
 
       return {
         success: true,
-        data: data,
-        message: data.message,
+        // For successful responses with no JSON body, data will be null which is expected
+        data: parsedData,
+        message: parsedData && typeof parsedData === 'object' ? parsedData.message : undefined,
       };
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Network error occurred';

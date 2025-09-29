@@ -7,6 +7,8 @@ interface AddCategoryModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  // optional preset parent id when opening modal for adding a child
+  presetParentId?: number | null;
   onSubmit: (data: {
     name: string;
     slug: string;
@@ -18,6 +20,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
+  presetParentId,
   onSubmit,
 }) => {
   const { showError } = useToast();
@@ -75,6 +78,17 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
       onClose();
     }
   };
+
+  // If modal opened with a preset parentId, populate it
+  useEffect(() => {
+    if (isOpen) {
+      setFormData((prev) => ({ ...prev, parentId: presetParentId ?? null }));
+    }
+    // reset when modal closes
+    if (!isOpen) {
+      setFormData({ name: "", slug: "", parentId: null });
+    }
+  }, [isOpen, presetParentId]);
 
   if (!isOpen) return null;
 
