@@ -12,11 +12,13 @@ import {
 } from "@/types/product.types";
 import { categoryApi, CategoryBackend } from "@/services/api/categoryApi";
 import {
-  deleteProductRequest,
+  // use direct success action when delete completes
+  deleteProductSuccess,
   uploadImageRequest,
   createProductSuccess,
   updateProductSuccess,
 } from "@/features/products/redux/productSlice";
+import { productApi } from "@/services/api/productApi";
 
 interface BaseModalProps {
   isOpen: boolean;
@@ -1146,9 +1148,16 @@ export const DeleteProductModal: React.FC<DeleteProductModalProps> = ({
     setLoading(true);
 
     try {
-      dispatch(deleteProductRequest({ id: product.id }));
-      showSuccess("Product deleted successfully!");
-      onClose();
+      // Call API directly; backend may return 204 No Content (no body)
+      const res = await productApi.deleteProduct(product.id);
+      if (res.success) {
+        // Update redux store
+        dispatch(deleteProductSuccess({ id: product.id }));
+        showSuccess("Product deleted successfully!");
+        onClose();
+      } else {
+        showError(res.message || "Failed to delete product");
+      }
     } catch (error) {
       showError(error instanceof Error ? error.message : "An error occurred");
     } finally {
