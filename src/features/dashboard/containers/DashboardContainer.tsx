@@ -41,19 +41,19 @@ export const DashboardContainer: React.FC = () => {
           {
             id: '1',
             type: 'ORDER_PLACED',
-            description: 'Đơn hàng #12345 được đặt bởi Nguyễn Văn A',
+            description: 'Order #12345 placed by Nguyen Van A',
             timestamp: new Date().toISOString(),
           },
           {
             id: '2',
             type: 'USER_REGISTERED',
-            description: 'Người dùng mới đăng ký: user@example.com',
+            description: 'New user registered: user@example.com',
             timestamp: new Date(Date.now() - 300000).toISOString(),
           },
           {
             id: '3',
             type: 'PRODUCT_ADDED',
-            description: 'Sản phẩm "Áo thun nam" được thêm vào hệ thống',
+            description: 'Product "Men T-shirt" added to the system',
             timestamp: new Date(Date.now() - 600000).toISOString(),
           },
         ],
@@ -61,7 +61,7 @@ export const DashboardContainer: React.FC = () => {
       
       setStats(mockStats);
     } catch (err) {
-      setError('Không thể tải dữ liệu dashboard');
+      setError('Unable to load dashboard data');
     } finally {
       setLoading(false);
     }

@@ -92,26 +92,26 @@ export const AddUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, onSave
         };
         onSave(newUser);
         showSuccess(
-          'Thêm người dùng thành công!',
-          `Đã thêm ${formData.name} vào hệ thống.`
+          'User added successfully!',
+          `Added ${formData.name} to the system.`
         );
       }
       setFormData({ name: '', email: '', role: 'Customer', status: 'Active' });
       onClose();
     } catch (error) {
       showError(
-        'Lỗi thêm người dùng',
-        'Có lỗi xảy ra khi thêm người dùng mới.'
+        'Add user error',
+        'An error occurred while adding a new user.'
       );
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Thêm người dùng mới">
+    <Modal isOpen={isOpen} onClose={onClose} title="Add new user">
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Tên người dùng
+            User name
           </label>
           <input
             type="text"
@@ -119,7 +119,7 @@ export const AddUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, onSave
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-gray-900"
-            placeholder="Nhập tên người dùng"
+            placeholder="Enter user name"
           />
         </div>
 
@@ -139,7 +139,7 @@ export const AddUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, onSave
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Vai trò
+            Role
           </label>
           <select
             value={formData.role}
@@ -153,16 +153,16 @@ export const AddUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, onSave
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Trạng thái
+            Status
           </label>
           <select
             value={formData.status}
             onChange={(e) => setFormData({ ...formData, status: e.target.value })}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-gray-900"
           >
-            <option value="Active">Hoạt động</option>
-            <option value="Inactive">Không hoạt động</option>
-            <option value="Blocked">Đã khóa</option>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+            <option value="Blocked">Blocked</option>
           </select>
         </div>
 
@@ -172,13 +172,13 @@ export const AddUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, onSave
             onClick={onClose}
             className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 font-medium transition-colors duration-200"
           >
-            Hủy
+            Cancel
           </button>
           <button
             type="submit"
             className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl hover:from-indigo-600 hover:to-purple-700 font-medium transition-all duration-200 transform hover:scale-105"
           >
-            Thêm người dùng
+            Add user
           </button>
         </div>
       </form>
@@ -191,7 +191,7 @@ export const ViewUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user 
   if (!user) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Thông tin chi tiết người dùng">
+    <Modal isOpen={isOpen} onClose={onClose} title="User details">
       <div className="space-y-6">
         {/* User Avatar & Basic Info */}
         <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl">
@@ -228,10 +228,10 @@ export const ViewUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user 
                 user.status === 'Active' ? 'bg-green-500' : 
                 user.status === 'Inactive' ? 'bg-yellow-500' : 'bg-red-500'
               } animate-pulse`}></div>
-              <span className="text-sm font-medium text-gray-700">Trạng thái</span>
+              <span className="text-sm font-medium text-gray-700">Status</span>
             </div>
             <p className="text-lg font-semibold text-gray-900">
-              {user.status === 'Active' ? 'Hoạt động' : user.status === 'Inactive' ? 'Không hoạt động' : 'Đã khóa'}
+              {user.status === 'Active' ? 'Active' : user.status === 'Inactive' ? 'Inactive' : 'Blocked'}
             </p>
           </div>
 
@@ -240,10 +240,10 @@ export const ViewUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user 
               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a4 4 0 118 0v4m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
               </svg>
-              <span className="text-sm font-medium text-gray-700">Ngày tham gia</span>
+              <span className="text-sm font-medium text-gray-700">Join date</span>
             </div>
             <p className="text-lg font-semibold text-gray-900">
-              {new Date(user.joinDate).toLocaleDateString('vi-VN')}
+              {new Date(user.joinDate).toLocaleDateString('en-US')}
             </p>
           </div>
         </div>
@@ -255,7 +255,7 @@ export const ViewUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user 
               <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
-              <span className="text-sm font-medium text-blue-700">Tổng đơn hàng</span>
+              <span className="text-sm font-medium text-blue-700">Total orders</span>
             </div>
             <p className="text-2xl font-bold text-blue-900">{user.totalOrders}</p>
           </div>
@@ -265,9 +265,9 @@ export const ViewUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user 
               <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
               </svg>
-              <span className="text-sm font-medium text-green-700">Tổng chi tiêu</span>
+              <span className="text-sm font-medium text-green-700">Total spending</span>
             </div>
-            <p className="text-2xl font-bold text-green-900">{user.totalSpent.toLocaleString('vi-VN')} VNĐ</p>
+            <p className="text-2xl font-bold text-green-900">{user.totalSpent.toLocaleString('en-US')} VND</p>
           </div>
         </div>
 
@@ -277,10 +277,10 @@ export const ViewUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user 
             <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span className="text-sm font-medium text-gray-700">Hoạt động gần nhất</span>
+            <span className="text-sm font-medium text-gray-700">Last activity</span>
           </div>
           <p className="text-lg font-semibold text-gray-900">
-            {new Date(user.lastLogin).toLocaleDateString('vi-VN')} lúc {new Date(user.lastLogin).toLocaleTimeString('vi-VN')}
+            {new Date(user.lastLogin).toLocaleDateString('en-US')} at {new Date(user.lastLogin).toLocaleTimeString('en-US')}
           </p>
         </div>
 
@@ -289,7 +289,7 @@ export const ViewUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user 
             onClick={onClose}
             className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl hover:from-indigo-600 hover:to-purple-700 font-medium transition-all duration-200 transform hover:scale-105"
           >
-            Đóng
+            Close
           </button>
         </div>
       </div>
@@ -328,15 +328,15 @@ export const EditUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user,
         };
         onSave(updatedUser);
         showSuccess(
-          'Cập nhật thành công!',
-          `Đã cập nhật thông tin của ${formData.name}.`
+          'Updated successfully!',
+          `Updated information for ${formData.name}.`
         );
       }
       onClose();
     } catch (error) {
       showError(
-        'Lỗi cập nhật',
-        'Có lỗi xảy ra khi cập nhật thông tin người dùng.'
+        'Update error',
+        'An error occurred while updating the user.'
       );
     }
   };
@@ -344,11 +344,11 @@ export const EditUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user,
   if (!user) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Chỉnh sửa thông tin người dùng">
+    <Modal isOpen={isOpen} onClose={onClose} title="Edit user information">
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Tên người dùng
+            User name
           </label>
           <input
             type="text"
@@ -374,7 +374,7 @@ export const EditUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user,
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Vai trò
+            Role
           </label>
           <select
             value={formData.role}
@@ -388,16 +388,16 @@ export const EditUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user,
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Trạng thái
+            Status
           </label>
           <select
             value={formData.status}
             onChange={(e) => setFormData({ ...formData, status: e.target.value })}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-gray-900"
           >
-            <option value="Active">Hoạt động</option>
-            <option value="Inactive">Không hoạt động</option>
-            <option value="Blocked">Đã khóa</option>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+            <option value="Blocked">Blocked</option>
           </select>
         </div>
 
@@ -407,13 +407,13 @@ export const EditUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user,
             onClick={onClose}
             className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 font-medium transition-colors duration-200"
           >
-            Hủy
+            Cancel
           </button>
           <button
             type="submit"
             className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl hover:from-indigo-600 hover:to-purple-700 font-medium transition-all duration-200 transform hover:scale-105"
           >
-            Lưu thay đổi
+            Save changes
           </button>
         </div>
       </form>
@@ -451,7 +451,7 @@ export const LockUserModal: React.FC<LockModalProps> = ({ isOpen, onClose, user,
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={isLocked ? 'Mở khóa người dùng' : 'Khóa người dùng'}>
+    <Modal isOpen={isOpen} onClose={onClose} title={isLocked ? 'Unlock user' : 'Lock user'}>
       <div className="text-center space-y-4">
         <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center ${
           isLocked ? 'bg-green-100' : 'bg-orange-100'
@@ -469,14 +469,14 @@ export const LockUserModal: React.FC<LockModalProps> = ({ isOpen, onClose, user,
 
         <div>
           <h4 className="text-lg font-semibold text-gray-900 mb-2">
-            {isLocked ? 'Mở khóa tài khoản?' : 'Khóa tài khoản?'}
+            {isLocked ? 'Unlock account?' : 'Lock account?'}
           </h4>
           <p className="text-gray-600">
-            Bạn có chắc chắn muốn {isLocked ? 'mở khóa' : 'khóa'} tài khoản của <span className="font-medium text-gray-900">{user.name}</span>?
+            Are you sure you want to {isLocked ? 'unlock' : 'lock'} the account of <span className="font-medium text-gray-900">{user.name}</span>?
           </p>
           {!isLocked && (
             <p className="text-sm text-yellow-600 mt-2">
-              Sau khi khóa, người dùng sẽ không thể truy cập vào hệ thống.
+              After locking, the user will not be able to access the system.
             </p>
           )}
         </div>
@@ -487,7 +487,7 @@ export const LockUserModal: React.FC<LockModalProps> = ({ isOpen, onClose, user,
             disabled={isLoading}
             className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Hủy
+            Cancel
           </button>
           <button
             onClick={handleConfirm}
@@ -503,7 +503,7 @@ export const LockUserModal: React.FC<LockModalProps> = ({ isOpen, onClose, user,
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
             )}
-            <span>{isLoading ? 'Đang xử lý...' : (isLocked ? 'Mở khóa' : 'Khóa tài khoản')}</span>
+            <span>{isLoading ? 'Processing...' : (isLocked ? 'Unlock' : 'Lock account')}</span>
           </button>
         </div>
       </div>

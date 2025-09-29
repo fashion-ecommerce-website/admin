@@ -238,7 +238,7 @@ export const EditCategoryModal: React.FC<EditCategoryModalProps> = ({
     e.preventDefault();
 
     if (!formData.name.trim() || !formData.slug.trim() || !category) {
-      showError("Lỗi nhập liệu", "Vui lòng nhập đầy đủ tên và slug");
+      showError("Input error", "Please enter a valid name and slug");
       return;
     }
 

@@ -12,23 +12,23 @@ function* handleLogin(action: PayloadAction<AdminLoginRequest>) {
     
     yield put(loginSuccess(response));
     
-    localStorage.setItem('admin_access_token', response.accessToken);
-    localStorage.setItem('admin_refresh_token', response.refreshToken);
+    sessionStorage.setItem('admin_access_token', response.accessToken);
+    sessionStorage.setItem('admin_refresh_token', response.refreshToken);
     
     const adminUser = {
       username: response.username,
       email: response.email,
     };
-    localStorage.setItem('admin_user', JSON.stringify(adminUser));
+    sessionStorage.setItem('admin_user', JSON.stringify(adminUser));
     
   } catch (error: any) {
-    yield put(loginFailure(error.message || 'Đăng nhập thất bại'));
+    yield put(loginFailure(error.message || 'Login failed'));
   }
 }
 
 function* handleLogout() {
   try {
-    const accessToken = localStorage.getItem('admin_access_token');
+    const accessToken = sessionStorage.getItem('admin_access_token');
     
     if (accessToken) {
       try {
@@ -38,9 +38,9 @@ function* handleLogout() {
       }
     }
     
-    localStorage.removeItem('admin_access_token');
-    localStorage.removeItem('admin_refresh_token');
-    localStorage.removeItem('admin_user');
+    sessionStorage.removeItem('admin_access_token');
+    sessionStorage.removeItem('admin_refresh_token');
+    sessionStorage.removeItem('admin_user');
     
     yield put(logout());
     

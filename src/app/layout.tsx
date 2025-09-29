@@ -4,7 +4,6 @@ import "./globals.css";
 import { ReduxProvider } from "@/providers/ReduxProvider";
 import { ToastProvider } from "@/providers/ToastProvider";
 import { AuthGuard } from "@/components/auth/AuthGuard";
-import { AuthInitializer } from "@/components/auth/AuthInitializer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,7 +31,6 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ReduxProvider>
-          <AuthInitializer />
           <ToastProvider>
             <AuthGuard>
               {children}

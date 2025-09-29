@@ -67,9 +67,9 @@ class AdminAuthApi {
 
     if (!response.ok) {
       if (response.status === 401) {
-        throw new Error('Phiên đăng nhập đã hết hạn');
+        throw new Error('Session expired');
       } else {
-        throw new Error('Không thể làm mới token');
+        throw new Error('Unable to refresh token');
       }
     }
 
@@ -112,9 +112,9 @@ class AdminAuthApi {
 
     if (!response.ok) {
       if (response.status === 401) {
-        throw new Error('Token không hợp lệ');
+        throw new Error('Invalid token');
       } else {
-        throw new Error('Không thể lấy thông tin người dùng');
+        throw new Error('Unable to fetch user profile');
       }
     }
 

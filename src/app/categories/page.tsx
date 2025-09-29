@@ -5,6 +5,7 @@ import { AdminLayout } from '@/components/layout/AdminLayout';
 import { categoryApi, CategoryBackend, CreateCategoryRequest, UpdateCategoryRequest } from '@/services/api/categoryApi';
 import { useToast } from '@/providers/ToastProvider';
 import { AddCategoryModal, EditCategoryModal } from '@/components/modals/CategoryModals';
+import { AuthGuard } from '@/components/auth/AuthGuard';
 
 export default function CategoriesPage() {
   const { showError, showSuccess } = useToast();
@@ -24,17 +25,17 @@ export default function CategoriesPage() {
       const res = await categoryApi.getAllCategories();
       if (res.success && res.data) {
         setCategories(res.data);
-        showSuccess('Tải danh mục thành công', `Đã tải ${res.data.length} danh mục`);
+        showSuccess('Categories loaded successfully', `Loaded ${res.data.length} categories`);
       } else {
-        setError(res.message || 'Không thể tải danh mục');
-        showError('Lỗi tải danh mục', res.message || 'Không thể tải danh mục');
+        setError(res.message || 'Unable to load categories');
+        showError('Load categories error', res.message || 'Unable to load categories');
         // Fallback: set empty list
         setCategories([]);
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Lỗi kết nối';
+      const msg = err instanceof Error ? err.message : 'Connection error';
       setError(msg);
-      showError('Lỗi', msg);
+      showError('Error', msg);
     } finally {
       setIsLoading(false);
     }
@@ -44,16 +45,16 @@ export default function CategoriesPage() {
     try {
       const response = await categoryApi.createCategory(categoryData);
       if (response.success && response.data) {
-        showSuccess('Tạo loại thành công', `Đã tạo loại "${categoryData.name}"`);
+        showSuccess('Category created', `Created category "${categoryData.name}"`);
         // Refresh the list
         await fetchCategories();
       } else {
-        showError('Lỗi tạo loại', response.message || 'Không thể tạo loại sản phẩm');
+        showError('Create category error', response.message || 'Unable to create category');
         throw new Error(response.message || 'Failed to create category');
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Lỗi kết nối';
-      showError('Lỗi', msg);
+      const msg = err instanceof Error ? err.message : 'Connection error';
+      showError('Error', msg);
       throw err; // Re-throw to let modal handle the error state
     }
   };
@@ -67,16 +68,16 @@ export default function CategoriesPage() {
     try {
       const response = await categoryApi.updateCategory(categoryData);
       if (response.success && response.data) {
-        showSuccess('Cập nhật thành công', `Đã cập nhật loại "${categoryData.name}"`);
+        showSuccess('Update successful', `Updated category "${categoryData.name}"`);
         // Refresh the list
         await fetchCategories();
       } else {
-        showError('Lỗi cập nhật', response.message || 'Không thể cập nhật loại sản phẩm');
+        showError('Update category error', response.message || 'Unable to update category');
         throw new Error(response.message || 'Failed to update category');
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Lỗi kết nối';
-      showError('Lỗi', msg);
+      const msg = err instanceof Error ? err.message : 'Connection error';
+      showError('Error', msg);
       throw err; // Re-throw to let modal handle the error state
     }
   };
@@ -86,6 +87,7 @@ export default function CategoriesPage() {
   }, []);
 
   return (
+    <AuthGuard>
     <AdminLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -186,5 +188,6 @@ export default function CategoriesPage() {
         category={selectedCategory}
       />
     </AdminLayout>
+    </AuthGuard>
   );
 }
