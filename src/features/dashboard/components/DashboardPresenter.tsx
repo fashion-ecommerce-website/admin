@@ -53,13 +53,13 @@ export const DashboardPresenter: React.FC<DashboardPresenterProps> = ({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
-        <h3 className="text-lg font-semibold text-red-800 mb-2">Có lỗi xảy ra</h3>
+        <h3 className="text-lg font-semibold text-red-800 mb-2">An error occurred</h3>
         <p className="text-red-600 mb-6">{error}</p>
         <button
           onClick={onRefresh}
           className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-6 py-3 rounded-xl font-medium hover:from-red-600 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105"
         >
-          Thử lại
+          Retry
         </button>
       </div>
     );
@@ -73,7 +73,7 @@ export const DashboardPresenter: React.FC<DashboardPresenterProps> = ({
           <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
             Dashboard
           </h1>
-          <p className="text-gray-600 mt-2">Chào mừng trở lại! Đây là tổng quan về hệ thống của bạn.</p>
+          <p className="text-gray-600 mt-2">Welcome back! Here is an overview of your system.</p>
         </div>
         <button
           onClick={onRefresh}
@@ -83,7 +83,7 @@ export const DashboardPresenter: React.FC<DashboardPresenterProps> = ({
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            <span>Làm mới</span>
+            <span>Refresh</span>
           </div>
         </button>
       </div>
@@ -91,7 +91,7 @@ export const DashboardPresenter: React.FC<DashboardPresenterProps> = ({
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         <StatsCard
-          title="Tổng người dùng"
+          title="Total users"
           value={stats?.totalUsers || 0}
           icon={(
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -103,7 +103,7 @@ export const DashboardPresenter: React.FC<DashboardPresenterProps> = ({
           bgGradient="from-blue-50 to-cyan-50"
         />
         <StatsCard
-          title="Tổng sản phẩm"
+          title="Total products"
           value={stats?.totalProducts || 0}
           icon={(
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -115,7 +115,7 @@ export const DashboardPresenter: React.FC<DashboardPresenterProps> = ({
           bgGradient="from-emerald-50 to-teal-50"
         />
         <StatsCard
-          title="Đơn hàng hôm nay"
+          title="Today's orders"
           value={stats?.todayOrders || 0}
           icon={(
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -127,8 +127,8 @@ export const DashboardPresenter: React.FC<DashboardPresenterProps> = ({
           bgGradient="from-orange-50 to-red-50"
         />
         <StatsCard
-          title="Doanh thu hôm nay"
-          value={`${(stats?.todayRevenue || 0).toLocaleString('vi-VN')} VNĐ`}
+          title="Today's revenue"
+          value={`${(stats?.todayRevenue || 0).toLocaleString('en-US')} VND`}
           icon={(
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
@@ -145,8 +145,8 @@ export const DashboardPresenter: React.FC<DashboardPresenterProps> = ({
         <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-8 py-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-xl font-bold text-gray-900">Hoạt động gần đây</h3>
-              <p className="text-gray-600 text-sm mt-1">Theo dõi các hoạt động mới nhất trong hệ thống</p>
+              <h3 className="text-xl font-bold text-gray-900">Recent activities</h3>
+              <p className="text-gray-600 text-sm mt-1">Track the latest activities across the system</p>
             </div>
             <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center">
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -167,7 +167,7 @@ export const DashboardPresenter: React.FC<DashboardPresenterProps> = ({
                     {activity.description}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
-                    {new Date(activity.timestamp).toLocaleString('vi-VN')}
+                    {new Date(activity.timestamp).toLocaleString('en-US')}
                   </p>
                 </div>
                 <div className="flex-shrink-0">
@@ -207,7 +207,7 @@ const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, trend, gradie
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17l9.2-9.2M17 17V7H7" />
                 </svg>
                 <span>{Math.abs(trend)}%</span>
-                <span className="text-gray-500">vs tháng trước</span>
+                <span className="text-gray-500">vs last month</span>
               </div>
             )}
           </div>

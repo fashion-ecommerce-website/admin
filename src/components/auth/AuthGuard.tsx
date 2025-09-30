@@ -26,7 +26,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     if (!isClient) return;
 
     const checkAuth = () => {
-      const tokenFromStorage = localStorage.getItem('admin_access_token');
+      const tokenFromStorage = sessionStorage.getItem('admin_access_token');
       const hasValidToken = accessToken || tokenFromStorage;
       
       const isProtectedRoute = pathname.startsWith('/dashboard') ||
@@ -44,10 +44,6 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
       }
 
       if (hasValidToken) {
-        if (isAuthRoute) {
-          router.push('/dashboard');
-          return;
-        }
         if (pathname === '/') {
           router.push('/dashboard');
           return;
@@ -74,7 +70,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Đang kiểm tra xác thực...</p>
+          <p className="mt-4 text-gray-600">Checking authentication...</p>
         </div>
       </div>
     );

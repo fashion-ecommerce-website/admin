@@ -63,10 +63,10 @@ export const AdminLoginPresenter: React.FC<AdminLoginPresenterProps> = ({
             </svg>
           </div>
           <h2 className="mt-6 text-center text-4xl font-extrabold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-            Fashion Admin
+            FIT Admin
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Hệ thống quản trị thời trang
+            Fashion Administration System
           </p>
         </div>
 
@@ -91,12 +91,12 @@ export const AdminLoginPresenter: React.FC<AdminLoginPresenterProps> = ({
 
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Địa chỉ email
+                  Email address
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+                    <svg className="h-5 w-5 text-gray-700" fill="none" stroke="currentColor" strokeWidth="1" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5A2.25 2.25 0 0119.5 19.5h-15A2.25 2.25 0 012.25 17.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15A2.25 2.25 0 002.25 6.75m19.5 0l-8.318 5.545a2.25 2.25 0 01-2.364 0L2.25 6.75" />
                     </svg>
                   </div>
                   <input
@@ -115,12 +115,13 @@ export const AdminLoginPresenter: React.FC<AdminLoginPresenterProps> = ({
 
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Mật khẩu
+                  Password
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+                    <svg className="h-5 w-5 text-gray-700" fill="none" stroke="currentColor" strokeWidth="1" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V7.5a4.5 4.5 0 10-9 0v3" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 10.5h16.5a.75.75 0 01.75.75v8.25A2.25 2.25 0 0118.75 21.75H5.25A2.25 2.25 0 013 19.5V11.25a.75.75 0 01.75-.75z" />
                     </svg>
                   </div>
                   <input
@@ -164,13 +165,13 @@ export const AdminLoginPresenter: React.FC<AdminLoginPresenterProps> = ({
                     className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                   />
                   <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
-                    Ghi nhớ đăng nhập
+                    Remember me
                   </label>
                 </div>
 
                 <div className="text-sm">
                   <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors">
-                    Quên mật khẩu?
+                    Forgot password?
                   </a>
                 </div>
               </div>
@@ -187,7 +188,7 @@ export const AdminLoginPresenter: React.FC<AdminLoginPresenterProps> = ({
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
                     </svg>
                   )}
-                  {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+                  {loading ? 'Signing in...' : 'Sign in'}
                 </button>
               </div>
 
