@@ -1,35 +1,25 @@
 import { call, put } from 'redux-saga/effects';
 import { takeEvery } from '@redux-saga/core/effects';
 import { PayloadAction } from '@reduxjs/toolkit';
-import { loginRequest, loginSuccess, loginFailure, AdminLoginRequest } from './adminAuthSlice';
-// Import admin auth API service khi đã có
+import { loginRequest, loginSuccess, loginFailure, logoutRequest, logout, AdminLoginRequest, AdminLoginResponse } from './adminAuthSlice';
+import { adminAuthApi } from '@/services/api/adminAuthApi';
 
 function* handleLogin(action: PayloadAction<AdminLoginRequest>) {
   try {
-    // TODO: Implement admin auth API call
-    // const response: AdminLoginResponse = yield call(adminAuthApi.login, action.payload);
+    const response: AdminLoginResponse = yield call(
+      () => adminAuthApi.login(action.payload)
+    );
     
-    // Mock successful login for now
-    const mockResponse = {
-      admin: {
-        id: '1',
-        email: action.payload.email,
-        username: 'admin',
-        role: 'ADMIN' as const,
-        permissions: ['USER_MANAGEMENT', 'PRODUCT_MANAGEMENT', 'DASHBOARD_VIEW'],
-        lastLoginAt: new Date().toISOString(),
-      },
-      tokens: {
-        accessToken: 'mock-access-token',
-        refreshToken: 'mock-refresh-token',
-      },
+    yield put(loginSuccess(response));
+    
+    sessionStorage.setItem('admin_access_token', response.accessToken);
+    sessionStorage.setItem('admin_refresh_token', response.refreshToken);
+    
+    const adminUser = {
+      username: response.username,
+      email: response.email,
     };
-    
-    yield put(loginSuccess(mockResponse));
-    
-    // Store tokens in localStorage
-    localStorage.setItem('admin_access_token', mockResponse.tokens.accessToken);
-    localStorage.setItem('admin_refresh_token', mockResponse.tokens.refreshToken);
+    sessionStorage.setItem('admin_user', JSON.stringify(adminUser));
     
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
@@ -37,6 +27,31 @@ function* handleLogin(action: PayloadAction<AdminLoginRequest>) {
   }
 }
 
+function* handleLogout() {
+  try {
+    const accessToken = sessionStorage.getItem('admin_access_token');
+    
+    if (accessToken) {
+      try {
+        yield call(() => adminAuthApi.logout(accessToken));
+      } catch (apiError) {
+        console.warn('Logout API failed:', apiError);
+      }
+    }
+    
+    sessionStorage.removeItem('admin_access_token');
+    sessionStorage.removeItem('admin_refresh_token');
+    sessionStorage.removeItem('admin_user');
+    
+    yield put(logout());
+    
+  } catch (error: any) {
+    console.error('Logout error:', error);
+    yield put(logout());
+  }
+}
+
 export function* adminAuthSaga() {
   yield takeEvery(loginRequest.type, handleLogin);
+  yield takeEvery(logoutRequest.type, handleLogout);
 }

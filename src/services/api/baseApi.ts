@@ -55,7 +55,7 @@ class AdminBaseApi {
     this.isRefreshing = true;
 
     try {
-      const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('admin_refresh_token') : null;
+      const refreshToken = typeof window !== 'undefined' ? sessionStorage.getItem('admin_refresh_token') : null;
       if (!refreshToken) {
         throw new Error('No admin refresh token available');
       }
@@ -81,8 +81,8 @@ class AdminBaseApi {
       }
 
       if (typeof window !== 'undefined') {
-        localStorage.setItem('admin_access_token', newAccessToken);
-        localStorage.setItem('admin_refresh_token', newRefreshToken);
+        sessionStorage.setItem('admin_access_token', newAccessToken);
+        sessionStorage.setItem('admin_refresh_token', newRefreshToken);
       }
 
       this.processQueue(null, newAccessToken);
@@ -91,9 +91,9 @@ class AdminBaseApi {
       this.processQueue(error, undefined);
       // Clear admin tokens if refresh fails
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('admin_access_token');
-        localStorage.removeItem('admin_refresh_token');
-        localStorage.removeItem('admin_user');
+        sessionStorage.removeItem('admin_access_token');
+        sessionStorage.removeItem('admin_refresh_token');
+        sessionStorage.removeItem('admin_user');
       }
       return null;
     } finally {
@@ -103,13 +103,13 @@ class AdminBaseApi {
 
   // Get admin authorization header
   private getAuthHeaders(): Record<string, string> {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('admin_access_token') : null;
+    const token = typeof window !== 'undefined' ? sessionStorage.getItem('admin_access_token') : null;
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
   // Check if admin token is expired or about to expire
   private isTokenExpired(): boolean {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('admin_access_token') : null;
+    const token = typeof window !== 'undefined' ? sessionStorage.getItem('admin_access_token') : null;
     if (!token) return true;
 
     try {

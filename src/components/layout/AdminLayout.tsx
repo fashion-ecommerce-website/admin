@@ -1,10 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { clsx } from "clsx";
-import { useToast } from "@/providers/ToastProvider";
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { clsx } from 'clsx';
+import { useToast } from '@/providers/ToastProvider';
+import { useAppDispatch } from '@/hooks/redux';
+import { logoutRequest } from '@/features/auth/login';
+import { adminAuthApi } from '@/services/api/adminAuthApi';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -12,30 +15,56 @@ interface AdminLayoutProps {
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [adminName, setAdminName] = useState<string>('Admin User');
+  const [adminEmail, setAdminEmail] = useState<string>('admin@fashion.com');
   const pathname = usePathname();
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const { showSuccess } = useToast();
 
   const handleLogout = () => {
     try {
-      // Clear any stored authentication data
-      localStorage.removeItem("admin_token");
-      localStorage.removeItem("admin_user");
-      sessionStorage.clear();
-
-      // Clear cookies
-      document.cookie =
-        "admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
-
-      // Immediate redirect - clean and fast
-      router.push("/auth/login");
-      router.refresh(); // Force refresh
+      dispatch(logoutRequest());
+      
+      showSuccess(
+        'Signed out successfully!',
+        'You have been signed out of the admin panel.'
+      );
+      
+      router.push('/auth/login');
+      router.refresh(); 
     } catch (error) {
-      console.error("Logout error:", error);
-      // Force redirect even if error occurs
-      router.push("/auth/login");
+      console.error('Logout error:', error);
+      router.push('/auth/login');
     }
   };
+
+  useEffect(() => {
+    const hydrateAdmin = async () => {
+      try {
+        const cached = typeof window !== 'undefined' ? sessionStorage.getItem('admin_user') : null;
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed?.username) setAdminName(parsed.username);
+          if (parsed?.email) setAdminEmail(parsed.email);
+        }
+
+        const token = typeof window !== 'undefined' ? sessionStorage.getItem('admin_access_token') : null;
+        if (token) {
+          try {
+            const profile = await adminAuthApi.getProfile(token);
+            if (profile?.username) setAdminName(profile.username);
+            if (profile?.email) setAdminEmail(profile.email);
+          } catch (e) {
+            // ignore profile errors, fallback to cached/session data
+          }
+        }
+      } catch (e) {
+        // ignore parsing errors
+      }
+    };
+    hydrateAdmin();
+  }, []);
 
   const navigation = [
     {
@@ -47,18 +76,18 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         </svg>
       ),
     },
-    {
-      name: "Users management",
-      href: "/users",
+    { 
+      name: 'User Management', 
+      href: '/users', 
       icon: (
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
           <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
         </svg>
       ),
     },
-    {
-      name: "Products management",
-      href: "/products",
+    { 
+      name: 'Product Management', 
+      href: '/products', 
       icon: (
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
           <path
@@ -69,9 +98,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         </svg>
       ),
     },
-    {
-      name: "Categories management",
-      href: "/categories",
+    { 
+      name: 'Category Management', 
+      href: '/categories', 
       icon: (
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
           <path
@@ -82,9 +111,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         </svg>
       ),
     },
-    {
-      name: "Orders management",
-      href: "/orders",
+    { 
+      name: 'Orders', 
+      href: '/orders', 
       icon: (
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
           <path
@@ -107,8 +136,15 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         )}
       >
         {/* Logo Section */}
-        <div className="flex items-center justify-between h-16 px-6 bg-black">
-          <span className="text-xl px-6 font-bold text-white">Fashion Admin</span>
+        <div className="flex items-center justify-between h-16 px-6 bg-gradient-to-r from-indigo-600 to-purple-600">
+          <div className="flex items-center space-x-3">
+            <div className="flex-shrink-0 w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+              </svg>
+            </div>
+            <span className="text-xl font-bold text-white">FIT Admin</span>
+          </div>
           <button
             onClick={() => setSidebarOpen(false)}
             className="text-white hover:text-indigo-200 lg:hidden transition-colors"
@@ -172,20 +208,16 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         <div className="absolute bottom-0 left-0 right-0 p-4 bg-gray-50 border-t border-gray-200">
           <div className="flex items-center space-x-3">
             <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center">
-              <span className="text-white font-medium text-sm">A</span>
+              <span className="text-white font-medium text-sm">{adminName?.[0] || 'A'}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                Admin User
-              </p>
-              <p className="text-xs text-gray-500 truncate">
-                admin@fashion.com
-              </p>
+              <p className="text-sm font-medium text-gray-900 truncate">{adminName}</p>
+              <p className="text-xs text-gray-500 truncate">{adminEmail}</p>
             </div>
             <button
               onClick={handleLogout}
               className="flex-shrink-0 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200 group"
-              title="Đăng xuất"
+              title="Sign out"
             >
               <svg
                 className="w-5 h-5"
@@ -232,19 +264,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
               {/* Breadcrumb */}
               <nav className="hidden md:flex items-center space-x-2 text-sm text-gray-600">
-                <span>Fashion Admin</span>
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
+                <span>FIT Admin</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
                 <span className="text-gray-900 font-medium">
                   {navigation.find((nav) => nav.href === pathname)?.name ||
@@ -276,10 +298,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
               {/* Profile Dropdown */}
               <div className="flex items-center space-x-3">
-                <span className="hidden md:block text-sm text-gray-700 font-medium">
-                  Hi, Admin
-                </span>
-                <button
+                <span className="hidden md:block text-sm text-gray-700 font-medium">Hello, Admin</span>
+                <button 
                   onClick={handleLogout}
                   className="bg-black text-white px-4 py-2 rounded-lg "
                 >
