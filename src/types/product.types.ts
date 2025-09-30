@@ -53,6 +53,21 @@ export interface ProductAdmin extends Product {
   productDetails?: ProductDetailAdmin[];
 }
 
+// Response shape for querying a single product detail by productId + optional colorId/sizeId
+export interface ProductDetailQueryResponse {
+  productId: number;
+  title?: string;
+  images?: string[];
+  variantColors?: VariantColor[];
+  activeColor?: VariantColor;
+  variantSizes?: VariantSize[];
+  activeSize?: VariantSize;
+  // When querying a specific color+size, the backend may include the detailId used for updates
+  detailId?: number;
+  quantity?: number;
+  price?: number;
+}
+
 // Product detail interface for form handling
 export interface ProductDetail {
   color: VariantColor;
