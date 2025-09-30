@@ -13,7 +13,8 @@ import ProductsPresenter from '../components/ProductsPresenter';
 import { ProductModal, DeleteProductModal } from '../../../components/modals/ProductModals';
 import EditProductAdminModal from '../../../components/modals/EditProductAdminModal';
 import EditProductDetailModal from '../../../components/modals/EditProductDetailModal';
-import { Product, ProductState, ProductAdmin, ProductDetailAdmin } from '../../../types/product.types';
+import { Product, ProductState, ProductAdmin, ProductDetailAdmin, ProductDetailQueryResponse } from '../../../types/product.types';
+import { productApi } from '../../../services/api/productApi';
 
 const ProductsContainer: React.FC = () => {
   const dispatch = useDispatch();
@@ -42,6 +43,14 @@ const ProductsContainer: React.FC = () => {
   };
 
   const [variantList, setVariantList] = useState<VariantListItem[]>([]);
+
+  // New states for query-by-color/size flow
+  const [productDetailQuery, setProductDetailQuery] = useState<ProductDetailQueryResponse | null>(null);
+  const [selectedColorId, setSelectedColorId] = useState<number | null>(null);
+  const [selectedSizeId, setSelectedSizeId] = useState<number | null>(null);
+  const [detailQueryDetailId, setDetailQueryDetailId] = useState<number | null>(null);
+  const [detailQueryPrice, setDetailQueryPrice] = useState<number | null>(null);
+  const [detailQueryQuantity, setDetailQueryQuantity] = useState<number | null>(null);
 
   // Debounced search function
   const debouncedFetch = useCallback(
@@ -118,49 +127,20 @@ const ProductsContainer: React.FC = () => {
 
   const handleEditVariant = useCallback(async (product: Product) => {
     try {
-      // Fetch full product details from API to obtain detail ids
-      const res = await (await import('../../../services/api/productApi')).productApi.getProductById(product.id);
+  // Use query-by-product/color/size endpoint to fetch available colors/sizes and the active detail
+  // If the product already exposes colors/sizes, pass the first available of each to the query
+  const initialColorId = product.variantColors?.[0]?.id;
+  const initialSizeId = product.variantSizes?.[0]?.id;
+  const res = await productApi.getProductDetailByQuery(product.id, initialColorId, initialSizeId);
       if (res.success && res.data) {
-        // Try to extract productDetails or build combinations from variantColors and variantSizes
-        const p = res.data as ProductAdmin;
-        const variants: VariantListItem[] = [];
-
-        if (Array.isArray(p.productDetails) && p.productDetails.length > 0) {
-          // Expect each productDetail to have a detailId and possibly sizeVariants
-          for (const d of p.productDetails as ProductDetailAdmin[]) {
-            if (Array.isArray(d.sizeVariants) && d.sizeVariants.length > 0) {
-              for (const sv of d.sizeVariants) {
-                const sizeId = sv.sizeId ?? sv.size?.id;
-                variants.push({
-                  detailId: sv.detailId,
-                  colorName: d.colorName ?? d.color?.name,
-                  sizeName: sv.size?.code ?? sv.sizeName ?? (sizeId !== undefined ? String(sizeId) : undefined),
-                  price: sv.price,
-                  quantity: sv.quantity,
-                });
-              }
-            } else {
-              variants.push({
-                detailId: d.detailId,
-                colorName: d.colorName ?? d.color?.name,
-                sizeName: d.sizeName ?? (d.size && typeof d.size === 'string' ? d.size : undefined),
-                price: d.price,
-                quantity: d.quantity,
-              });
-            }
-          }
-        } else if (Array.isArray(p.variantColors) && Array.isArray(p.variantSizes)) {
-          // Fallback: combine colors and sizes if backend exposes separate arrays and a predictable detail id is present
-          // In this fallback we cannot determine detailId reliably, so we leave variants empty.
-        }
-
-        if (variants.length === 0) {
-          // Nothing to edit at detail level
-          alert('No editable product details (color+size) found for this product');
-          return;
-        }
-
-        setVariantList(variants);
+        const d = res.data;
+        setProductDetailQuery(d);
+        setSelectedColorId(d.activeColor?.id ?? d.variantColors?.[0]?.id ?? null);
+        setSelectedSizeId(d.activeSize?.id ?? d.variantSizes?.[0]?.id ?? null);
+        setDetailQueryPrice(d.price ?? null);
+        setDetailQueryQuantity(d.quantity ?? null);
+        setDetailQueryDetailId(d.detailId ?? null);
+        setSelectedProduct(product);
         setIsVariantPickerOpen(true);
       } else {
         alert(res.message || 'Failed to load product details');
@@ -236,48 +216,114 @@ const ProductsContainer: React.FC = () => {
               <button onClick={() => setIsVariantPickerOpen(false)} className="text-white">✕</button>
             </div>
             <div className="p-4">
-              {/* Group variants by color for compact display */}
-              {(() => {
-                const grouped: Record<string, VariantListItem[]> = {};
-                for (const v of variantList) {
-                  const key = v.colorName ?? 'Color';
-                  if (!grouped[key]) grouped[key] = [];
-                  grouped[key].push(v);
-                }
-                return Object.keys(grouped).map((color) => (
-                  <div key={color} className="pb-3 border-b last:border-b-0">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-4 h-4 rounded-full bg-gray-200 border" aria-hidden="true" />
-                        <div className="font-medium text-black">{color}</div>
-                      </div>
-                      <div className="text-sm text-black">{grouped[color].length} size{grouped[color].length > 1 ? 's' : ''}</div>
-                    </div>
-
-                      <div className="flex flex-wrap gap-2">
-                      {grouped[color].map((item) => (
-                        <div key={String(item.detailId)} className="flex items-center gap-3 px-3 py-2 border rounded-md bg-white">
-                          <div className="flex flex-col">
-                            <div className="text-sm font-semibold text-black">{item.sizeName ?? '-'}</div>
-                            <div className="text-xs text-black">{item.price ? `${item.price} VND` : '-'} • {`Qty: ${item.quantity ?? '-'}`}</div>
-                          </div>
-                          <div>
-                            <button
-                              onClick={() => {
-                                setSelectedDetailId(Number(item.detailId));
-                                setIsVariantPickerOpen(false);
-                              }}
-                              className="px-2 py-1 bg-black text-white rounded text-xs"
-                            >
-                              Edit
-                            </button>
-                          </div>
-                        </div>
+              {/* New: select color and size; call query endpoint when selection changes */}
+              {productDetailQuery ? (
+                <div className="space-y-4 text-black">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Color</label>
+                    <select
+                      value={selectedColorId ?? ''}
+                      onChange={async (e) => {
+                        const newColorId = e.target.value ? Number(e.target.value) : null;
+                        setSelectedColorId(newColorId);
+                        try {
+                          const q = await productApi.getProductDetailByQuery(selectedProduct?.id ?? 0, newColorId ?? undefined, selectedSizeId ?? undefined);
+                          if (q.success && q.data) {
+                            setProductDetailQuery(q.data);
+                            setDetailQueryPrice(q.data.price ?? null);
+                            setDetailQueryQuantity(q.data.quantity ?? null);
+                            setDetailQueryDetailId(q.data.detailId ?? null);
+                          }
+                        } catch (err) {
+                          console.error('Error querying detail on color change', err);
+                        }
+                      }}
+                      className="mt-1 block w-full border rounded-md p-2"
+                    >
+                      <option value="">-- Select color --</option>
+                      {productDetailQuery.variantColors?.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
                       ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Size</label>
+                    <select
+                      value={selectedSizeId ?? ''}
+                      onChange={async (e) => {
+                        const newSizeId = e.target.value ? Number(e.target.value) : null;
+                        setSelectedSizeId(newSizeId);
+                        try {
+                          const q = await productApi.getProductDetailByQuery(selectedProduct?.id ?? 0, selectedColorId ?? undefined, newSizeId ?? undefined);
+                          if (q.success && q.data) {
+                            setProductDetailQuery(q.data);
+                            setDetailQueryPrice(q.data.price ?? null);
+                            setDetailQueryQuantity(q.data.quantity ?? null);
+                            setDetailQueryDetailId(q.data.detailId ?? null);
+                          }
+                        } catch (err) {
+                          console.error('Error querying detail on size change', err);
+                        }
+                      }}
+                      className="mt-1 block w-full border rounded-md p-2"
+                    >
+                      <option value="">-- Select size --</option>
+                      {productDetailQuery.variantSizes?.map((s) => (
+                        <option key={s.id} value={s.id}>{s.code}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex gap-2 items-center">
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium mb-1">Price (VND)</label>
+                      <input type="number" className="w-full border rounded-md p-2" value={detailQueryPrice ?? ''} onChange={(e) => setDetailQueryPrice(e.target.value ? Number(e.target.value) : null)} />
+                    </div>
+                    <div className="w-36">
+                      <label className="block text-sm font-medium mb-1">Quantity</label>
+                      <input type="number" className="w-full border rounded-md p-2" value={detailQueryQuantity ?? ''} onChange={(e) => setDetailQueryQuantity(e.target.value ? Number(e.target.value) : null)} />
                     </div>
                   </div>
-                ));
-              })()}
+
+                  <div className="flex justify-end gap-2">
+                    <button onClick={() => setIsVariantPickerOpen(false)} className="px-4 py-2 border rounded">Cancel</button>
+                    <button
+                      onClick={async () => {
+                        if (!detailQueryDetailId) {
+                          alert('Cannot update: missing detail id for this color+size');
+                          return;
+                        }
+                        try {
+                          const body = {
+                            colorId: selectedColorId ?? undefined,
+                            sizeId: selectedSizeId ?? undefined,
+                            price: detailQueryPrice ?? undefined,
+                            quantity: detailQueryQuantity ?? undefined,
+                          };
+                          const upd = await productApi.updateProductDetailAdmin(detailQueryDetailId, body);
+                          if (upd.success) {
+                            // Refresh products list
+                            dispatch(fetchProductsRequest({ page: pagination.page, pageSize: pagination.pageSize }));
+                            setIsVariantPickerOpen(false);
+                            setSelectedDetailId(null);
+                          } else {
+                            alert(upd.message || 'Failed to update');
+                          }
+                        } catch (err) {
+                          console.error('Error updating product detail', err);
+                          alert('Failed to update product detail');
+                        }
+                      }}
+                      className="px-4 py-2 bg-black text-white rounded"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>Loading...</div>
+              )}
             </div>
           </div>
         </div>

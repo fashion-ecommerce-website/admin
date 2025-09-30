@@ -9,6 +9,7 @@ import {
   VariantOptions,
   ProductDetailAdmin,
   ProductAdmin,
+  ProductDetailQueryResponse,
 } from '../../types/product.types';
 
 class ProductApi {
@@ -242,6 +243,39 @@ class ProductApi {
         success: false,
         data: null,
         message: error instanceof Error ? error.message : 'Failed to fetch product detail (admin)'
+      };
+    }
+  }
+
+  /**
+   * Query a single product detail by productId and optional colorId/sizeId
+   * GET /products/admin/details?productId={productId}&colorId={colorId}&sizeId={sizeId}
+   */
+  async getProductDetailByQuery(
+    productId: number,
+    colorId?: number,
+    sizeId?: number
+  ): Promise<ApiResponse<ProductDetailQueryResponse>> {
+    try {
+      const queryParams = new URLSearchParams();
+      queryParams.append('productId', String(productId));
+      if (colorId !== undefined) queryParams.append('colorId', String(colorId));
+      if (sizeId !== undefined) queryParams.append('sizeId', String(sizeId));
+
+      const endpoint = `${this.endpoint}/admin/details?${queryParams.toString()}`;
+      const response = await adminApiClient.get<ProductDetailQueryResponse>(endpoint);
+
+      return {
+        success: response.success,
+        data: response.data,
+        message: response.message,
+      };
+    } catch (error) {
+      console.error('Error querying product detail (admin):', error);
+      return {
+        success: false,
+        data: null,
+        message: error instanceof Error ? error.message : 'Failed to query product detail (admin)'
       };
     }
   }
