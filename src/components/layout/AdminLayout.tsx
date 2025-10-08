@@ -106,6 +106,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           />
         </svg>
       ),
+      
     },
     { 
       name: 'Orders', 
