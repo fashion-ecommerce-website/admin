@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAppSelector, useAppDispatch } from '@/hooks/redux';
 import { logout } from '@/features/auth/login';
+import { adminAuthApi } from '@/services/api/adminAuthApi';
+import { setAdminInfo } from '@/features/auth/login/redux/adminAuthSlice';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -16,7 +18,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isClient, setIsClient] = useState(false);
   
-  const { isAuthenticated, accessToken } = useAppSelector(state => state.adminAuth);
+  const { isAuthenticated, accessToken, admin } = useAppSelector(state => state.adminAuth);
 
   useEffect(() => {
     setIsClient(true);
@@ -25,7 +27,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   useEffect(() => {
     if (!isClient) return;
 
-    const checkAuth = () => {
+    const checkAuth = async () => {
       const tokenFromStorage = sessionStorage.getItem('admin_access_token');
       const hasValidToken = accessToken || tokenFromStorage;
       
@@ -47,6 +49,33 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
         if (pathname === '/') {
           router.push('/dashboard');
           return;
+        }
+        // Ensure role is ADMIN/SUPER_ADMIN for protected areas
+        if (isProtectedRoute) {
+          let currentRoles = admin?.roles || undefined;
+          if (!currentRoles) {  
+            try {
+              const me: any = await adminAuthApi.getAuthenticatedUser(String(hasValidToken));
+              const roles: string[] | undefined = me?.roles || me?.data?.roles || me?.authorities;
+              const permissions = me?.permissions || me?.data?.permissions;
+              if (roles) {
+                dispatch(setAdminInfo({ roles, permissions }));
+                const stored = JSON.parse(sessionStorage.getItem('admin_user') || '{}');
+                sessionStorage.setItem('admin_user', JSON.stringify({ ...stored, roles, permissions }));
+                currentRoles = roles;
+              }
+            } catch (e) {
+              // If cannot fetch role, treat as unauthorized
+              router.push('/auth/login');
+              return;
+            }
+          }
+          const effectiveRoles = Array.isArray(currentRoles) ? currentRoles : [];
+          const isAdmin = effectiveRoles.includes('ADMIN') || effectiveRoles.includes('SUPER_ADMIN');
+          if (!isAdmin) {
+            router.push('/auth/login');
+            return;
+          }
         }
       } else {
         if (isProtectedRoute) {

@@ -5,9 +5,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { clsx } from 'clsx';
 import { useToast } from '@/providers/ToastProvider';
-import { useAppDispatch } from '@/hooks/redux';
+import { useAppDispatch, useAppSelector } from '@/hooks/redux';
 import { logoutRequest } from '@/features/auth/login';
-import { adminAuthApi } from '@/services/api/adminAuthApi';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -21,6 +20,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { showSuccess } = useToast();
+  const adminState = useAppSelector(state => state.adminAuth.admin);
 
   const handleLogout = () => {
     try {
@@ -42,21 +42,17 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   useEffect(() => {
     const hydrateAdmin = async () => {
       try {
-        const cached = typeof window !== 'undefined' ? sessionStorage.getItem('admin_user') : null;
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (parsed?.username) setAdminName(parsed.username);
-          if (parsed?.email) setAdminEmail(parsed.email);
-        }
+        // Prefer Redux admin state
+        if (adminState?.username) setAdminName(adminState.username);
+        if (adminState?.email) setAdminEmail(adminState.email);
 
-        const token = typeof window !== 'undefined' ? sessionStorage.getItem('admin_access_token') : null;
-        if (token) {
-          try {
-            const profile = await adminAuthApi.getProfile(token);
-            if (profile?.username) setAdminName(profile.username);
-            if (profile?.email) setAdminEmail(profile.email);
-          } catch (e) {
-            // ignore profile errors, fallback to cached/session data
+        // Fallback to session cache if Redux not yet populated
+        if (!adminState?.username || !adminState?.email) {
+          const cached = typeof window !== 'undefined' ? sessionStorage.getItem('admin_user') : null;
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (!adminState?.username && parsed?.username) setAdminName(parsed.username);
+            if (!adminState?.email && parsed?.email) setAdminEmail(parsed.email);
           }
         }
       } catch (e) {
@@ -64,7 +60,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       }
     };
     hydrateAdmin();
-  }, []);
+  }, [adminState]);
 
   const navigation = [
     { 
