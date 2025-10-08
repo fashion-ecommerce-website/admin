@@ -105,8 +105,14 @@ export default function CategoriesPage() {
     setShowAddModal(true);
   };
 
-  const handleDeleteCategory = async (id: number) => {
-    // legacy - replaced by modal flow
+  // Deterministic demo status: only ids 1 and 2 are active, others inactive
+  const getDemoStatus = (id: number) => {
+    // id 1 and 2 should be active (true), rest inactive (false)
+    return id === 1 || id === 2;
+  };
+
+  const handleToggleStatus = async (id: number) => {
+    // opens confirmation modal for status toggle
     openConfirm(id);
   };
 
@@ -120,16 +126,16 @@ export default function CategoriesPage() {
     setConfirmOpen(true);
   };
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmToggle = async () => {
     if (confirmingId === null) return;
     setConfirmLoading(true);
     try {
       const res = await categoryApi.deleteCategory(confirmingId);
       if (res.success) {
-        showSuccess("Deleted", "Category status changed / deleted successfully");
+        showSuccess("Status Updated", "Category status has been updated successfully");
         await fetchCategories();
       } else {
-        showError("Delete error", res.message || "Cannot delete category");
+        showError("Update error", res.message || "Cannot update category status");
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Connection error";
@@ -241,20 +247,30 @@ export default function CategoriesPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-gray-600">Active</span>
-              <div
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  node.isActive ? "bg-black" : "bg-gray-200"
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-gray-600">Status</span>
+              <button
+                onClick={() => handleToggleStatus(node.id)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                  getDemoStatus(node.id) ? "bg-green-500" : "bg-gray-300"
                 }`}
+                aria-label={`Toggle status - currently ${getDemoStatus(node.id) ? 'active' : 'inactive'}`}
+                title={`Click to ${getDemoStatus(node.id) ? 'deactivate' : 'activate'} category`}
               >
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    node.isActive ? "translate-x-6" : "translate-x-1"
+                    getDemoStatus(node.id) ? "translate-x-6" : "translate-x-1"
                   }`}
                 />
-              </div>
-            </div> */}
+              </button>
+              <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                getDemoStatus(node.id)
+                  ? "bg-green-100 text-green-800" 
+                  : "bg-gray-100 text-gray-600"
+              }`}>
+                {getDemoStatus(node.id) ? "Active" : "Inactive"}
+              </span>
+            </div>
 
             <div className="flex items-center gap-2">
               <button
@@ -297,26 +313,6 @@ export default function CategoriesPage() {
                   />
                   <path
                     d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-
-              <button
-                onClick={() => handleDeleteCategory(node.id)}
-                className="p-2.5 border border-gray-200 rounded-lg text-gray-600 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-all duration-200"
-                aria-label="Delete"
-              >
-                <svg
-                  className="w-4 h-4"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
@@ -487,16 +483,16 @@ export default function CategoriesPage() {
 
       <ConfirmModal
         isOpen={confirmOpen}
-        title="Confirm delete category"
-        description="Are you sure you want to change the status or delete this category? This action may affect related products."
-        confirmLabel="Yes, continue"
+        title="Confirm switch category status"
+        description="Are you sure you want to switch the status of this category? This action will activate/deactivate the category and may affect related products."
+        confirmLabel="Yes, switch status"
         cancelLabel="Cancel"
         loading={confirmLoading}
         onClose={() => {
           setConfirmOpen(false);
           setConfirmingId(null);
         }}
-        onConfirm={handleConfirmDelete}
+        onConfirm={handleConfirmToggle}
       />
     </AdminLayout>
   );

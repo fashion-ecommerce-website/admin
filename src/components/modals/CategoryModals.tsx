@@ -146,7 +146,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
               onChange={(e) => handleInputChange("slug", e.target.value)}
               disabled={isSubmitting}
               className="w-full px-3 py-2 text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent disabled:opacity-50"
-              placeholder="slug-tu-dong-tao"
+              placeholder="slug-auto-generated"
               required
             />
           </div>
@@ -337,7 +337,7 @@ export const EditCategoryModal: React.FC<EditCategoryModalProps> = ({
               onChange={(e) => handleInputChange("slug", e.target.value)}
               disabled={isSubmitting}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg  text-gray-800"
-              placeholder="slug-tu-dong-tao"
+              placeholder="slug-auto-generated"
               required
             />
             <p className="text-xs text-gray-500 mt-1">

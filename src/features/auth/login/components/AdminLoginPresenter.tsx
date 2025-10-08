@@ -14,7 +14,7 @@ export const AdminLoginPresenter: React.FC<AdminLoginPresenterProps> = ({
   error,
 }) => {
   const [email, setEmail] = useState('admin@fit.com');
-  const [password, setPassword] = useState('password123');
+  const [password, setPassword] = useState('123456789');
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {

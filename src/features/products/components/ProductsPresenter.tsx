@@ -377,12 +377,12 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
                           >
                             Edit
                           </button>
-                          <button
+                          {/* <button
                             onClick={() => onEditVariant && onEditVariant(product)}
                             className="text-sm px-3 py-1 border border-indigo-600 rounded text-indigo-600 bg-white"
                           >
                             Edit Variant
-                          </button>
+                          </button> */}
                           <button
                             onClick={() => onDeleteProduct(product.id)}
                             className="text-sm px-3 py-1 border border-gray-400 text-gray-600 rounded bg-white"
