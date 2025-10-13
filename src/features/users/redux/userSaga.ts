@@ -60,9 +60,10 @@ function* handleFetchUsers(action: PayloadAction<FetchUsersRequest>) {
         error: response.message || 'Failed to fetch users',
       }));
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
     yield put(fetchUsersFailure({
-      error: error.message || 'An error occurred while fetching users',
+      error: message || 'An error occurred while fetching users',
     }));
   }
 }
@@ -74,9 +75,10 @@ function* handleCreateUser(action: PayloadAction<CreateUserRequest>) {
     yield put(createUserFailure({
       error: 'Create user functionality will be available when backend is integrated',
     }));
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
     yield put(createUserFailure({
-      error: error.message || 'An error occurred while creating user',
+      error: message || 'An error occurred while creating user',
     }));
   }
 }
@@ -87,9 +89,10 @@ function* handleUpdateUser(action: PayloadAction<UpdateUserRequest>) {
     yield put(updateUserFailure({
       error: 'Update user functionality will be available when backend is integrated',
     }));
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
     yield put(updateUserFailure({
-      error: error.message || 'An error occurred while updating user',
+      error: message || 'An error occurred while updating user',
     }));
   }
 }
@@ -100,9 +103,10 @@ function* handleUpdateUserStatus(action: PayloadAction<UpdateUserStatusRequest>)
     yield put(updateUserStatusFailure({
       error: 'Update user status functionality will be available when backend is integrated',
     }));
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
     yield put(updateUserStatusFailure({
-      error: error.message || 'An error occurred while updating user status',
+      error: message || 'An error occurred while updating user status',
     }));
   }
 }
@@ -113,9 +117,10 @@ function* handleDeleteUser(action: PayloadAction<DeleteUserRequest>) {
     yield put(deleteUserFailure({
       error: 'Delete user functionality will be available when backend is integrated',
     }));
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
     yield put(deleteUserFailure({
-      error: error.message || 'An error occurred while deleting user',
+      error: message || 'An error occurred while deleting user',
     }));
   }
 }

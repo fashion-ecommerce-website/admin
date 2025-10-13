@@ -11,7 +11,10 @@ import {
 } from '../redux/productSlice';
 import ProductsPresenter from '../components/ProductsPresenter';
 import { ProductModal, DeleteProductModal } from '../../../components/modals/ProductModals';
-import { Product, ProductState } from '../../../types/product.types';
+import EditProductAdminModal from '../../../components/modals/EditProductAdminModal';
+import EditProductDetailModal from '../../../components/modals/EditProductDetailModal';
+import { Product, ProductState, ProductAdmin, ProductDetailAdmin, ProductDetailQueryResponse } from '../../../types/product.types';
+import { productApi } from '../../../services/api/productApi';
 
 const ProductsContainer: React.FC = () => {
   const dispatch = useDispatch();
@@ -29,6 +32,25 @@ const ProductsContainer: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isVariantPickerOpen, setIsVariantPickerOpen] = useState(false);
+  const [selectedDetailId, setSelectedDetailId] = useState<number | null>(null);
+  type VariantListItem = {
+    detailId: number;
+    colorName?: string;
+    sizeName?: string;
+    price?: number;
+    quantity?: number;
+  };
+
+  const [variantList, setVariantList] = useState<VariantListItem[]>([]);
+
+  // New states for query-by-color/size flow
+  const [productDetailQuery, setProductDetailQuery] = useState<ProductDetailQueryResponse | null>(null);
+  const [selectedColorId, setSelectedColorId] = useState<number | null>(null);
+  const [selectedSizeId, setSelectedSizeId] = useState<number | null>(null);
+  const [detailQueryDetailId, setDetailQueryDetailId] = useState<number | null>(null);
+  const [detailQueryPrice, setDetailQueryPrice] = useState<number | null>(null);
+  const [detailQueryQuantity, setDetailQueryQuantity] = useState<number | null>(null);
 
   // Debounced search function
   const debouncedFetch = useCallback(
@@ -68,14 +90,6 @@ const ProductsContainer: React.FC = () => {
     filters.sortDirection,
   ]);
 
-  // Load initial products
-  useEffect(() => {
-    dispatch(fetchProductsRequest({
-      page: 0,
-      pageSize: 12,
-    }));
-  }, [dispatch]);
-
   const handleSearch = useCallback((searchTerm: string) => {
     dispatch(setFilters({ filters: { title: searchTerm } }));
     // Reset to first page when searching
@@ -111,6 +125,32 @@ const ProductsContainer: React.FC = () => {
     setIsEditModalOpen(true);
   }, []);
 
+  const handleEditVariant = useCallback(async (product: Product) => {
+    try {
+  // Use query-by-product/color/size endpoint to fetch available colors/sizes and the active detail
+  // If the product already exposes colors/sizes, pass the first available of each to the query
+  const initialColorId = product.variantColors?.[0]?.id;
+  const initialSizeId = product.variantSizes?.[0]?.id;
+  const res = await productApi.getProductDetailByQuery(product.id, initialColorId, initialSizeId);
+      if (res.success && res.data) {
+        const d = res.data;
+        setProductDetailQuery(d);
+        setSelectedColorId(d.activeColor?.id ?? d.variantColors?.[0]?.id ?? null);
+        setSelectedSizeId(d.activeSize?.id ?? d.variantSizes?.[0]?.id ?? null);
+        setDetailQueryPrice(d.price ?? null);
+        setDetailQueryQuantity(d.quantity ?? null);
+        setDetailQueryDetailId(d.detailId ?? null);
+        setSelectedProduct(product);
+        setIsVariantPickerOpen(true);
+      } else {
+        alert(res.message || 'Failed to load product details');
+      }
+    } catch (error) {
+      console.error('Error fetching product details for variant edit', error);
+      alert('Failed to load product details');
+    }
+  }, []);
+
   const handleDeleteProduct = useCallback((productId: number) => {
     const product = products.find(p => p.id === productId);
     if (product) {
@@ -143,6 +183,7 @@ const ProductsContainer: React.FC = () => {
         onPageChange={handlePageChange}
         onCreateProduct={handleCreateProduct}
         onEditProduct={handleEditProduct}
+        onEditVariant={handleEditVariant}
         onDeleteProduct={handleDeleteProduct}
         onClearError={handleClearError}
       />
@@ -151,13 +192,153 @@ const ProductsContainer: React.FC = () => {
       <ProductModal
         isOpen={isCreateModalOpen}
         onClose={handleCloseModals}
-        product={null}
       />
 
-      <ProductModal
+      {/* Edit (admin JSON) modal */}
+      <EditProductAdminModal
         isOpen={isEditModalOpen}
         onClose={handleCloseModals}
-        product={selectedProduct}
+        productId={selectedProduct?.id ?? 0}
+        initial={{
+          title: selectedProduct?.title ?? undefined,
+          description: selectedProduct?.description ?? undefined,
+          categoryIds: selectedProduct ? [selectedProduct.categoryId] : undefined,
+        }}
+      />
+
+      {/* Variant picker modal - simple list to choose which product detail to edit */}
+      {isVariantPickerOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/50" onClick={() => setIsVariantPickerOpen(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-auto">
+            <div className="bg-black px-6 py-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-white">Select Variant to Edit</h3>
+              <button onClick={() => setIsVariantPickerOpen(false)} className="text-white">✕</button>
+            </div>
+            <div className="p-4">
+              {/* New: select color and size; call query endpoint when selection changes */}
+              {productDetailQuery ? (
+                <div className="space-y-4 text-black">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Color</label>
+                    <select
+                      value={selectedColorId ?? ''}
+                      onChange={async (e) => {
+                        const newColorId = e.target.value ? Number(e.target.value) : null;
+                        setSelectedColorId(newColorId);
+                        try {
+                          const q = await productApi.getProductDetailByQuery(selectedProduct?.id ?? 0, newColorId ?? undefined, selectedSizeId ?? undefined);
+                          if (q.success && q.data) {
+                            setProductDetailQuery(q.data);
+                            setDetailQueryPrice(q.data.price ?? null);
+                            setDetailQueryQuantity(q.data.quantity ?? null);
+                            setDetailQueryDetailId(q.data.detailId ?? null);
+                          }
+                        } catch (err) {
+                          console.error('Error querying detail on color change', err);
+                        }
+                      }}
+                      className="mt-1 block w-full border rounded-md p-2"
+                    >
+                      <option value="">-- Select color --</option>
+                      {productDetailQuery.variantColors?.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Size</label>
+                    <select
+                      value={selectedSizeId ?? ''}
+                      onChange={async (e) => {
+                        const newSizeId = e.target.value ? Number(e.target.value) : null;
+                        setSelectedSizeId(newSizeId);
+                        try {
+                          const q = await productApi.getProductDetailByQuery(selectedProduct?.id ?? 0, selectedColorId ?? undefined, newSizeId ?? undefined);
+                          if (q.success && q.data) {
+                            setProductDetailQuery(q.data);
+                            setDetailQueryPrice(q.data.price ?? null);
+                            setDetailQueryQuantity(q.data.quantity ?? null);
+                            setDetailQueryDetailId(q.data.detailId ?? null);
+                          }
+                        } catch (err) {
+                          console.error('Error querying detail on size change', err);
+                        }
+                      }}
+                      className="mt-1 block w-full border rounded-md p-2"
+                    >
+                      <option value="">-- Select size --</option>
+                      {productDetailQuery.variantSizes?.map((s) => (
+                        <option key={s.id} value={s.id}>{s.code}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex gap-2 items-center">
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium mb-1">Price (VND)</label>
+                      <input type="number" className="w-full border rounded-md p-2" value={detailQueryPrice ?? ''} onChange={(e) => setDetailQueryPrice(e.target.value ? Number(e.target.value) : null)} />
+                    </div>
+                    <div className="w-36">
+                      <label className="block text-sm font-medium mb-1">Quantity</label>
+                      <input type="number" className="w-full border rounded-md p-2" value={detailQueryQuantity ?? ''} onChange={(e) => setDetailQueryQuantity(e.target.value ? Number(e.target.value) : null)} />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2">
+                    <button onClick={() => setIsVariantPickerOpen(false)} className="px-4 py-2 border rounded">Cancel</button>
+                    <button
+                      onClick={async () => {
+                        if (!detailQueryDetailId) {
+                          alert('Cannot update: missing detail id for this color+size');
+                          return;
+                        }
+                        try {
+                          const body = {
+                            colorId: selectedColorId ?? undefined,
+                            sizeId: selectedSizeId ?? undefined,
+                            price: detailQueryPrice ?? undefined,
+                            quantity: detailQueryQuantity ?? undefined,
+                          };
+                          const upd = await productApi.updateProductDetailAdmin(detailQueryDetailId, body);
+                          if (upd.success) {
+                            // Refresh products list
+                            dispatch(fetchProductsRequest({ page: pagination.page, pageSize: pagination.pageSize }));
+                            setIsVariantPickerOpen(false);
+                            setSelectedDetailId(null);
+                          } else {
+                            alert(upd.message || 'Failed to update');
+                          }
+                        } catch (err) {
+                          console.error('Error updating product detail', err);
+                          alert('Failed to update product detail');
+                        }
+                      }}
+                      className="px-4 py-2 bg-black text-white rounded"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>Loading...</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* The detail edit modal */}
+      <EditProductDetailModal
+        isOpen={selectedDetailId !== null}
+        onClose={() => setSelectedDetailId(null)}
+        productDetailId={selectedDetailId}
+        onConfirm={({ detailId, price, quantity }) => {
+          // After successful update you may want to refresh product list
+          dispatch(fetchProductsRequest({ page: pagination.page, pageSize: pagination.pageSize }));
+          setSelectedDetailId(null);
+        }}
       />
 
       <DeleteProductModal
@@ -170,14 +351,15 @@ const ProductsContainer: React.FC = () => {
 };
 
 // Debounce utility function
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
+function debounce<P extends unknown[], R>(
+  func: (...args: P) => R,
   delay: number
-): (...args: Parameters<T>) => void {
+): (...args: P) => void {
   let timeoutId: NodeJS.Timeout;
-  return (...args: Parameters<T>) => {
+  return (...args: P) => {
     clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func.apply(null, args), delay);
+    // setTimeout callback returns number | NodeJS.Timeout depending on env; cast is safe here
+    timeoutId = setTimeout(() => func(...args), delay) as unknown as NodeJS.Timeout;
   };
 }
 

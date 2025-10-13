@@ -31,10 +31,9 @@ function* handleFetchProducts(action: PayloadAction<productSlice.FetchProductsRe
         error: response.message || 'Failed to fetch products',
       }));
     }
-  } catch (error: any) {
-    yield put(productSlice.fetchProductsFailure({
-      error: error.message || 'An error occurred while fetching products',
-    }));
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'An error occurred while fetching products';
+    yield put(productSlice.fetchProductsFailure({ error: message }));
   }
 }
 
@@ -45,10 +44,9 @@ function* handleFetchProductById(action: PayloadAction<productSlice.FetchProduct
     yield put(productSlice.fetchProductByIdFailure({
       error: 'Fetch single product functionality will be available when backend is integrated',
     }));
-  } catch (error: any) {
-    yield put(productSlice.fetchProductByIdFailure({
-      error: error.message || 'An error occurred while fetching product',
-    }));
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'An error occurred while fetching product';
+    yield put(productSlice.fetchProductByIdFailure({ error: message }));
   }
 }
 
@@ -59,10 +57,9 @@ function* handleCreateProduct(action: PayloadAction<productSlice.CreateProductRe
     yield put(productSlice.createProductFailure({
       error: 'Create product functionality will be available when backend is integrated',
     }));
-  } catch (error: any) {
-    yield put(productSlice.createProductFailure({
-      error: error.message || 'An error occurred while creating product',
-    }));
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'An error occurred while creating product';
+    yield put(productSlice.createProductFailure({ error: message }));
   }
 }
 
@@ -73,10 +70,9 @@ function* handleUpdateProduct(action: PayloadAction<productSlice.UpdateProductRe
     yield put(productSlice.updateProductFailure({
       error: 'Update product functionality will be available when backend is integrated',
     }));
-  } catch (error: any) {
-    yield put(productSlice.updateProductFailure({
-      error: error.message || 'An error occurred while updating product',
-    }));
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'An error occurred while updating product';
+    yield put(productSlice.updateProductFailure({ error: message }));
   }
 }
 
@@ -87,10 +83,9 @@ function* handleDeleteProduct(action: PayloadAction<productSlice.DeleteProductRe
     yield put(productSlice.deleteProductFailure({
       error: 'Delete product functionality will be available when backend is integrated',
     }));
-  } catch (error: any) {
-    yield put(productSlice.deleteProductFailure({
-      error: error.message || 'An error occurred while deleting product',
-    }));
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'An error occurred while deleting product';
+    yield put(productSlice.deleteProductFailure({ error: message }));
   }
 }
 
@@ -101,16 +96,16 @@ function* handleUploadImage(action: PayloadAction<productSlice.UploadImageReques
     yield put(productSlice.uploadImageFailure({
       error: 'Image upload functionality will be available when backend is integrated',
     }));
-  } catch (error: any) {
-    yield put(productSlice.uploadImageFailure({
-      error: error.message || 'An error occurred while uploading image',
-    }));
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'An error occurred while uploading image';
+    yield put(productSlice.uploadImageFailure({ error: message }));
   }
 }
 
 // Root product saga
 export function* productSaga() {
   yield takeEvery(productSlice.fetchProductsRequest.type, handleFetchProducts);
+  yield takeEvery(productSlice.fetchProductsSilentRequest.type, handleFetchProducts);
   yield takeEvery(productSlice.fetchProductByIdRequest.type, handleFetchProductById);
   yield takeLeading(productSlice.createProductRequest.type, handleCreateProduct);
   yield takeLeading(productSlice.updateProductRequest.type, handleUpdateProduct);

@@ -158,10 +158,14 @@ class AdminBaseApi {
       }
 
       const url = `${this.baseUrl}${endpoint}`;
-      const headers = {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      };
+
+      // Build headers but do not set Content-Type when sending FormData so the browser
+      // can set the appropriate multipart/form-data boundary.
+      const headers: Record<string, string> = { ...(options.headers || {}) };
+      if (!(options.body instanceof FormData)) {
+        // Only set default Content-Type for non-FormData bodies
+        headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+      }
 
       // Only add auth headers for authenticated endpoints
       if (!endpoint.includes('/auth/') && 
@@ -176,7 +180,8 @@ class AdminBaseApi {
       };
 
       if (options.body && options.method !== 'GET') {
-        config.body = options.body;
+        // If body is FormData, pass it through as-is. For JSON strings, pass string.
+        config.body = options.body as BodyInit;
       }
 
       const response = await fetch(url, config);
@@ -196,20 +201,56 @@ class AdminBaseApi {
         }
       }
 
-      const data = await response.json();
+      // Handle 204 No Content or empty responses: do not attempt to parse JSON
+      let parsedData: any = null;
+
+      // If status is 204 No Content, there's intentionally no body
+      if (response.status === 204) {
+        parsedData = null;
+      } else {
+        // Try to parse JSON; if parsing fails (non-JSON body), fall back to null
+        try {
+          // Some responses may have empty body even if status != 204 (Content-Length: 0)
+          // So guard by checking content-length header when available
+          const contentLength = response.headers.get('content-length');
+          const hasBody = contentLength ? parseInt(contentLength, 10) > 0 : true;
+
+          if (hasBody) {
+            // Attempt to parse JSON; if it fails we'll catch and keep parsedData = null
+            parsedData = await response.json();
+          } else {
+            parsedData = null;
+          }
+        } catch (jsonError) {
+          // If response isn't JSON, we don't want to throw here. Keep data null and
+          // return message based on status or text if available.
+          try {
+            const text = await response.text();
+            parsedData = text ? text : null;
+          } catch (_) {
+            parsedData = null;
+          }
+        }
+      }
 
       if (!response.ok) {
+        // If parsedData is an object and has a message property, prefer that
+        const message = parsedData && typeof parsedData === 'object' && 'message' in parsedData
+          ? parsedData.message
+          : `HTTP Error: ${response.status}`;
+
         return {
           success: false,
           data: null,
-          message: data.message || `HTTP Error: ${response.status}`,
+          message,
         };
       }
 
       return {
         success: true,
-        data: data,
-        message: data.message,
+        // For successful responses with no JSON body, data will be null which is expected
+        data: parsedData,
+        message: parsedData && typeof parsedData === 'object' ? parsedData.message : undefined,
       };
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Network error occurred';
@@ -228,36 +269,39 @@ class AdminBaseApi {
 
   async post<T>(
     endpoint: string,
-    body?: Record<string, unknown> | unknown,
+    body?: Record<string, unknown> | FormData | unknown,
     headers?: Record<string, string>
   ): Promise<ApiResponse<T>> {
+    const requestBody = body instanceof FormData ? body : body ? JSON.stringify(body) : undefined;
     return this.makeRequest<T>(endpoint, { 
       method: 'POST', 
-      body: body ? JSON.stringify(body) : undefined, 
+      body: requestBody, 
       headers 
     });
   }
 
   async put<T>(
     endpoint: string,
-    body?: Record<string, unknown> | unknown,
+    body?: Record<string, unknown> | FormData | unknown,
     headers?: Record<string, string>
   ): Promise<ApiResponse<T>> {
+    const requestBody = body instanceof FormData ? body : body ? JSON.stringify(body) : undefined;
     return this.makeRequest<T>(endpoint, { 
       method: 'PUT', 
-      body: body ? JSON.stringify(body) : undefined, 
+      body: requestBody, 
       headers 
     });
   }
 
   async patch<T>(
     endpoint: string,
-    body?: Record<string, unknown> | unknown,
+    body?: Record<string, unknown> | FormData | unknown,
     headers?: Record<string, string>
   ): Promise<ApiResponse<T>> {
+    const requestBody = body instanceof FormData ? body : body ? JSON.stringify(body) : undefined;
     return this.makeRequest<T>(endpoint, { 
       method: 'PATCH', 
-      body: body ? JSON.stringify(body) : undefined, 
+      body: requestBody, 
       headers 
     });
   }

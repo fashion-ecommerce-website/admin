@@ -50,8 +50,9 @@ function* handleFetchStats() {
     
     yield put(fetchStatsSuccess(mockStats));
     
-  } catch (error: any) {
-    yield put(fetchStatsFailure(error.message || 'Failed to fetch dashboard stats'));
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    yield put(fetchStatsFailure(message || 'Failed to fetch dashboard stats'));
   }
 }
 

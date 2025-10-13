@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useToast } from "@/providers/ToastProvider";
 import {
   Product,
@@ -12,20 +12,21 @@ import {
 } from "@/types/product.types";
 import { categoryApi, CategoryBackend } from "@/services/api/categoryApi";
 import {
-  createProductRequest,
-  updateProductRequest,
-  deleteProductRequest,
+  // use direct success action when delete completes
+  deleteProductSuccess,
   uploadImageRequest,
+  createProductSuccess,
 } from "@/features/products/redux/productSlice";
+import { fetchProductsSilentRequest } from '@/features/products/redux/productSlice';
+import { RootState } from '@/store';
+import { productApi } from "@/services/api/productApi";
 
 interface BaseModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-interface ProductModalProps extends BaseModalProps {
-  product?: Product | null;
-}
+interface ProductModalProps extends BaseModalProps {}
 
 interface DeleteProductModalProps extends BaseModalProps {
   product?: Product | null;
@@ -111,17 +112,15 @@ const Modal: React.FC<
 };
 
 // Create/Edit Product Modal
-export const ProductModal: React.FC<ProductModalProps> = ({
-  isOpen,
-  onClose,
-  product,
-}) => {
+export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
+  const { pagination, filters } = useSelector((s: RootState) => s.product);
   const { showSuccess, showError } = useToast();
   const [loading, setLoading] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
   const [categories, setCategories] = useState<CategoryBackend[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [categoryLabels, setCategoryLabels] = useState<Record<number, string>>({});
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const [formData, setFormData] = useState<ProductFormData>({
@@ -132,15 +131,45 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     productDetails: [],
   });
 
+  // Keep actual File objects for each colorId so we can append them to FormData
+  const [detailFiles, setDetailFiles] = useState<Record<number, File[]>>({});
+
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Load categories function
+  // Load categories using tree endpoint and build leaf labels (like EditProductAdminModal)
   const loadCategories = async () => {
     setCategoriesLoading(true);
     try {
-      const response = await categoryApi.getAllCategories();
-      if (response.success && response.data) {
-        setCategories(response.data);
+      const res = await categoryApi.getTree();
+      if (res.success && res.data && Array.isArray(res.data)) {
+        const items: CategoryBackend[] = res.data as CategoryBackend[];
+
+        const leafItemsWithLabels: Array<{ node: CategoryBackend; label: string }> = [];
+        const traverse = (nodes: CategoryBackend[] = [], parents: string[] = []) => {
+          for (const n of nodes) {
+            const currentPath = [...parents, n.name];
+            const isLeaf = n.children === null || (Array.isArray(n.children) && n.children.length === 0);
+            if (isLeaf) {
+              leafItemsWithLabels.push({ node: n, label: currentPath.join(' > ') });
+            } else if (Array.isArray(n.children) && n.children.length > 0) {
+              traverse(n.children, currentPath);
+            }
+          }
+        };
+        traverse(items);
+
+        const leafItems = leafItemsWithLabels.map((x) => x.node);
+        const labelsMap: Record<number, string> = {};
+        for (const it of leafItemsWithLabels) labelsMap[it.node.id] = it.label;
+
+        setCategories(leafItems);
+        setCategoryLabels(labelsMap);
+
+        // if no category selected yet, choose first leaf
+        setFormData((prev) => ({
+          ...prev,
+          categoryId: prev.categoryId || (leafItems.length > 0 ? leafItems[0].id : prev.categoryId),
+        }));
       } else {
         showError("Failed to load categories");
       }
@@ -174,51 +203,39 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   }, [dropdownOpen]);
 
   // Helper function to ensure productDetail has images array
-  const normalizeProductDetail = (productDetail: any): ProductDetail => {
+  const normalizeProductDetail = (productDetail: Partial<ProductDetail>): ProductDetail => {
     return {
       ...productDetail,
-      images: Array.isArray(productDetail.images) ? productDetail.images : 
-              productDetail.image ? [productDetail.image] : [],
-      price: productDetail.price || 0,
-      quantity: productDetail.quantity || 0,
-    };
+      color: productDetail.color as VariantColor,
+      sizes: Array.isArray(productDetail.sizes) ? (productDetail.sizes as number[]) : [],
+      images: Array.isArray(productDetail.images)
+        ? (productDetail.images as string[])
+        : [],
+      price: typeof productDetail.price === 'number' ? productDetail.price : 0,
+      quantity: typeof productDetail.quantity === 'number' ? productDetail.quantity : 0,
+      sizeVariants: Array.isArray(productDetail.sizeVariants) ? (productDetail.sizeVariants as ProductDetail['sizeVariants']) : undefined,
+    } as ProductDetail;
   };
 
   useEffect(() => {
-    if (product) {
-      // Convert existing product data to new productDetail structure
-      const existingProductDetails = product.variantColors.map((color) => ({
-        color,
-        sizes: product.variantSizes.map((s) => s.id),
-        images: product.thumbnail ? [product.thumbnail] : [], // Use main thumbnail as first image
-        price: 0, // Default price - in real app this would come from API
-        quantity: 0, // Default quantity - in real app this would come from API
-      }));
-      
-      setFormData({
-        title: product.title,
-        description: product.description || "",
-        thumbnail: product.thumbnail,
-        categoryId: product.categoryId,
-        productDetails: existingProductDetails,
-      });
-    } else {
-      setFormData({
-        title: "",
-        description: "",
-        thumbnail: "",
-        categoryId: categories.length > 0 ? categories[0].id : 1,
-        productDetails: [],
-      });
-    }
+    // Initialize form for creating a new product
+    setFormData({
+      title: "",
+      description: "",
+      thumbnail: "",
+      categoryId: categories.length > 0 ? categories[0].id : 1,
+      productDetails: [],
+    });
     setErrors({});
-  }, [product, isOpen, categories]);
+  }, [isOpen, categories]);
 
   // Normalize productDetails to ensure they have images array
   useEffect(() => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      productDetails: prev.productDetails.map(productDetail => normalizeProductDetail(productDetail))
+      productDetails: prev.productDetails.map((productDetail) =>
+        normalizeProductDetail(productDetail)
+      ),
     }));
   }, []);
 
@@ -229,43 +246,77 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       newErrors.title = "Product title is required";
     }
 
-    if (!formData.thumbnail.trim()) {
-      newErrors.thumbnail = "Product image is required";
+    if (formData.title.length > 500) {
+      newErrors.title = "Product title must be 500 characters or less";
     }
 
     if (formData.productDetails.length === 0) {
       newErrors.productDetails = "At least one product detail must be created";
     } else {
+      // Validate each product detail structure more strictly
+      formData.productDetails.forEach((pd) => {
+        if (!pd.color || typeof pd.color.id !== "number") {
+          newErrors.productDetails =
+            "Each product detail must have a valid color";
+        }
+
+        if (!Array.isArray(pd.sizes) || pd.sizes.length === 0) {
+          newErrors.productDetails =
+            "Each color productDetail must have at least one size";
+        }
+
+        // If per-size variants exist, validate them. Otherwise validate color-level price/quantity.
+        if (Array.isArray(pd.sizeVariants) && pd.sizeVariants.length > 0) {
+          // Ensure each variant has a positive price and a non-negative integer quantity
+          const invalidVariant = pd.sizeVariants.some((v) => {
+            const badPrice = typeof v.price !== "number" || isNaN(v.price) || v.price <= 0;
+            const badQty = !Number.isInteger(v.quantity) || v.quantity < 0;
+            return badPrice || badQty;
+          });
+          if (invalidVariant) {
+            newErrors.productDetails =
+              "Each size variant must have a valid price (> 0) and quantity (integer >= 0)";
+          }
+        } else {
+          // price must be a positive number (can be decimal)
+          if (typeof pd.price !== "number" || isNaN(pd.price) || pd.price <= 0) {
+            newErrors.productDetails =
+              "Each color productDetail must have a valid price";
+          }
+
+          // quantity must be integer >= 0
+          if (!Number.isInteger(pd.quantity) || pd.quantity < 0) {
+            newErrors.productDetails =
+              "Each color productDetail must have a valid quantity (integer >= 0)";
+          }
+        }
+
+        // validate files count if any files tracked
+        const filesForColor = detailFiles[pd.color.id] || [];
+        if (filesForColor.length > 5) {
+          newErrors.productDetails =
+            "Maximum 5 images allowed per color variant";
+        }
+      });
+
       // Check if all productDetails have at least one size
       const hasIncompleteProductDetails = formData.productDetails.some(
         (productDetail) => productDetail.sizes.length === 0
       );
       if (hasIncompleteProductDetails) {
-        newErrors.productDetails = "Each color productDetail must have at least one size";
+        newErrors.productDetails =
+          "Each color productDetail must have at least one size";
       }
-      
-      // Check if all productDetails have images
+
+      // Check if all productDetails have images. A global thumbnail also satisfies this requirement.
       const hasProductDetailWithoutImage = formData.productDetails.some(
-        (productDetail) => !productDetail.images || productDetail.images.length === 0
+        (productDetail) =>
+          (!productDetail.images || productDetail.images.length === 0) &&
+          !formData.thumbnail
       );
       if (hasProductDetailWithoutImage) {
-        newErrors.productDetails = "Each color productDetail must have at least one image";
-      }
-
-      // Check if all productDetails have valid price
-      const hasProductDetailWithoutPrice = formData.productDetails.some(
-        (productDetail) => productDetail.price <= 0
-      );
-      if (hasProductDetailWithoutPrice) {
-        newErrors.productDetails = "Each color productDetail must have a valid price";
-      }
-
-      // Check if all productDetails have valid quantity
-      const hasProductDetailWithoutQuantity = formData.productDetails.some(
-        (productDetail) => productDetail.quantity <= 0
-      );
-      if (hasProductDetailWithoutQuantity) {
-        newErrors.productDetails = "Each color productDetail must have a valid quantity";
+        newErrors.productDetails =
+          "Each color productDetail must have at least one image";
       }
     }
 
@@ -283,41 +334,120 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     setLoading(true);
 
     try {
-      // Transform productDetail data back to the expected API format
-      const variantColorIds = formData.productDetails.map(detail => detail.color.id);
-      const variantSizeIds = Array.from(
-        new Set(formData.productDetails.flatMap(detail => detail.sizes))
-      );
-
-      const apiData = {
-        title: formData.title,
-        description: formData.description,
-        thumbnail: formData.thumbnail,
-        categoryId: formData.categoryId,
-        variantColorIds,
-        variantSizeIds,
+      // Build the product JSON according to required schema
+      // Product must include title (<=500 chars), non-empty categoryIds, and productDetails with colorId and sizeVariants
+      const productJson: {
+        title: string;
+        description?: string;
+        categoryIds: number[];
+        productDetails: Array<{ colorId: number; sizeVariants: Array<{ sizeId: number; price: number; quantity: number }> }>;
+      } = {
+        title: formData.title.trim(),
+        description: formData.description?.trim() || undefined,
+        categoryIds: [formData.categoryId],
+        productDetails: formData.productDetails.map((pd) => ({
+          colorId: pd.color.id,
+          sizeVariants:
+            pd.sizeVariants && pd.sizeVariants.length > 0
+              ? pd.sizeVariants.map((v) => ({
+                  sizeId: v.sizeId,
+                  price: v.price,
+                  quantity: v.quantity,
+                }))
+              : pd.sizes.map((sizeId) => ({
+                  sizeId,
+                  price: pd.price,
+                  quantity: pd.quantity,
+                })),
+        })),
       };
 
-      if (product) {
-        // Update existing product
-        dispatch(
-          updateProductRequest({
-            productData: {
-              id: product.id,
-              ...apiData,
-            },
-          })
+      // Final validation before sending
+      if (
+        !productJson.title ||
+        productJson.title.length === 0 ||
+        productJson.title.length > 500
+      ) {
+        throw new Error(
+          "Product title is required and must be 500 characters or less"
         );
-        showSuccess("Product updated successfully!");
-      } else {
-        // Create new product
-        dispatch(
-          createProductRequest({
-            productData: apiData,
-          })
-        );
-        showSuccess("Product created successfully!");
       }
+      if (
+        !Array.isArray(productJson.categoryIds) ||
+        productJson.categoryIds.length === 0
+      ) {
+        throw new Error("At least one categoryId is required");
+      }
+      if (
+        !Array.isArray(productJson.productDetails) ||
+        productJson.productDetails.length === 0
+      ) {
+        throw new Error(
+          "At least one product detail (color variant) is required"
+        );
+      }
+
+      // Build FormData
+      const fd = new FormData();
+      // Append the product JSON as an application/json Blob so the multipart part
+      // has Content-Type: application/json which Spring's @RequestPart can bind reliably.
+      const productBlob = new Blob([JSON.stringify(productJson)], {
+        type: "application/json",
+      });
+      fd.append("product", productBlob);
+
+      // Append images for each color under keys detail_<colorId>
+      for (const pd of formData.productDetails) {
+        const filesForColor = detailFiles[pd.color.id] || [];
+        if (filesForColor.length > 5) {
+          throw new Error(
+            `No more than 5 images allowed for color ${pd.color.id}`
+          );
+        }
+
+        filesForColor.forEach((file) => {
+          fd.append(`detail_${pd.color.id}`, file);
+        });
+      }
+
+      // Use centralized productApi which will forward FormData to adminApiClient (which supports FormData)
+      // Create product only
+      const resp = await (await import("@/services/api/productApi")).productApi.createProduct(fd);
+      if (!resp.success) throw new Error(resp.message || "Failed to create product");
+
+      // If API returned created product, try to fetch full product from server
+      if (resp.data && 'id' in resp.data && typeof resp.data.id === 'number') {
+        const createdId = resp.data.id;
+        try {
+          const full = await productApi.getProductById(createdId);
+          if (full.success && full.data) {
+            dispatch(createProductSuccess({ product: full.data }));
+          } else {
+            dispatch(createProductSuccess({ product: resp.data as Product }));
+          }
+        } catch (e) {
+    dispatch(createProductSuccess({ product: resp.data as Product }));
+        }
+      } else if (resp.data) {
+  dispatch(createProductSuccess({ product: resp.data as Product }));
+      }
+
+      // Silent re-fetch to refresh list/page counts without showing global loading
+      try {
+        dispatch(fetchProductsSilentRequest({
+          page: pagination.page,
+          pageSize: pagination.pageSize,
+          title: filters.title || undefined,
+          categorySlug: filters.categorySlug || undefined,
+          isActive: filters.isActive ?? undefined,
+          sortBy: filters.sortBy,
+          sortDirection: filters.sortDirection,
+        }));
+      } catch (e) {
+        // ignore
+      }
+
+      showSuccess("Product created successfully!");
 
       onClose();
     } catch (error) {
@@ -362,9 +492,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   };
 
   const handleAddColorProductDetail = (color: VariantColor) => {
-    const existingProductDetail = formData.productDetails.find(detail => detail.color.id === color.id);
+    const existingProductDetail = formData.productDetails.find(
+      (detail) => detail.color.id === color.id
+    );
     if (existingProductDetail) return; // Color already exists
-    
+
     const newProductDetail: ProductDetail = {
       color,
       sizes: [],
@@ -372,31 +504,53 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       price: 0,
       quantity: 0,
     };
-    
-    setFormData(prev => ({
+
+    setFormData((prev) => ({
       ...prev,
       productDetails: [...prev.productDetails, newProductDetail],
     }));
   };
 
   const handleRemoveColorProductDetail = (colorId: number) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      productDetails: prev.productDetails.filter(detail => detail.color.id !== colorId),
+      productDetails: prev.productDetails.filter(
+        (detail) => detail.color.id !== colorId
+      ),
     }));
   };
 
   const handleToggleSize = (colorId: number, sizeId: number) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      productDetails: prev.productDetails.map(productDetail => {
+      productDetails: prev.productDetails.map((productDetail) => {
         if (productDetail.color.id === colorId) {
           const sizeExists = productDetail.sizes.includes(sizeId);
+          const newSizes = sizeExists
+            ? productDetail.sizes.filter((id) => id !== sizeId)
+            : [...productDetail.sizes, sizeId];
+
+          // Also update sizeVariants: remove or add default variant entry
+          let newSizeVariants = productDetail.sizeVariants
+            ? [...productDetail.sizeVariants]
+            : [];
+          if (sizeExists) {
+            newSizeVariants = newSizeVariants.filter(
+              (sv) => sv.sizeId !== sizeId
+            );
+          } else {
+            // Add default sizeVariant using color-level price/quantity as defaults
+            newSizeVariants.push({
+              sizeId,
+              price: productDetail.price || 0,
+              quantity: productDetail.quantity || 0,
+            });
+          }
+
           return {
             ...productDetail,
-            sizes: sizeExists 
-              ? productDetail.sizes.filter(id => id !== sizeId)
-              : [...productDetail.sizes, sizeId],
+            sizes: newSizes,
+            sizeVariants: newSizeVariants,
           };
         }
         return productDetail;
@@ -404,128 +558,163 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     }));
   };
 
-  const handleProductDetailImageUpload = async (colorId: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleSizeVariantChange = (
+    colorId: number,
+    sizeId: number,
+    field: "price" | "quantity",
+    value: number
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      productDetails: prev.productDetails.map((productDetail) => {
+        if (productDetail.color.id === colorId) {
+          const variants = (productDetail.sizeVariants || []).map((v) => {
+            if (v.sizeId === sizeId) {
+              return {
+                ...v,
+                [field]:
+                  field === "quantity"
+                    ? Math.max(0, Math.floor(value))
+                    : Math.max(0, value),
+              };
+            }
+            return v;
+          });
+          return { ...productDetail, sizeVariants: variants };
+        }
+        return productDetail;
+      }),
+    }));
+  };
+
+  const handleProductDetailImageUpload = async (
+    colorId: number,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
     // Find the current productDetail
-    const currentProductDetail = formData.productDetails.find(detail => detail.color.id === colorId);
+    const currentProductDetail = formData.productDetails.find(
+      (detail) => detail.color.id === colorId
+    );
     if (!currentProductDetail) return;
 
-    // Ensure images array exists and check if already have 5 images
-    const currentImages = currentProductDetail.images || [];
-    if (currentImages.length >= 5) {
+    const existingImages = currentProductDetail.images || [];
+    const existingFiles = detailFiles[colorId] || [];
+
+    // Convert FileList to array and validate each
+    const incomingFiles: File[] = Array.from(files);
+    // Ensure total files won't exceed 5
+    if (
+      existingFiles.length + incomingFiles.length > 5 ||
+      existingImages.length + incomingFiles.length > 5
+    ) {
       showError("Maximum 5 images allowed per color productDetail");
       return;
     }
 
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      showError("Please select a valid image file");
-      return;
+    const validFiles: File[] = [];
+    const previewUrls: string[] = [];
+
+    for (const file of incomingFiles) {
+      if (!file.type.startsWith("image/")) {
+        showError("Please select only image files");
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        showError("Each image must be less than 5MB");
+        return;
+      }
+
+      validFiles.push(file);
+      previewUrls.push(URL.createObjectURL(file));
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      showError("Image size should be less than 5MB");
-      return;
-    }
-
-    try {
-      // For now, create a mock URL. In real app, upload to server
-      const mockUrl = URL.createObjectURL(file);
-      
-      setFormData(prev => ({
-        ...prev,
-        productDetails: prev.productDetails.map(productDetail => {
-          if (productDetail.color.id === colorId) {
-            const currentImages = productDetail.images || [];
-            return { ...productDetail, images: [...currentImages, mockUrl] };
-          }
-          return productDetail;
-        }),
-      }));
-
-      showSuccess("Product detail image uploaded successfully!");
-    } catch (error) {
-      showError("Failed to upload image");
-    }
-  };
-
-  const handleRemoveProductDetailImage = (colorId: number, imageIndex: number) => {
-    setFormData(prev => ({
+    // Append files to detailFiles state
+    setDetailFiles((prev) => ({
       ...prev,
-      productDetails: prev.productDetails.map(productDetail => {
+      [colorId]: [...existingFiles, ...validFiles],
+    }));
+
+    // Append preview urls to productDetail.images so UI shows previews
+    setFormData((prev) => ({
+      ...prev,
+      productDetails: prev.productDetails.map((productDetail) => {
         if (productDetail.color.id === colorId) {
           const currentImages = productDetail.images || [];
-          return { 
-            ...productDetail, 
-            images: currentImages.filter((_, index) => index !== imageIndex)
+          return {
+            ...productDetail,
+            images: [...currentImages, ...previewUrls],
           };
         }
         return productDetail;
       }),
     }));
+
+    showSuccess("Product detail image(s) added");
   };
 
-  const handleProductDetailPriceChange = (colorId: number, price: number) => {
-    setFormData(prev => ({
+  const handleRemoveProductDetailImage = (
+    colorId: number,
+    imageIndex: number
+  ) => {
+    setFormData((prev) => ({
       ...prev,
-      productDetails: prev.productDetails.map(productDetail => {
+      productDetails: prev.productDetails.map((productDetail) => {
         if (productDetail.color.id === colorId) {
-          return { ...productDetail, price: Math.max(0, price) };
+          const currentImages = productDetail.images || [];
+          return {
+            ...productDetail,
+            images: currentImages.filter((_, index) => index !== imageIndex),
+          };
         }
         return productDetail;
       }),
     }));
+
+    // Also remove corresponding File object if exists
+    setDetailFiles((prev) => {
+      const filesForColor = prev[colorId] || [];
+      if (!filesForColor.length) return prev;
+      const newFiles = filesForColor.filter((_, idx) => idx !== imageIndex);
+      return { ...prev, [colorId]: newFiles };
+    });
   };
 
-  const handleProductDetailQuantityChange = (colorId: number, quantity: number) => {
-    setFormData(prev => ({
-      ...prev,
-      productDetails: prev.productDetails.map(productDetail => {
-        if (productDetail.color.id === colorId) {
-          return { ...productDetail, quantity: Math.max(0, Math.floor(quantity)) };
-        }
-        return productDetail;
-      }),
-    }));
-  };
+  // const handleProductDetailPriceChange = (colorId: number, price: number) => {
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     productDetails: prev.productDetails.map((productDetail) => {
+  //       if (productDetail.color.id === colorId) {
+  //         return { ...productDetail, price: Math.max(0, price) };
+  //       }
+  //       return productDetail;
+  //     }),
+  //   }));
+  // };
+
+  // const handleProductDetailQuantityChange = (
+  //   colorId: number,
+  //   quantity: number
+  // ) => {
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     productDetails: prev.productDetails.map((productDetail) => {
+  //       if (productDetail.color.id === colorId) {
+  //         return {
+  //           ...productDetail,
+  //           quantity: Math.max(0, Math.floor(quantity)),
+  //         };
+  //       }
+  //       return productDetail;
+  //     }),
+  //   }));
+  // };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={product ? "Edit Product" : "Create New Product"}
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title={"Create New Product"}>
       <form onSubmit={handleSubmit} className="p-6 space-y-6">
-        {/* Product Image
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Product Image <span className="text-red-500">*</span>
-          </label>
-          <div className="flex items-center space-x-4">
-            {formData.thumbnail && (
-              <img
-                src={formData.thumbnail}
-                alt="Product preview"
-                className="w-20 h-20 object-cover rounded-lg border"
-              />
-            )}
-            <div className="flex-1">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                disabled={imageUploading}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-black file:text-white hover:file:bg-gray-700"
-              />
-              {imageUploading && <p className="text-sm text-blue-600 mt-1">Uploading...</p>}
-              {errors.thumbnail && <p className="text-sm text-red-600 mt-1">{errors.thumbnail}</p>}
-            </div>
-          </div>
-        </div> */}
-
         {/* Product Title */}
         <div>
           <label
@@ -629,7 +818,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                           : ""
                       }`}
                     >
-                      {category.name}
+                      {categoryLabels[category.id] ?? category.name}
                     </button>
                   ))
                 ) : (
@@ -650,13 +839,17 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Product Details <span className="text-red-500">*</span>
           </label>
-          
+
           {/* Add Color Section */}
           <div className="mb-4">
-            <h4 className="text-sm font-medium text-gray-600 mb-2">Add Colors:</h4>
+            <h4 className="text-sm font-medium text-gray-600 mb-2">
+              Add Colors:
+            </h4>
             <div className="grid grid-cols-3 gap-2">
               {AVAILABLE_COLORS.map((color) => {
-                const isSelected = formData.productDetails.some(detail => detail.color.id === color.id);
+                const isSelected = formData.productDetails.some(
+                  (detail) => detail.color.id === color.id
+                );
                 return (
                   <button
                     key={color.id}
@@ -678,7 +871,9 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                       className="w-4 h-4 rounded-full border border-gray-300 mr-2"
                       style={{ backgroundColor: color.hex }}
                     />
-                    <span className="text-sm text-black capitalize">{color.name}</span>
+                    <span className="text-sm text-black capitalize">
+                      {color.name}
+                    </span>
                   </button>
                 );
               })}
@@ -688,7 +883,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           {/* Product Detail Management */}
           <div className="space-y-4 text-black">
             {formData.productDetails.map((productDetail) => (
-              <div key={productDetail.color.id} className="border rounded-lg p-4 bg-gray-50">
+              <div
+                key={productDetail.color.id}
+                className="border rounded-lg p-4 bg-gray-50"
+              >
                 {/* Product Detail Header */}
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center">
@@ -696,22 +894,35 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                       className="w-6 h-6 rounded-full border border-gray-300 mr-3"
                       style={{ backgroundColor: productDetail.color.hex }}
                     />
-                    <span className="font-medium capitalize">{productDetail.color.name}</span>
+                    <span className="font-medium capitalize">
+                      {productDetail.color.name}
+                    </span>
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleRemoveColorProductDetail(productDetail.color.id)}
+                    onClick={() =>
+                      handleRemoveColorProductDetail(productDetail.color.id)
+                    }
                     className="text-red-500 hover:text-red-700"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
                   </button>
                 </div>
 
                 {/* Image Upload */}
                 <div className="mb-3">
-                  
                   {/* Display existing images */}
                   {productDetail.images && productDetail.images.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-3">
@@ -724,7 +935,12 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                           />
                           <button
                             type="button"
-                            onClick={() => handleRemoveProductDetailImage(productDetail.color.id, index)}
+                            onClick={() =>
+                              handleRemoveProductDetailImage(
+                                productDetail.color.id,
+                                index
+                              )
+                            }
                             className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center hover:bg-red-600"
                           >
                             <svg
@@ -745,16 +961,22 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                       ))}
                     </div>
                   )}
-                  
+
                   {/* Upload button */}
-                  {(!productDetail.images || productDetail.images.length < 5) && (
+                  {(!productDetail.images ||
+                    productDetail.images.length < 5) && (
                     <div>
                       <label className="inline-block bg-black text-white px-3 py-1 rounded text-sm cursor-pointer hover:bg-gray-700">
                         Upload Image
                         <input
                           type="file"
                           accept="image/*"
-                          onChange={(e) => handleProductDetailImageUpload(productDetail.color.id, e)}
+                          onChange={(e) =>
+                            handleProductDetailImageUpload(
+                              productDetail.color.id,
+                              e
+                            )
+                          }
                           className="hidden"
                         />
                       </label>
@@ -774,7 +996,9 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                         <button
                           key={size.id}
                           type="button"
-                          onClick={() => handleToggleSize(productDetail.color.id, size.id)}
+                          onClick={() =>
+                            handleToggleSize(productDetail.color.id, size.id)
+                          }
                           className={`w-10 h-10 border rounded-lg font-medium text-sm transition-colors ${
                             isSelected
                               ? "border-black bg-black text-white"
@@ -787,51 +1011,83 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                     })}
                   </div>
                   {productDetail.sizes.length === 0 && (
-                    <p className="text-sm text-red-600 mt-1">At least one size is required</p>
+                    <p className="text-sm text-red-600 mt-1">
+                      At least one size is required
+                    </p>
                   )}
-                </div>
-
-                {/* Price and Quantity */}
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Price */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">
-                      Price (VND)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      step={1000}
-                      value={productDetail.price}
-                      onChange={(e) => handleProductDetailPriceChange(productDetail.color.id, parseFloat(e.target.value) || 0)}
-                      onFocus={(e) => {
-                        if (e.target.value === '0') {
-                          e.target.value = '';
-                        }
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:border-black"
-                    />
-                  </div>
-                  
-                  {/* Quantity */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">
-                      Quantity
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      step={1}
-                      value={productDetail.quantity}
-                      onChange={(e) => handleProductDetailQuantityChange(productDetail.color.id, parseInt(e.target.value) || 0)}
-                      onFocus={(e) => {
-                        if (e.target.value === '0') {
-                          e.target.value = '';
-                        }
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black transition-colors duration-200 focus:border-black"
-                    />
-                  </div>
+                  {/* Per-size price/quantity inputs */}
+                  {productDetail.sizes.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      <h5 className="text-sm font-medium text-gray-700 mb-1">
+                        Per-size price & quantity
+                      </h5>
+                      <div className="grid grid-cols-1 gap-2">
+                        {productDetail.sizes.map((sizeId) => {
+                          const sizeInfo = AVAILABLE_SIZES.find(
+                            (s) => s.id === sizeId
+                          );
+                          const variant = (
+                            productDetail.sizeVariants || []
+                          ).find((v) => v.sizeId === sizeId) || {
+                            price: productDetail.price || 0,
+                            quantity: productDetail.quantity || 0,
+                          };
+                          return (
+                            <div
+                              key={sizeId}
+                              className="flex items-center gap-2"
+                            >
+                              <div className="w-12 text-sm">
+                                {sizeInfo?.code || sizeId}
+                              </div>
+                              <input
+                                type="number"
+                                min="0"
+                                step={1000}
+                                value={variant.price}
+                                onChange={(e) =>
+                                  handleSizeVariantChange(
+                                    productDetail.color.id,
+                                    sizeId,
+                                    "price",
+                                    parseFloat(e.target.value) || 0
+                                  )
+                                }
+                                onFocus={(e) => {
+                                  if (e.target.value === "0") {
+                                    e.target.value = "";
+                                  }
+                                }}
+                                className="w-32 px-2 py-1 border border-gray-300 rounded-lg text-black"
+                                placeholder="Price"
+                              />
+                              <input
+                                type="number"
+                                min="0"
+                                step={1}
+                                value={variant.quantity}
+                                onChange={(e) =>
+                                  handleSizeVariantChange(
+                                    productDetail.color.id,
+                                    sizeId,
+                                    "quantity",
+                                    parseInt(e.target.value) || 0
+                                  )
+                                }
+                                onFocus={(e) => {
+                                  if (e.target.value === "0") {
+                                    e.target.value = "";
+                                  }
+                                }}
+                                className="w-24 px-2 py-1 border border-gray-300 rounded-lg text-black"
+                                placeholder="Qty"
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -884,7 +1140,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                 />
               </svg>
             )}
-            <span>{product ? "Update Product" : "Create Product"}</span>
+            <span>Create Product</span>
           </button>
         </div>
       </form>
@@ -901,6 +1157,7 @@ export const DeleteProductModal: React.FC<DeleteProductModalProps> = ({
   const dispatch = useDispatch();
   const { showSuccess, showError } = useToast();
   const [loading, setLoading] = useState(false);
+  const { pagination, filters } = useSelector((s: RootState) => s.product);
 
   const handleDelete = async () => {
     if (!product) return;
@@ -908,9 +1165,30 @@ export const DeleteProductModal: React.FC<DeleteProductModalProps> = ({
     setLoading(true);
 
     try {
-      dispatch(deleteProductRequest({ id: product.id }));
-      showSuccess("Product deleted successfully!");
-      onClose();
+      // Call admin delete API
+      const res = await productApi.deleteProductAdmin(product.id);
+      if (res.success) {
+        // Update redux store
+        dispatch(deleteProductSuccess({ id: product.id }));
+        // Silent re-fetch to refresh list/page counts without global loading
+        try {
+          dispatch(fetchProductsSilentRequest({
+            page: pagination.page,
+            pageSize: pagination.pageSize,
+            title: filters.title || undefined,
+            categorySlug: filters.categorySlug || undefined,
+            isActive: filters.isActive ?? undefined,
+            sortBy: filters.sortBy,
+            sortDirection: filters.sortDirection,
+          }));
+        } catch (e) {
+          // ignore
+        }
+        showSuccess("Product deleted successfully!");
+        onClose();
+      } else {
+        showError(res.message || "Failed to delete product");
+      }
     } catch (error) {
       showError(error instanceof Error ? error.message : "An error occurred");
     } finally {
