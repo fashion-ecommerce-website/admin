@@ -25,8 +25,10 @@ export default function CategoriesPage() {
   const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  type SelectedCategory = CategoryBackend & { parentId?: number | null };
+
   const [selectedCategory, setSelectedCategory] =
-    useState<CategoryBackend | null>(null);
+    useState<SelectedCategory | null>(null);
   // parentId preset when opening Add modal for adding a child
   const [createParentId, setCreateParentId] = useState<number | null>(null);
 
@@ -96,19 +98,13 @@ export default function CategoriesPage() {
 
     const parentId = findParentId(categories, category.id);
 
-    setSelectedCategory({ ...(category as any), parentId } as any);
+    setSelectedCategory({ ...category, parentId });
     setShowEditModal(true);
   };
 
   const handleAddChild = (parentId: number) => {
     setCreateParentId(parentId);
     setShowAddModal(true);
-  };
-
-  // Deterministic demo status: only ids 1 and 2 are active, others inactive
-  const getDemoStatus = (id: number) => {
-    // id 1 and 2 should be active (true), rest inactive (false)
-    return id === 1 || id === 2;
   };
 
   const handleToggleStatus = async (id: number) => {
@@ -252,23 +248,23 @@ export default function CategoriesPage() {
               <button
                 onClick={() => handleToggleStatus(node.id)}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
-                  getDemoStatus(node.id) ? "bg-green-500" : "bg-gray-300"
+                  node.isActive ? "bg-green-500" : "bg-gray-300"
                 }`}
-                aria-label={`Toggle status - currently ${getDemoStatus(node.id) ? 'active' : 'inactive'}`}
-                title={`Click to ${getDemoStatus(node.id) ? 'deactivate' : 'activate'} category`}
+                aria-label={`Toggle status - currently ${node.isActive ? 'active' : 'inactive'}`}
+                title={`Click to ${node.isActive ? 'deactivate' : 'activate'} category`}
               >
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    getDemoStatus(node.id) ? "translate-x-6" : "translate-x-1"
+                    node.isActive ? "translate-x-6" : "translate-x-1"
                   }`}
                 />
               </button>
               <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                getDemoStatus(node.id)
+                node.isActive
                   ? "bg-green-100 text-green-800" 
                   : "bg-gray-100 text-gray-600"
               }`}>
-                {getDemoStatus(node.id) ? "Active" : "Inactive"}
+                {node.isActive ? "Active" : "Inactive"}
               </span>
             </div>
 

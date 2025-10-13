@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useToast } from "@/providers/ToastProvider";
+import type { CategoryBackend } from "@/services/api/categoryApi";
 
 interface AddCategoryModalProps {
   isOpen: boolean;
@@ -194,21 +195,9 @@ interface EditCategoryModalProps {
     parentId: number | null;
   }) => Promise<void>;
   // the category being edited; backend should include parentId if available
-  category: {
-    id: number;
-    name: string;
-    slug: string;
-    isActive: boolean;
-    parentId?: number | null;
-    children: any;
-  } | null;
+  category: (CategoryBackend & { parentId?: number | null }) | null;
   // optional full category tree used to select a parent
-  categories?: {
-    id: number;
-    name: string;
-    slug: string;
-    children?: any;
-  }[];
+  categories?: CategoryBackend[];
 }
 
 export const EditCategoryModal: React.FC<EditCategoryModalProps> = ({
@@ -368,12 +357,12 @@ export const EditCategoryModal: React.FC<EditCategoryModalProps> = ({
                * avoid self-parenting.
                */}
               {categories &&
-                (function flatten(nodes: any[] = []) {
-                  const list: any[] = [];
-                  const walk = (items: any[], prefix = "") => {
+                (function flatten(nodes: CategoryBackend[] = []) {
+                  const list: CategoryBackend[] = [];
+                  const walk = (items: CategoryBackend[]) => {
                     for (const it of items) {
                       list.push(it);
-                      if (it.children && it.children.length) walk(it.children, prefix + "-");
+                      if (it.children && it.children.length) walk(it.children as CategoryBackend[]);
                     }
                   };
                   walk(nodes);

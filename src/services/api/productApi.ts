@@ -8,9 +8,24 @@ import {
   UpdateProductRequest,
   VariantOptions,
   ProductDetailAdmin,
-  ProductAdmin,
   ProductDetailQueryResponse,
 } from '../../types/product.types';
+
+// Import types from the public API that you provided earlier
+export interface ProductDetail {
+  detailId: number;
+  title: string;
+  price: number;
+  activeColor: string;
+  activeSize?: string;
+  images: string[];
+  colors: string[];
+  mapSizeToQuantity: { [size: string]: number };
+  description: string[];
+  colorId?: number;
+  sizeId?: number;
+  quantity?: number;
+}
 
 class ProductApi {
   private readonly endpoint = '/products';
@@ -327,6 +342,55 @@ class ProductApi {
         success: false,
         data: null,
         message: error instanceof Error ? error.message : 'Failed to upload image',
+      };
+    }
+  }
+
+  // Public API methods (from the API you provided earlier)
+  /**
+   * Get product by ID using public API
+   * URL example: /products/details/123
+   */
+  async getProductByIdPublic(id: string): Promise<ApiResponse<ProductDetail>> {
+    try {
+      const url = `/products/details/${id}`;
+      const response = await adminApiClient.get<ProductDetail>(url);
+      return {
+        success: response.success,
+        data: response.data,
+        message: response.message,
+      };
+    } catch (error) {
+      console.error('Error fetching product by ID:', error);
+      return {
+        success: false,
+        data: null,
+        message: error instanceof Error ? error.message : 'Failed to fetch product',
+      };
+    }
+  }
+
+  /**
+   * Get product by ID and color using public API
+   * URL example: /products/details/1/color?activeColor=white&activeSize=M
+   */
+  async getProductByColorPublic(id: string, activeColor: string, activeSize?: string): Promise<ApiResponse<ProductDetail>> {
+    try {
+      const search = new URLSearchParams({ activeColor });
+      if (activeSize) search.append('activeSize', activeSize);
+      const url = `/products/details/${id}/color?${search.toString()}`;
+      const response = await adminApiClient.get<ProductDetail>(url);
+      return {
+        success: response.success,
+        data: response.data,
+        message: response.message,
+      };
+    } catch (error) {
+      console.error('Error fetching product by color:', error);
+      return {
+        success: false,
+        data: null,
+        message: error instanceof Error ? error.message : 'Failed to fetch product by color',
       };
     }
   }

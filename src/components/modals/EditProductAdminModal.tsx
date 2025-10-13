@@ -98,7 +98,7 @@ export const EditProductAdminModal: React.FC<Props> = ({
       } else {
         showError("Failed to load categories");
       }
-    } catch (err) {
+    } catch {
       showError("Failed to load categories");
     } finally {
       setCategoriesLoading(false);
@@ -161,10 +161,10 @@ export const EditProductAdminModal: React.FC<Props> = ({
               sortBy: filters.sortBy,
               sortDirection: filters.sortDirection,
             }));
-          } catch (e) {
+          } catch {
             // ignore
           }
-        } catch (e) {
+        } catch {
           if (res.data) dispatch(updateProductSuccess({ product: res.data }));
         }
         showSuccess("Product updated successfully");

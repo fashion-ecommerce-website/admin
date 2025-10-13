@@ -13,7 +13,7 @@ import ProductsPresenter from '../components/ProductsPresenter';
 import { ProductModal, DeleteProductModal } from '../../../components/modals/ProductModals';
 import EditProductAdminModal from '../../../components/modals/EditProductAdminModal';
 import EditProductDetailModal from '../../../components/modals/EditProductDetailModal';
-import { Product, ProductState, ProductAdmin, ProductDetailAdmin, ProductDetailQueryResponse } from '../../../types/product.types';
+import { Product, ProductDetailQueryResponse } from '../../../types/product.types';
 import { productApi } from '../../../services/api/productApi';
 
 const ProductsContainer: React.FC = () => {
@@ -34,15 +34,16 @@ const ProductsContainer: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isVariantPickerOpen, setIsVariantPickerOpen] = useState(false);
   const [selectedDetailId, setSelectedDetailId] = useState<number | null>(null);
-  type VariantListItem = {
-    detailId: number;
-    colorName?: string;
-    sizeName?: string;
-    price?: number;
-    quantity?: number;
-  };
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null); // Add this
+  // type VariantListItem = {
+  //   detailId: number;
+  //   colorName?: string;
+  //   sizeName?: string;
+  //   price?: number;
+  //   quantity?: number;
+  // };
 
-  const [variantList, setVariantList] = useState<VariantListItem[]>([]);
+  // const [variantList, setVariantList] = useState<VariantListItem[]>([]);
 
   // New states for query-by-color/size flow
   const [productDetailQuery, setProductDetailQuery] = useState<ProductDetailQueryResponse | null>(null);
@@ -54,9 +55,9 @@ const ProductsContainer: React.FC = () => {
 
   // Debounced search function
   const debouncedFetch = useCallback(
-    debounce((searchParams: FetchProductsRequest) => {
+    (searchParams: FetchProductsRequest) => {
       dispatch(fetchProductsRequest(searchParams));
-    }, 500),
+    },
     [dispatch]
   );
 
@@ -98,7 +99,13 @@ const ProductsContainer: React.FC = () => {
     }
   }, [dispatch, pagination.page]);
 
-  const handleFilterChange = useCallback((newFilters: Partial<ProductState['filters']>) => {
+  const handleFilterChange = useCallback((newFilters: {
+    title?: string;
+    categorySlug?: string;
+    isActive?: boolean | null;
+    sortBy?: 'createdAt' | 'updatedAt' | 'title';
+    sortDirection?: 'asc' | 'desc';
+  }) => {
     dispatch(setFilters({ filters: newFilters }));
   }, [dispatch]);
 
@@ -159,6 +166,54 @@ const ProductsContainer: React.FC = () => {
     }
   }, [products]);
 
+  const handleEditProductDetail = useCallback(async (product: Product) => {
+    try {
+      console.log('Editing product detail for product:', product);
+      
+      // Save productId for modal
+      setSelectedProductId(product.id);
+      
+      // Step 1: Call GET /products/details/{productId} to get all colors and sizes
+      const productDetailRes = await productApi.getProductByIdPublic(product.id.toString());
+      
+      if (!productDetailRes.success || !productDetailRes.data) {
+        alert('Failed to load product information');
+        return;
+      }
+      
+      const productInfo = productDetailRes.data;
+      console.log('Product info loaded:', productInfo);
+      
+      // Step 2: Get the first color to call the color-specific API
+      const firstColor = productInfo.colors?.[0];
+      if (!firstColor) {
+        alert('No colors found for this product');
+        return;
+      }
+      
+      // Step 3: Call GET /products/details/{productId}/color?activeColor={firstColor}
+      const colorSpecificRes = await productApi.getProductByColorPublic(
+        product.id.toString(),
+        firstColor,
+        productInfo.activeSize // Use existing size if available
+      );
+      
+      if (!colorSpecificRes.success || !colorSpecificRes.data) {
+        alert('Failed to load product detail for color: ' + firstColor);
+        return;
+      }
+      
+      console.log('Color-specific detail loaded:', colorSpecificRes.data);
+      
+      // Step 4: Open modal with the loaded detail
+      setSelectedDetailId(colorSpecificRes.data.detailId);
+      
+    } catch (error) {
+      console.error('Error fetching product detail for editing:', error);
+      alert('Error loading product detail: ' + (error as Error).message);
+    }
+  }, []);
+
   const handleCloseModals = useCallback(() => {
     setIsCreateModalOpen(false);
     setIsEditModalOpen(false);
@@ -186,6 +241,7 @@ const ProductsContainer: React.FC = () => {
         onEditVariant={handleEditVariant}
         onDeleteProduct={handleDeleteProduct}
         onClearError={handleClearError}
+        onEditProductDetail={handleEditProductDetail}
       />
 
       {/* Modals */}
@@ -332,12 +388,17 @@ const ProductsContainer: React.FC = () => {
       {/* The detail edit modal */}
       <EditProductDetailModal
         isOpen={selectedDetailId !== null}
-        onClose={() => setSelectedDetailId(null)}
+        onClose={() => {
+          setSelectedDetailId(null);
+          setSelectedProductId(null);
+        }}
         productDetailId={selectedDetailId}
-        onConfirm={({ detailId, price, quantity }) => {
+        productId={selectedProductId ?? undefined}
+        onConfirm={() => {
           // After successful update you may want to refresh product list
           dispatch(fetchProductsRequest({ page: pagination.page, pageSize: pagination.pageSize }));
           setSelectedDetailId(null);
+          setSelectedProductId(null);
         }}
       />
 
@@ -349,18 +410,5 @@ const ProductsContainer: React.FC = () => {
     </>
   );
 };
-
-// Debounce utility function
-function debounce<P extends unknown[], R>(
-  func: (...args: P) => R,
-  delay: number
-): (...args: P) => void {
-  let timeoutId: NodeJS.Timeout;
-  return (...args: P) => {
-    clearTimeout(timeoutId);
-    // setTimeout callback returns number | NodeJS.Timeout depending on env; cast is safe here
-    timeoutId = setTimeout(() => func(...args), delay) as unknown as NodeJS.Timeout;
-  };
-}
 
 export default ProductsContainer;
