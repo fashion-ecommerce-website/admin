@@ -47,7 +47,7 @@ export const DashboardPresenter: React.FC<DashboardPresenterProps> = ({
 
   if (error) {
     return (
-      <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-2xl p-8 text-center shadow-lg">
+      <div className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center shadow-lg">
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -57,7 +57,7 @@ export const DashboardPresenter: React.FC<DashboardPresenterProps> = ({
         <p className="text-red-600 mb-6">{error}</p>
         <button
           onClick={onRefresh}
-          className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-6 py-3 rounded-xl font-medium hover:from-red-600 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105"
+          className="bg-gray-800 text-white px-6 py-3 rounded-xl font-medium hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105"
         >
           Retry
         </button>
@@ -70,22 +70,11 @@ export const DashboardPresenter: React.FC<DashboardPresenterProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold text-gray-900">
             Dashboard
           </h1>
           <p className="text-gray-600 mt-2">Welcome back! Here is an overview of your system.</p>
         </div>
-        <button
-          onClick={onRefresh}
-          className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-6 py-3 rounded-xl font-medium hover:from-indigo-600 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
-        >
-          <div className="flex items-center space-x-2">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            <span>Refresh</span>
-          </div>
-        </button>
       </div>
 
       {/* Stats Cards */}
@@ -99,8 +88,7 @@ export const DashboardPresenter: React.FC<DashboardPresenterProps> = ({
             </svg>
           )}
           trend={stats?.userGrowth}
-          gradient="from-blue-500 to-cyan-500"
-          bgGradient="from-blue-50 to-cyan-50"
+          accentClass="bg-amber-500"
         />
         <StatsCard
           title="Total products"
@@ -111,8 +99,7 @@ export const DashboardPresenter: React.FC<DashboardPresenterProps> = ({
             </svg>
           )}
           trend={stats?.productGrowth}
-          gradient="from-emerald-500 to-teal-500"
-          bgGradient="from-emerald-50 to-teal-50"
+          accentClass="bg-orange-500"
         />
         <StatsCard
           title="Today's orders"
@@ -123,8 +110,7 @@ export const DashboardPresenter: React.FC<DashboardPresenterProps> = ({
             </svg>
           )}
           trend={stats?.orderGrowth}
-          gradient="from-orange-500 to-red-500"
-          bgGradient="from-orange-50 to-red-50"
+          accentClass="bg-amber-600"
         />
         <StatsCard
           title="Today's revenue"
@@ -135,23 +121,17 @@ export const DashboardPresenter: React.FC<DashboardPresenterProps> = ({
             </svg>
           )}
           trend={stats?.revenueGrowth}
-          gradient="from-purple-500 to-pink-500"
-          bgGradient="from-purple-50 to-pink-50"
+          accentClass="bg-orange-600"
         />
       </div>
 
       {/* Recent Activities */}
       <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-        <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-8 py-6 border-b border-gray-200">
+        <div className="bg-gray-50 px-8 py-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-xl font-bold text-gray-900">Recent activities</h3>
               <p className="text-gray-600 text-sm mt-1">Track the latest activities across the system</p>
-            </div>
-            <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
             </div>
           </div>
         </div>
@@ -163,7 +143,7 @@ export const DashboardPresenter: React.FC<DashboardPresenterProps> = ({
                   {getActivityIcon(activity.type)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 group-hover:text-indigo-600 transition-colors">
+                  <p className="text-sm font-medium text-gray-900 group-hover:text-gray-900 transition-colors">
                     {activity.description}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
@@ -187,13 +167,12 @@ interface StatsCardProps {
   value: string | number;
   icon: React.ReactNode;
   trend?: number;
-  gradient: string;
-  bgGradient: string;
+  accentClass: string; // e.g., 'bg-blue-600'
 }
 
-const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, trend, gradient, bgGradient }) => {
+const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, trend, accentClass }) => {
   return (
-    <div className={`bg-gradient-to-br ${bgGradient} rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-white/50 overflow-hidden group`}>
+    <div className={`bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100 overflow-hidden group`}>
       <div className="p-6">
         <div className="flex items-center justify-between">
           <div className="flex-1">
@@ -211,12 +190,12 @@ const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, trend, gradie
               </div>
             )}
           </div>
-          <div className={`flex-shrink-0 w-16 h-16 bg-gradient-to-br ${gradient} rounded-2xl flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+          <div className={`flex-shrink-0 w-16 h-16 ${accentClass} rounded-2xl flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}>
             {icon}
           </div>
         </div>
       </div>
-      <div className={`h-2 bg-gradient-to-r ${gradient} opacity-60 group-hover:opacity-80 transition-opacity duration-300`}></div>
+      <div className={`h-2 ${accentClass} opacity-60 group-hover:opacity-80 transition-opacity duration-300`}></div>
     </div>
   );
 };

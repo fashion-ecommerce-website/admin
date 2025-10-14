@@ -122,23 +122,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       )}>
         {/* Logo Section */}
-        <div className="flex items-center justify-between h-16 px-6 bg-gradient-to-r from-indigo-600 to-purple-600">
+        <div className="flex items-center justify-center h-16 px-6 bg-black">
           <div className="flex items-center space-x-3">
-            <div className="flex-shrink-0 w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-              </svg>
-            </div>
             <span className="text-xl font-bold text-white">FIT Admin</span>
           </div>
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="text-white hover:text-indigo-200 lg:hidden transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+         
         </div>
         
         {/* Navigation */}
@@ -179,7 +167,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         {/* User Profile Section */}
         <div className="absolute bottom-0 left-0 right-0 p-4 bg-gray-50 border-t border-gray-200">
           <div className="flex items-center space-x-3">
-            <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center">
+            <div className="flex-shrink-0 w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center">
               <span className="text-white font-medium text-sm">{adminName?.[0] || 'A'}</span>
             </div>
             <div className="flex-1 min-w-0">
@@ -243,7 +231,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 <span className="hidden md:block text-sm text-gray-700 font-medium">Hello, Admin</span>
                 <button 
                   onClick={handleLogout}
-                  className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-red-600 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105"
+                  className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-900 focus:outline-none transition-all duration-200 transform hover:scale-105"
                 >
                   Sign out
                 </button>

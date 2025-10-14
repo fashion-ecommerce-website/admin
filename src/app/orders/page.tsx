@@ -10,7 +10,7 @@ export default function OrdersPage() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold text-gray-900">Order Management</h1>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+            <button className="bg-black text-white px-4 py-2 rounded-lg ">
               Export report
             </button>
           </div>

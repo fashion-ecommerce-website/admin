@@ -45,7 +45,7 @@ const Modal: React.FC<BaseModalProps & { children: React.ReactNode; title: strin
       {/* Modal */}
       <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden animate-fadeInUp">
         {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4">
+        <div className="bg-gray-800 px-6 py-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-white">{title}</h3>
             <button
@@ -176,7 +176,7 @@ export const AddUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, onSave
           </button>
           <button
             type="submit"
-            className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl hover:from-indigo-600 hover:to-purple-700 font-medium transition-all duration-200 transform hover:scale-105"
+            className="px-6 py-3 bg-gray-800 text-white rounded-xl hover:bg-gray-900 font-medium transition-all duration-200 transform hover:scale-105"
           >
             Add user
           </button>
@@ -195,11 +195,7 @@ export const ViewUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user 
       <div className="space-y-6">
         {/* User Avatar & Basic Info */}
         <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl">
-          <div className={`h-16 w-16 ${
-            user.role === 'VIP Customer' 
-              ? 'bg-gradient-to-r from-purple-500 to-pink-600' 
-              : 'bg-gradient-to-r from-indigo-500 to-blue-600'
-          } rounded-full flex items-center justify-center shadow-lg`}>
+          <div className={`h-16 w-16 bg-gray-800 rounded-full flex items-center justify-center shadow-lg`}>
             <span className="text-white font-bold text-xl">{user.name.charAt(0)}</span>
           </div>
           <div>
@@ -287,7 +283,7 @@ export const ViewUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user 
         <div className="flex justify-end pt-4">
           <button
             onClick={onClose}
-            className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl hover:from-indigo-600 hover:to-purple-700 font-medium transition-all duration-200 transform hover:scale-105"
+            className="px-6 py-3 bg-gray-800 text-white rounded-xl hover:bg-gray-900 font-medium transition-all duration-200 transform hover:scale-105"
           >
             Close
           </button>
@@ -411,7 +407,7 @@ export const EditUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user,
           </button>
           <button
             type="submit"
-            className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl hover:from-indigo-600 hover:to-purple-700 font-medium transition-all duration-200 transform hover:scale-105"
+            className="px-6 py-3 bg-gray-800 text-white rounded-xl hover:bg-gray-900 font-medium transition-all duration-200 transform hover:scale-105"
           >
             Save changes
           </button>
@@ -492,11 +488,7 @@ export const LockUserModal: React.FC<LockModalProps> = ({ isOpen, onClose, user,
           <button
             onClick={handleConfirm}
             disabled={isLoading}
-            className={`px-6 py-3 text-white rounded-xl font-medium transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 ${
-              isLocked 
-                ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700'
-                : 'bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700'
-            }`}
+            className={`px-6 py-3 text-white rounded-xl font-medium transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 bg-gray-800 hover:bg-gray-900`}
           >
             {isLoading && (
               <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">

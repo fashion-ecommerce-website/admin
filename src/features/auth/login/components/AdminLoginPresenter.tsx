@@ -57,11 +57,6 @@ export const AdminLoginPresenter: React.FC<AdminLoginPresenterProps> = ({
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative">
         {/* Logo and Title */}
         <div className="text-center">
-          <div className="mx-auto h-20 w-20 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-xl transform rotate-3 hover:rotate-0 transition-transform duration-300">
-            <svg className="h-10 w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          </div>
           <h2 className="mt-6 text-center text-4xl font-extrabold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
             FIT Admin
           </h2>
@@ -170,7 +165,7 @@ export const AdminLoginPresenter: React.FC<AdminLoginPresenterProps> = ({
                 </div>
 
                 <div className="text-sm">
-                  <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors">
+                  <a href="#" className="font-medium text-gray-800 hover:text-gray-800 transition-colors">
                     Forgot password?
                   </a>
                 </div>
@@ -180,7 +175,7 @@ export const AdminLoginPresenter: React.FC<AdminLoginPresenterProps> = ({
                 <button
                   type="submit"
                   disabled={loading || !email.trim() || !password.trim()}
-                  className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-2xl text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-2xl text-white bg-black focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
                 >
                   {loading && (
                     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
