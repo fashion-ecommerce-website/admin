@@ -3,7 +3,7 @@ import { takeEvery, takeLeading } from '@redux-saga/core/effects';
 import { PayloadAction } from '@reduxjs/toolkit';
 import { productApi } from '../../../services/api/productApi';
 import type { ApiResponse } from '../../../services/api/baseApi';
-import type { ProductListResponse, Product } from '../../../types/product.types';
+import type { ProductListResponse } from '../../../types/product.types';
 import * as productSlice from './productSlice';
 
 // Fetch products saga
@@ -38,7 +38,7 @@ function* handleFetchProducts(action: PayloadAction<productSlice.FetchProductsRe
 }
 
 // Fetch single product saga - simplified for now
-function* handleFetchProductById(action: PayloadAction<productSlice.FetchProductByIdRequest>) {
+function* handleFetchProductById(/* action: PayloadAction<productSlice.FetchProductByIdRequest> */) {
   try {
     // For now, just show error - can be implemented later when backend is ready
     yield put(productSlice.fetchProductByIdFailure({
@@ -51,7 +51,7 @@ function* handleFetchProductById(action: PayloadAction<productSlice.FetchProduct
 }
 
 // Create product saga - simplified for now
-function* handleCreateProduct(action: PayloadAction<productSlice.CreateProductRequest>) {
+function* handleCreateProduct(/* action: PayloadAction<productSlice.CreateProductRequest> */) {
   try {
     // For now, just show success - can be implemented later when backend is ready
     yield put(productSlice.createProductFailure({
@@ -64,7 +64,7 @@ function* handleCreateProduct(action: PayloadAction<productSlice.CreateProductRe
 }
 
 // Update product saga - simplified for now
-function* handleUpdateProduct(action: PayloadAction<productSlice.UpdateProductRequest>) {
+function* handleUpdateProduct(/* action: PayloadAction<productSlice.UpdateProductRequest> */) {
   try {
     // For now, just show error - can be implemented later when backend is ready
     yield put(productSlice.updateProductFailure({
@@ -77,7 +77,7 @@ function* handleUpdateProduct(action: PayloadAction<productSlice.UpdateProductRe
 }
 
 // Delete product saga - simplified for now
-function* handleDeleteProduct(action: PayloadAction<productSlice.DeleteProductRequest>) {
+function* handleDeleteProduct(/* action: PayloadAction<productSlice.DeleteProductRequest> */) {
   try {
     // For now, just show error - can be implemented later when backend is ready
     yield put(productSlice.deleteProductFailure({
@@ -90,7 +90,7 @@ function* handleDeleteProduct(action: PayloadAction<productSlice.DeleteProductRe
 }
 
 // Upload image saga - simplified for now
-function* handleUploadImage(action: PayloadAction<productSlice.UploadImageRequest>) {
+function* handleUploadImage(/* action: PayloadAction<productSlice.UploadImageRequest> */) {
   try {
     // For now, just show success - can be implemented later when backend is ready
     yield put(productSlice.uploadImageFailure({

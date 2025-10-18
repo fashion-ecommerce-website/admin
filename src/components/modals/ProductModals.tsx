@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useToast } from "@/providers/ToastProvider";
 import {
@@ -14,7 +14,7 @@ import { categoryApi, CategoryBackend } from "@/services/api/categoryApi";
 import {
   // use direct success action when delete completes
   deleteProductSuccess,
-  uploadImageRequest,
+  // uploadImageRequest,
   createProductSuccess,
 } from "@/features/products/redux/productSlice";
 import { fetchProductsSilentRequest } from '@/features/products/redux/productSlice';
@@ -26,7 +26,7 @@ interface BaseModalProps {
   onClose: () => void;
 }
 
-interface ProductModalProps extends BaseModalProps {}
+type ProductModalProps = BaseModalProps;
 
 interface DeleteProductModalProps extends BaseModalProps {
   product?: Product | null;
@@ -58,12 +58,6 @@ const Modal: React.FC<
   BaseModalProps & { children: React.ReactNode; title: string }
 > = ({ isOpen, onClose, children, title }) => {
   if (!isOpen) return null;
-
-  const sizeClasses = {
-    sm: "max-w-md",
-    md: "max-w-lg",
-    lg: "max-w-2xl",
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -117,7 +111,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
   const { pagination, filters } = useSelector((s: RootState) => s.product);
   const { showSuccess, showError } = useToast();
   const [loading, setLoading] = useState(false);
-  const [imageUploading, setImageUploading] = useState(false);
+  const [imageUploading] = useState(false);
   const [categories, setCategories] = useState<CategoryBackend[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [categoryLabels, setCategoryLabels] = useState<Record<number, string>>({});
@@ -137,7 +131,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Load categories using tree endpoint and build leaf labels (like EditProductAdminModal)
-  const loadCategories = async () => {
+  const loadCategories = useCallback(async () => {
     setCategoriesLoading(true);
     try {
       const res = await categoryApi.getTree();
@@ -173,19 +167,19 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
       } else {
         showError("Failed to load categories");
       }
-    } catch (error) {
+    } catch {
       showError("Failed to load categories");
     } finally {
       setCategoriesLoading(false);
     }
-  };
+  }, [showError]);
 
   // Load categories when modal opens
   useEffect(() => {
     if (isOpen) {
       loadCategories();
     }
-  }, [isOpen]);
+  }, [isOpen, loadCategories]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -425,7 +419,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
           } else {
             dispatch(createProductSuccess({ product: resp.data as Product }));
           }
-        } catch (e) {
+        } catch {
     dispatch(createProductSuccess({ product: resp.data as Product }));
         }
       } else if (resp.data) {
@@ -443,7 +437,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
           sortBy: filters.sortBy,
           sortDirection: filters.sortDirection,
         }));
-      } catch (e) {
+      } catch {
         // ignore
       }
 
@@ -457,39 +451,39 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const file = e.target.files?.[0];
+  //   if (!file) return;
 
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      showError("Please select a valid image file");
-      return;
-    }
+  //   // Validate file type
+  //   if (!file.type.startsWith("image/")) {
+  //     showError("Please select a valid image file");
+  //     return;
+  //   }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      showError("Image size should be less than 5MB");
-      return;
-    }
+  //   // Validate file size (max 5MB)
+  //   if (file.size > 5 * 1024 * 1024) {
+  //     showError("Image size should be less than 5MB");
+  //     return;
+  //   }
 
-    setImageUploading(true);
+  //   setImageUploading(true);
 
-    try {
-      // For now, create a mock URL. In real app, upload to server
-      const mockUrl = URL.createObjectURL(file);
-      setFormData((prev) => ({ ...prev, thumbnail: mockUrl }));
+  //   try {
+  //     // For now, create a mock URL. In real app, upload to server
+  //     const mockUrl = URL.createObjectURL(file);
+  //     setFormData((prev) => ({ ...prev, thumbnail: mockUrl }));
 
-      // Dispatch the upload action (for future integration)
-      dispatch(uploadImageRequest({ file }));
+  //     // Dispatch the upload action (for future integration)
+  //     dispatch(uploadImageRequest({ file }));
 
-      showSuccess("Image uploaded successfully!");
-    } catch (error) {
-      showError("Failed to upload image");
-    } finally {
-      setImageUploading(false);
-    }
-  };
+  //     showSuccess("Image uploaded successfully!");
+  //   } catch {
+  //     showError("Failed to upload image");
+  //   } finally {
+  //     setImageUploading(false);
+  //   }
+  // };
 
   const handleAddColorProductDetail = (color: VariantColor) => {
     const existingProductDetail = formData.productDetails.find(
@@ -928,9 +922,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
                     <div className="flex flex-wrap gap-2 mb-3">
                       {productDetail.images.map((image, index) => (
                         <div key={index} className="relative">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={image}
-                            // alt={`${productDetail.color.name} productDetail ${index + 1}`}
+                            alt={`${productDetail.color.name} productDetail ${index + 1}`}
                             className="w-20 h-20 object-cover rounded-lg border"
                           />
                           <button
@@ -1181,7 +1176,7 @@ export const DeleteProductModal: React.FC<DeleteProductModalProps> = ({
             sortBy: filters.sortBy,
             sortDirection: filters.sortDirection,
           }));
-        } catch (e) {
+        } catch {
           // ignore
         }
         showSuccess("Product deleted successfully!");
@@ -1220,7 +1215,7 @@ export const DeleteProductModal: React.FC<DeleteProductModalProps> = ({
             Delete Product
           </h3>
           <p className="text-sm text-gray-500">
-            Are you sure you want to delete "{product?.title}"? This action
+            Are you sure you want to delete &quot;{product?.title}&quot;? This action
             cannot be undone.
           </p>
         </div>
