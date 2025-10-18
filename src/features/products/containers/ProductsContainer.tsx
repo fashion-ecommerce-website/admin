@@ -15,6 +15,7 @@ import EditProductAdminModal from '../../../components/modals/EditProductAdminMo
 import EditProductDetailModal from '../../../components/modals/EditProductDetailModal';
 import { Product, ProductDetailQueryResponse } from '../../../types/product.types';
 import { productApi } from '../../../services/api/productApi';
+import { useMinimumLoadingTime } from '../../../hooks/useMinimumLoadingTime';
 
 const ProductsContainer: React.FC = () => {
   const dispatch = useDispatch();
@@ -26,6 +27,9 @@ const ProductsContainer: React.FC = () => {
     pagination, 
     filters 
   } = useSelector((state: RootState) => state.product);
+
+  // Use minimum loading time hook to ensure skeleton shows for at least 500ms
+  const displayLoading = useMinimumLoadingTime(loading, 500);
 
   // Modal states
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -229,7 +233,7 @@ const ProductsContainer: React.FC = () => {
     <>
       <ProductsPresenter
         products={products}
-        loading={loading}
+        loading={displayLoading}
         error={error}
         pagination={pagination}
         filters={filters}

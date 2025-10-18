@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { categoryApi, CategoryBackend } from '../../../services/api/categoryApi';
 import { Product, ProductState, VariantColor, VariantSize } from '../../../types/product.types';
+import { ProductRowSkeleton, TableSkeletonWithRows } from '../../../components/ui/Skeleton';
 
 interface ProductFilters {
   title?: string;
@@ -263,15 +264,31 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
         </div>
       </div>
 
-      {/* Loading State */}
-      {loading && (
-        <div className="flex items-center justify-center h-96">
-          <div className="w-16 h-16 border-4 border-gray-200 border-t-black rounded-full animate-spin"></div>
+      {/* Products Table */}
+      {loading ? (
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-medium text-black">Product List</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-black text-white">
+                <tr>
+                  <th className="px-6 py-3 text-left text-sm font-semibold">Image</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold">Product Name</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold">Category</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold">Colors</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold">Sizes</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-100">
+                <TableSkeletonWithRows rows={5} rowComponent={ProductRowSkeleton} />
+              </tbody>
+            </table>
+          </div>
         </div>
-      )}
-
-      {/* Empty State */}
-      {!loading && products.length === 0 && (
+      ) : products.length === 0 ? (
         <div className="bg-white rounded-lg p-12 text-center border border-gray-200">
           <div className="mx-auto h-24 w-24 text-gray-400 mb-6">
             <svg fill="none" stroke="currentColor" viewBox="0 0 48 48" aria-hidden="true">
@@ -296,10 +313,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
             </button>
           )}
         </div>
-      )}
-
-      {/* Products Table */}
-      {!loading && products.length > 0 && (
+      ) : (
         <>
           <div className="bg-white rounded-lg shadow overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200">

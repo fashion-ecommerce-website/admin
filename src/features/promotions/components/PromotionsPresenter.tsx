@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Promotion, PromotionFilters, CreatePromotionRequest, UpdatePromotionRequest } from "../../../types/promotion.types";
 import PromotionModal from "../../../components/modals/PromotionModals";
+import { PromotionRowSkeleton, TableSkeletonWithRows } from "../../../components/ui/Skeleton";
 
 interface PromotionsPresenterProps {
   promotions: Promotion[];
@@ -38,10 +39,27 @@ export const PromotionsPresenter: React.FC<PromotionsPresenterProps> = ({
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedPromotion, setSelectedPromotion] = useState<Promotion | null>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleSearch = () => {
-    onUpdateFilters({ name: searchQuery });
-  };
+  // Real-time search with 300ms debounce
+  useEffect(() => {
+    // Clear existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Set new timeout for search
+    searchTimeoutRef.current = setTimeout(() => {
+      onUpdateFilters({ name: searchQuery });
+    }, 300);
+
+    // Cleanup function
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery, onUpdateFilters]);
 
   const handleStatusFilter = (isActive: boolean | null) => {
     onUpdateFilters({ isActive });
@@ -82,20 +100,19 @@ export const PromotionsPresenter: React.FC<PromotionsPresenterProps> = ({
           Search
         </label>
         <div className="flex justify-between">
-          <div className="w-[40%] flex border-1 border-gray-600 rounded-md">
+          <div className="w-[40%] relative">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search promotions..."
-              className="px-2 flex-1 rounded-l-md border-black text-black"
+              placeholder="Search promotions by name..."
+              className="w-full px-4 py-2 rounded-md border border-gray-600 text-black focus:outline-none focus:ring-2 focus:ring-black"
             />
-            <button
-              onClick={handleSearch}
-              className="px-4 py-2 bg-black text-white rounded-r-md hover:bg-gray-800"
-            >
-              Search
-            </button>
+            {loading && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
+              </div>
+            )}
           </div>
           <button 
             onClick={() => setIsCreateModalOpen(true)}
@@ -153,45 +170,64 @@ export const PromotionsPresenter: React.FC<PromotionsPresenterProps> = ({
         </button>
       </div>
 
-      {/* Loading State */}
-      {loading && (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
-        </div>
-      )}
-
       {/* Promotions Table */}
-      {!loading && (
-        <div className="bg-white shadow overflow-hidden sm:rounded-md">
-          <div className="px-4 py-5 sm:p-6">
-            {promotions.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-black">No promotions found</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                        Promotion
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                        Type
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                        Value
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                        Valid Period
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-black uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {promotions.map((promotion) => (
+      <div className="bg-white shadow overflow-hidden sm:rounded-md">
+        <div className="px-4 py-5 sm:p-6">
+          {loading ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Promotion
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Type
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Value
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Valid Period
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-black uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  <TableSkeletonWithRows rows={5} rowComponent={PromotionRowSkeleton} />
+                </tbody>
+              </table>
+            </div>
+          ) : promotions.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-black">No promotions found</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Promotion
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Type
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Value
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Valid Period
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-black uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {promotions.map((promotion) => (
                       <tr key={promotion.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
@@ -284,10 +320,10 @@ export const PromotionsPresenter: React.FC<PromotionsPresenterProps> = ({
                   </tbody>
                 </table>
               </div>
-            )}
-          </div>
+            )
+          }
         </div>
-      )}
+      </div>
 
       {/* Pagination */}
       {!loading && promotions.length > 0 && (

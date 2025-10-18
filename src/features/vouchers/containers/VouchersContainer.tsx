@@ -10,6 +10,7 @@ import {
 import { VouchersPresenter } from '../components/VouchersPresenter';
 import { VoucherFilters, GetVouchersRequest } from '../../../types/voucher.types';
 import { useToast } from '../../../providers/ToastProvider';
+import { useMinimumLoadingTime } from '../../../hooks/useMinimumLoadingTime';
 
 const VouchersContainer: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -22,6 +23,9 @@ const VouchersContainer: React.FC = () => {
     error, 
     filters,
   } = useAppSelector((state) => state.voucher);
+
+  // Use minimum loading time hook to ensure skeleton shows for at least 500ms
+  const displayLoading = useMinimumLoadingTime(loading, 500);
 
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = 12;
@@ -89,7 +93,7 @@ const VouchersContainer: React.FC = () => {
   return (
     <VouchersPresenter
       vouchers={vouchers}
-      loading={loading}
+      loading={displayLoading}
       filters={filters}
       pagination={pagination}
       onUpdateFilters={handleUpdateFilters}

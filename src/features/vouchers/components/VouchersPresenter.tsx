@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Voucher, VoucherFilters } from "../../../types/voucher.types";
+import { VoucherRowSkeleton, TableSkeletonWithRows } from "../../../components/ui/Skeleton";
 
 interface VouchersPresenterProps {
   vouchers: Voucher[];
@@ -30,10 +31,27 @@ export const VouchersPresenter: React.FC<VouchersPresenterProps> = ({
   onToggleVoucherActive,
 }) => {
   const [searchQuery, setSearchQuery] = useState(filters.name || "");
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleSearch = () => {
-    onUpdateFilters({ name: searchQuery });
-  };
+  // Real-time search with 300ms debounce
+  useEffect(() => {
+    // Clear existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Set new timeout for search
+    searchTimeoutRef.current = setTimeout(() => {
+      onUpdateFilters({ name: searchQuery });
+    }, 300);
+
+    // Cleanup function
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery, onUpdateFilters]);
 
   return (
     <div className="space-y-6">
@@ -53,82 +71,103 @@ export const VouchersPresenter: React.FC<VouchersPresenterProps> = ({
           Search
         </label>
         <div className="flex justify-between">
-          <div className="w-[40%] flex border-1 border-gray-600 rounded-md">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search vouchers..."
-            className="px-2 flex-1 rounded-l-md border-black text-black"
-          />
-          <button
-            onClick={handleSearch}
-            className="px-4 py-2 bg-black text-white rounded-r-md hover:bg-gray-800"
-          >
-            Search
-          </button>
-        </div>
-        <button className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 flex items-center space-x-2">
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4v16m8-8H4"
+          <div className="w-[40%] relative">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search vouchers by name..."
+              className="w-full px-4 py-2 rounded-md border border-gray-600 text-black focus:outline-none focus:ring-2 focus:ring-black"
             />
-          </svg>
-          <span>Add New Voucher</span>
-        </button>
+            {loading && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
+              </div>
+            )}
+          </div>
+          <button className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 flex items-center space-x-2">
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            <span>Add New Voucher</span>
+          </button>
         </div>
       </div>
 
-      {/* Loading State */}
-      {loading && (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
-        </div>
-      )}
-
       {/* Vouchers Table */}
-      {!loading && (
-        <div className="bg-white shadow overflow-hidden sm:rounded-md">
-          <div className="px-4 py-5 sm:p-6">
-            {vouchers.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-black">No vouchers found</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                        Voucher
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                        Code
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                        Type
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                        Value
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                        Valid Period
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-black uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {vouchers.map((voucher) => (
+      <div className="bg-white shadow overflow-hidden sm:rounded-md">
+        <div className="px-4 py-5 sm:p-6">
+          {loading ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Voucher
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Code
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Type
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Value
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Valid Period
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-black uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  <TableSkeletonWithRows rows={5} rowComponent={VoucherRowSkeleton} />
+                </tbody>
+              </table>
+            </div>
+          ) : vouchers.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-black">No vouchers found</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Voucher
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Code
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Type
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Value
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Valid Period
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-black uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {vouchers.map((voucher) => (
                       <tr key={voucher.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
@@ -230,10 +269,10 @@ export const VouchersPresenter: React.FC<VouchersPresenterProps> = ({
                   </tbody>
                 </table>
               </div>
-            )}
-          </div>
+            )
+          }
         </div>
-      )}
+      </div>
 
       {/* Pagination */}
       {!loading && vouchers.length > 0 && (

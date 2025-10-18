@@ -12,6 +12,7 @@ import {
 import { PromotionsPresenter } from '../components/PromotionsPresenter';
 import { PromotionFilters, GetPromotionsRequest, CreatePromotionRequest, UpdatePromotionRequest } from '../../../types/promotion.types';
 import { useToast } from '../../../providers/ToastProvider';
+import { useMinimumLoadingTime } from '../../../hooks/useMinimumLoadingTime';
 
 const PromotionsContainer: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -24,6 +25,9 @@ const PromotionsContainer: React.FC = () => {
     error, 
     filters,
   } = useAppSelector((state) => state.promotion);
+
+  // Use minimum loading time hook to ensure skeleton shows for at least 500ms
+  const displayLoading = useMinimumLoadingTime(loading, 500);
 
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = 12;
@@ -101,7 +105,7 @@ const PromotionsContainer: React.FC = () => {
   return (
     <PromotionsPresenter
       promotions={promotions}
-      loading={loading}
+      loading={displayLoading}
       filters={filters}
       pagination={pagination}
       onUpdateFilters={handleUpdateFilters}
