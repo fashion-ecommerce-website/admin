@@ -179,7 +179,7 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
               id="isActive"
               checked={formData.isActive}
               onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-              className="h-4 w-4 text-black focus:ring-black border-gray-300 rounded"
+              className="h-4 w-4 text-black focus:ring-black border-gray-300 rounded accent-black"
             />
             <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
               Active promotion

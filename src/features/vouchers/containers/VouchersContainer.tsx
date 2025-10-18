@@ -6,15 +6,17 @@ import {
   fetchVouchersRequest,
   updateFilters,
   toggleVoucherActiveRequest,
+  createVoucherRequest,
+  updateVoucherRequest,
 } from '../redux/voucherSlice';
 import { VouchersPresenter } from '../components/VouchersPresenter';
-import { VoucherFilters, GetVouchersRequest } from '../../../types/voucher.types';
+import { VoucherFilters, GetVouchersRequest, CreateVoucherRequest, UpdateVoucherRequest } from '../../../types/voucher.types';
 import { useToast } from '../../../providers/ToastProvider';
 import { useMinimumLoadingTime } from '../../../hooks/useMinimumLoadingTime';
 
 const VouchersContainer: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { showError } = useToast();
+  const { showError, showSuccess } = useToast();
 
   const { 
     vouchers, 
@@ -81,6 +83,18 @@ const VouchersContainer: React.FC = () => {
     dispatch(toggleVoucherActiveRequest(voucherId));
   }, [dispatch]);
 
+  // Handle create voucher
+  const handleCreateVoucher = useCallback((voucherData: CreateVoucherRequest) => {
+    dispatch(createVoucherRequest(voucherData));
+    showSuccess('Created', `Voucher "${voucherData.name}" has been created`);
+  }, [dispatch, showSuccess]);
+
+  // Handle update voucher
+  const handleUpdateVoucher = useCallback((id: number, voucherData: UpdateVoucherRequest) => {
+    dispatch(updateVoucherRequest({ id, voucherData }));
+    showSuccess('Updated', `Voucher "${voucherData.name}" has been updated`);
+  }, [dispatch, showSuccess]);
+
   const pagination = {
     page: currentPage,
     pageSize,
@@ -99,6 +113,8 @@ const VouchersContainer: React.FC = () => {
       onUpdateFilters={handleUpdateFilters}
       onPageChange={handlePageChange}
       onToggleVoucherActive={handleToggleVoucherActive}
+      onCreateVoucher={handleCreateVoucher}
+      onUpdateVoucher={handleUpdateVoucher}
     />
   );
 };

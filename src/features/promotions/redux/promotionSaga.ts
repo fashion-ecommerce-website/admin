@@ -114,8 +114,19 @@ function* handleTogglePromotionActive(action: PayloadAction<number>) {
       promotionApi.togglePromotionActive(action.payload)
     );
 
-    if (response.success && response.data) {
-      yield put(togglePromotionActiveSuccess(normalizePromotion(response.data)));
+    if (response.success) {
+      // Status 204 No Content means success, but no data returned
+      // Fetch the updated promotion from the API to get the latest state
+      const promotionResponse: ApiResponse<BackendPromotion> = yield call(async () =>
+        promotionApi.getPromotionById(action.payload)
+      );
+
+      if (promotionResponse.success && promotionResponse.data) {
+        yield put(togglePromotionActiveSuccess(normalizePromotion(promotionResponse.data)));
+      } else {
+        // Fallback: just mark success without updating data
+        yield put(togglePromotionActiveSuccess({ id: action.payload } as Promotion));
+      }
     } else {
       yield put(togglePromotionActiveFailure(response.message || 'Failed to toggle promotion status'));
     }

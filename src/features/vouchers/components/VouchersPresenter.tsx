@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Voucher, VoucherFilters } from "../../../types/voucher.types";
+import { Voucher, VoucherFilters, CreateVoucherRequest, UpdateVoucherRequest } from "../../../types/voucher.types";
+import { VoucherModal } from "../../../components/modals/VoucherModals";
 import { VoucherRowSkeleton, TableSkeletonWithRows } from "../../../components/ui/Skeleton";
 
 interface VouchersPresenterProps {
@@ -19,6 +20,8 @@ interface VouchersPresenterProps {
   onUpdateFilters: (filters: Partial<VoucherFilters>) => void;
   onPageChange: (page: number) => void;
   onToggleVoucherActive: (voucherId: number) => void;
+  onCreateVoucher: (voucherData: CreateVoucherRequest) => void;
+  onUpdateVoucher: (id: number, voucherData: UpdateVoucherRequest) => void;
 }
 
 export const VouchersPresenter: React.FC<VouchersPresenterProps> = ({
@@ -29,8 +32,13 @@ export const VouchersPresenter: React.FC<VouchersPresenterProps> = ({
   onUpdateFilters,
   onPageChange,
   onToggleVoucherActive,
+  onCreateVoucher,
+  onUpdateVoucher,
 }) => {
   const [searchQuery, setSearchQuery] = useState(filters.name || "");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Real-time search with 300ms debounce
@@ -52,6 +60,24 @@ export const VouchersPresenter: React.FC<VouchersPresenterProps> = ({
       }
     };
   }, [searchQuery, onUpdateFilters]);
+
+  const handleCreateVoucher = (voucherData: CreateVoucherRequest) => {
+    onCreateVoucher(voucherData);
+    setIsCreateModalOpen(false);
+  };
+
+  const handleEditVoucher = (voucherData: CreateVoucherRequest) => {
+    if (selectedVoucher) {
+      onUpdateVoucher(selectedVoucher.id, voucherData);
+      setIsEditModalOpen(false);
+      setSelectedVoucher(null);
+    }
+  };
+
+  const openEditModal = (voucher: Voucher) => {
+    setSelectedVoucher(voucher);
+    setIsEditModalOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -85,7 +111,10 @@ export const VouchersPresenter: React.FC<VouchersPresenterProps> = ({
               </div>
             )}
           </div>
-          <button className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 flex items-center space-x-2">
+          <button 
+            onClick={() => setIsCreateModalOpen(true)}
+            className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 flex items-center space-x-2"
+          >
             <svg
               className="w-5 h-5"
               fill="none"
@@ -239,6 +268,25 @@ export const VouchersPresenter: React.FC<VouchersPresenterProps> = ({
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex items-center justify-end space-x-3">
+                            <button
+                              onClick={() => openEditModal(voucher)}
+                              className="text-black hover:text-gray-700"
+                              title="Edit voucher"
+                            >
+                              <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                />
+                              </svg>
+                            </button>
                             <span className="text-sm font-medium text-black">
                               Status
                             </span>
@@ -303,6 +351,26 @@ export const VouchersPresenter: React.FC<VouchersPresenterProps> = ({
           </div>
         </div>
       )}
+
+      {/* Create Modal */}
+      <VoucherModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSubmit={handleCreateVoucher}
+        title="Create New Voucher"
+      />
+
+      {/* Edit Modal */}
+      <VoucherModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedVoucher(null);
+        }}
+        onSubmit={handleEditVoucher}
+        voucher={selectedVoucher}
+        title="Edit Voucher"
+      />
     </div>
   );
 };

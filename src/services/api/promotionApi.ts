@@ -129,12 +129,21 @@ class PromotionApi {
    */
   async togglePromotionActive(id: number): Promise<ApiResponse<BackendPromotion>> {
     try {
-      const response = await adminApiClient.patch<BackendPromotion>(`/admin${this.endpoint}/${id}/toggle`, {});
+      const response = await adminApiClient.post<BackendPromotion>(`/admin${this.endpoint}/${id}:toggle`, {});
+      
+      // Status 204 No Content means success but no response body
+      if (response.success) {
+        return {
+          success: true,
+          data: response.data, // Will be null for 204, which is expected
+          message: response.message || 'Promotion status toggled successfully'
+        };
+      }
       
       return {
-        success: true,
-        data: response.data,
-        message: 'Promotion status toggled successfully'
+        success: false,
+        data: null,
+        message: response.message || 'Failed to toggle promotion status'
       };
     } catch (error: unknown) {
       console.error('Error toggling promotion status:', error);
