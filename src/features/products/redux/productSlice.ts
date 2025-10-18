@@ -24,7 +24,8 @@ const initialState: ProductState = {
   filters: {
     title: '',
     categorySlug: '',
-    isActive: null,
+    // Default to showing only active products
+    isActive: true,
     sortBy: 'createdAt',
     sortDirection: 'desc',
   },
@@ -123,6 +124,11 @@ const productSlice = createSlice({
       state.loading = true;
       state.error = null;
     },
+    // Silent fetch - like fetchProductsRequest but don't toggle global loading
+    fetchProductsSilentRequest: (state, action: PayloadAction<FetchProductsRequest>) => {
+      // intentionally do not set state.loading to true — background refresh
+      state.error = null;
+    },
     fetchProductsSuccess: (state, action: PayloadAction<FetchProductsSuccess>) => {
       state.loading = false;
       state.products = action.payload.products;
@@ -171,12 +177,15 @@ const productSlice = createSlice({
     },
     updateProductSuccess: (state, action: PayloadAction<UpdateProductSuccess>) => {
       state.loading = false;
-      const index = state.products.findIndex(p => p.id === action.payload.product.id);
+      const updated = action.payload.product;
+      const index = state.products.findIndex(p => p.id === updated.id);
       if (index !== -1) {
-        state.products[index] = action.payload.product;
+        // Merge existing product with updated fields to avoid dropping arrays like variantColors
+        const existing = state.products[index];
+        state.products[index] = { ...existing, ...updated } as Product;
       }
-      if (state.currentProduct?.id === action.payload.product.id) {
-        state.currentProduct = action.payload.product;
+      if (state.currentProduct?.id === updated.id) {
+        state.currentProduct = { ...state.currentProduct, ...updated } as Product;
       }
       state.error = null;
     },
@@ -242,6 +251,7 @@ const productSlice = createSlice({
 // Export actions
 export const {
   fetchProductsRequest,
+  fetchProductsSilentRequest,
   fetchProductsSuccess,
   fetchProductsFailure,
   fetchProductByIdRequest,

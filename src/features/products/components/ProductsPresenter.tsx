@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
-import { Product, ProductState } from '../../../types/product.types';
+import React, { useEffect, useState } from 'react';
+import { categoryApi, CategoryBackend } from '../../../services/api/categoryApi';
+import { Product, ProductState, VariantColor, VariantSize } from '../../../types/product.types';
 
 interface ProductsPresenterProps {
   products: Product[];
@@ -14,6 +15,7 @@ interface ProductsPresenterProps {
   onPageChange: (page: number) => void;
   onCreateProduct: () => void;
   onEditProduct: (product: Product) => void;
+  onEditVariant?: (product: Product) => void;
   onDeleteProduct: (productId: number) => void;
   onClearError: () => void;
 }
@@ -29,9 +31,44 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
   onPageChange,
   onCreateProduct,
   onEditProduct,
+  onEditVariant,
   onDeleteProduct,
   onClearError,
 }) => {
+  const [categoryMap, setCategoryMap] = useState<Record<number, string>>({});
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadCategories() {
+      try {
+        const res = await categoryApi.getTree();
+        if (!mounted) return;
+        if (res.success && res.data) {
+          const map: Record<number, string> = {};
+          const walk = (items: CategoryBackend[] | null) => {
+            if (!items) return;
+            for (const it of items) {
+              map[it.id] = it.name;
+              if (it.children) walk(it.children);
+            }
+          };
+          walk(res.data);
+          setCategoryMap(map);
+        }
+      } catch (e) {
+        // ignore - presenter should not crash the page for category fetch failures
+        // Optionally you could set an error state and show it in the UI
+      }
+    }
+
+    loadCategories();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onSearch(e.target.value);
   };
@@ -46,7 +83,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
 
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
-    const isActive = value === '' ? null : value === 'active';
+    const isActive = value === 'active';
     onFilterChange({ isActive });
   };
 
@@ -61,7 +98,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
     pages.push(
       <button
         key="prev"
-        className="px-4 py-2 mx-1 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+        className="px-4 py-2 mx-1 text-sm text-black bg-white border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium"
         onClick={() => onPageChange(pagination.page - 1)}
         disabled={!pagination.hasPrevious}
       >
@@ -80,7 +117,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
           className={`px-4 py-2 mx-1 text-sm border rounded-lg font-medium ${
             i === currentPage
               ? 'bg-black text-white border-black'
-              : 'border-gray-300 bg-white'
+              : 'border-gray-300 bg-white text-black'
           }`}
           onClick={() => onPageChange(i - 1)} // Convert to 0-based
         >
@@ -93,7 +130,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
     pages.push(
       <button
         key="next"
-        className="px-4 py-2 mx-1 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+        className="px-4 py-2 mx-1 text-sm text-black bg-white border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium"
         onClick={() => onPageChange(pagination.page + 1)}
         disabled={!pagination.hasNext}
       >
@@ -131,9 +168,6 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
           <h1 className="text-4xl font-bold text-black">
             Product Management
           </h1>
-          <p className="text-gray-600 mt-2">
-            Showing {pagination.totalItems} products
-          </p>
         </div>
         <button
           onClick={onCreateProduct}
@@ -148,7 +182,13 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
 
       {/* Filters */}
       <div className="bg-white p-6 rounded-lg shadow border border-gray-200 mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/*
+          Using Tailwind arbitrary grid template columns to control column widths.
+          - First column (Search) is ~3fr (three parts) so it appears around 3/5 width
+          - Second and third columns are 1fr each and share the remaining 2/5
+          To adjust ratios, change the values in grid-cols-[3fr_1fr_1fr] (e.g. [4fr_1fr_1fr])
+        */}
+        <div className="grid grid-cols-[3fr_1fr_1fr] gap-6">
           {/* Search */}
           <div>
             <label htmlFor="search" className="block text-sm font-semibold text-black mb-2">
@@ -161,7 +201,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
                 value={filters.title}
                 onChange={handleSearchChange}
                 placeholder="Enter product name..."
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                className="w-full h-[10%] pl-10 text-black pr-4 py-3 border border-gray-300 rounded-lg focus:border-black"
               />
               <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -178,7 +218,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
               id="sort"
               value={`${filters.sortBy}:${filters.sortDirection}`}
               onChange={handleSortChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+              className="w-full px-4 py-3 text-black border border-gray-300 rounded-lg focus:border-black"
             >
               <option value="createdAt:desc">Newest First</option>
               <option value="createdAt:asc">Oldest First</option>
@@ -195,11 +235,10 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
             </label>
             <select
               id="status"
-              value={filters.isActive === null ? '' : filters.isActive ? 'active' : 'inactive'}
+              value={filters.isActive ? 'active' : 'inactive'}
               onChange={handleStatusChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+              className="w-full text-black px-4 py-3 border border-gray-300 rounded-lg focus:border-black"
             >
-              <option value="">All Products</option>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
             </select>
@@ -228,12 +267,10 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
             </svg>
           </div>
           <h3 className="text-xl font-semibold text-gray-800 mb-2">No products found</h3>
-          <p className="text-gray-600 mb-6">
-            {filters.title || filters.categorySlug || filters.isActive !== null 
+          <p className="text-gray-600 mb-6">{filters.title || filters.categorySlug || filters.isActive === false 
               ? 'Try adjusting your search or filter criteria'
-              : 'Get started by creating your first product'}
-          </p>
-          {(!filters.title && !filters.categorySlug && filters.isActive === null) && (
+              : 'Get started by creating your first product'}</p>
+          {(!filters.title && !filters.categorySlug && filters.isActive === true) && (
             <button
               onClick={onCreateProduct}
               className="bg-black text-white px-6 py-3 rounded-lg font-medium"
@@ -264,15 +301,20 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
-                  {products.map((product: any) => (
+                  {products.map((product) => (
                     <tr key={product.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
-                        <img 
-                          src={product.thumbnail || '/placeholder-product.jpg'} 
+                        {/* Use an inline SVG data URL as a reliable placeholder to avoid missing static asset 404s */}
+                        <img
+                          src={product.thumbnail || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-family="Arial, Helvetica, sans-serif" font-size="14">No image</text></svg>'}
                           alt={product.title || 'Product image'}
                           className="w-12 h-12 object-cover rounded-lg"
                           onError={(e) => {
-                            e.currentTarget.src = '/placeholder-product.jpg';
+                            // Only fallback once to avoid infinite loop trying to load a missing static file
+                            const fallback = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-family="Arial, Helvetica, sans-serif" font-size="14">No image</text></svg>';
+                            if (e.currentTarget.src !== fallback) {
+                              e.currentTarget.src = fallback;
+                            }
                           }}
                         />
                       </td>
@@ -283,12 +325,12 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">
-                        Category {product.categoryId || 'N/A'}
+                        {product.categoryId ? (categoryMap[product.categoryId] ?? product.categoryId) : 'N/A'}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-1">
                           {product.variantColors && product.variantColors.length > 0 ? (
-                            product.variantColors.slice(0, 3).map((color: any) => (
+                            product.variantColors.slice(0, 3).map((color: VariantColor) => (
                               <div
                                 key={color.id}
                                 className="w-6 h-6 rounded-full border border-gray-300"
@@ -309,7 +351,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-1">
                           {product.variantSizes && product.variantSizes.length > 0 ? (
-                            product.variantSizes.slice(0, 4).map((size: any) => (
+                            product.variantSizes.slice(0, 4).map((size: VariantSize) => (
                               <span
                                 key={size.id}
                                 className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800 border border-gray-300"
@@ -335,6 +377,12 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
                           >
                             Edit
                           </button>
+                          {/* <button
+                            onClick={() => onEditVariant && onEditVariant(product)}
+                            className="text-sm px-3 py-1 border border-indigo-600 rounded text-indigo-600 bg-white"
+                          >
+                            Edit Variant
+                          </button> */}
                           <button
                             onClick={() => onDeleteProduct(product.id)}
                             className="text-sm px-3 py-1 border border-gray-400 text-gray-600 rounded bg-white"

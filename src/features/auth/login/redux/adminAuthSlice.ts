@@ -14,7 +14,7 @@ export interface AdminAuthState {
 export interface AdminUser {
   username: string;
   email: string;
-  role?: 'ADMIN' | 'SUPER_ADMIN';
+  roles?: string[];
   permissions?: string[];
 }
 
@@ -76,6 +76,15 @@ export const adminAuthSlice = createSlice({
       state.error = action.payload;
     },
     
+    // Set or update admin info (including role/permissions)
+    setAdminInfo: (state, action: PayloadAction<Partial<AdminUser>>) => {
+      const current = state.admin || { username: '', email: '' };
+      state.admin = {
+        ...current,
+        ...action.payload,
+      };
+    },
+
     // Logout actions
     logoutRequest: (state) => {
       state.loading = true;
@@ -104,7 +113,8 @@ export const {
   loginFailure, 
   logoutRequest,
   logout, 
-  clearError
+  clearError,
+  setAdminInfo
 } = adminAuthSlice.actions;
 
 export const adminAuthReducer = adminAuthSlice.reducer;

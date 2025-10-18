@@ -1,11 +1,21 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { AdminLayout } from '@/components/layout/AdminLayout';
-import { categoryApi, CategoryBackend, CreateCategoryRequest, UpdateCategoryRequest } from '@/services/api/categoryApi';
-import { useToast } from '@/providers/ToastProvider';
-import { AddCategoryModal, EditCategoryModal } from '@/components/modals/CategoryModals';
-import { AuthGuard } from '@/components/auth/AuthGuard';
+import type React from "react";
+
+import { useEffect, useState } from "react";
+import { AdminLayout } from "@/components/layout/AdminLayout";
+import {
+  categoryApi,
+  type CategoryBackend,
+  type CreateCategoryRequest,
+  type UpdateCategoryRequest,
+} from "@/services/api/categoryApi";
+import { useToast } from "@/providers/ToastProvider";
+import {
+  AddCategoryModal,
+  EditCategoryModal,
+} from "@/components/modals/CategoryModals";
+import ConfirmModal from '@/components/modals/ConfirmModal';
 
 export default function CategoriesPage() {
   const { showError, showSuccess } = useToast();
@@ -15,27 +25,27 @@ export default function CategoriesPage() {
   const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<CategoryBackend | null>(null);
+  const [selectedCategory, setSelectedCategory] =
+    useState<CategoryBackend | null>(null);
+  // parentId preset when opening Add modal for adding a child
+  const [createParentId, setCreateParentId] = useState<number | null>(null);
 
+  // fetch category tree
   const fetchCategories = async () => {
     try {
       setIsLoading(true);
       setError(null);
-
-      const res = await categoryApi.getAllCategories();
+      const res = await categoryApi.getTree();
       if (res.success && res.data) {
         setCategories(res.data);
-        showSuccess('Categories loaded successfully', `Loaded ${res.data.length} categories`);
       } else {
-        setError(res.message || 'Unable to load categories');
-        showError('Load categories error', res.message || 'Unable to load categories');
-        // Fallback: set empty list
+        setError(res.message || "Không thể tải danh mục");
         setCategories([]);
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Connection error';
+      const msg = err instanceof Error ? err.message : "Lỗi kết nối";
       setError(msg);
-      showError('Error', msg);
+      showError("Lỗi", msg);
     } finally {
       setIsLoading(false);
     }
@@ -43,120 +53,396 @@ export default function CategoriesPage() {
 
   const handleCreateCategory = async (categoryData: CreateCategoryRequest) => {
     try {
-      const response = await categoryApi.createCategory(categoryData);
+      // ensure parentId comes from preset if modal was opened for add-child
+      const payload: CreateCategoryRequest = {
+        ...categoryData,
+        parentId:
+          categoryData.parentId !== undefined && categoryData.parentId !== null
+            ? categoryData.parentId
+            : createParentId ?? null,
+      };
+
+      const response = await categoryApi.createCategory(payload);
       if (response.success && response.data) {
-        showSuccess('Category created', `Created category "${categoryData.name}"`);
+        showSuccess("Created", `Category "${payload.name}" has been created`);
         // Refresh the list
         await fetchCategories();
+        setCreateParentId(null);
       } else {
-        showError('Create category error', response.message || 'Unable to create category');
-        throw new Error(response.message || 'Failed to create category');
+        showError("Create error", response.message || "Cannot create category");
+        throw new Error(response.message || "Failed to create category");
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Connection error';
-      showError('Error', msg);
+      const msg = err instanceof Error ? err.message : "Connection error";
+      showError("Lỗi", msg);
       throw err; // Re-throw to let modal handle the error state
     }
   };
 
   const handleEditCategory = (category: CategoryBackend) => {
-    setSelectedCategory(category);
+    // find parentId by traversing the tree
+    const findParentId = (nodes: CategoryBackend[], targetId: number): number | null => {
+      for (const node of nodes) {
+        if (node.children && node.children.some((c) => c.id === targetId)) {
+          return node.id;
+        }
+        if (node.children && node.children.length) {
+          const found = findParentId(node.children, targetId);
+          if (found !== null) return found;
+        }
+      }
+      return null;
+    };
+
+    const parentId = findParentId(categories, category.id);
+
+    setSelectedCategory({ ...(category as any), parentId } as any);
     setShowEditModal(true);
+  };
+
+  const handleAddChild = (parentId: number) => {
+    setCreateParentId(parentId);
+    setShowAddModal(true);
+  };
+
+  // Deterministic demo status: only ids 1 and 2 are active, others inactive
+  const getDemoStatus = (id: number) => {
+    // id 1 and 2 should be active (true), rest inactive (false)
+    return id === 1 || id === 2;
+  };
+
+  const handleToggleStatus = async (id: number) => {
+    // opens confirmation modal for status toggle
+    openConfirm(id);
+  };
+
+  // confirm modal state
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmingId, setConfirmingId] = useState<number | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+
+  const openConfirm = (id: number) => {
+    setConfirmingId(id);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmToggle = async () => {
+    if (confirmingId === null) return;
+    setConfirmLoading(true);
+    try {
+      const res = await categoryApi.deleteCategory(confirmingId);
+      if (res.success) {
+        showSuccess("Status Updated", "Category status has been updated successfully");
+        await fetchCategories();
+      } else {
+        showError("Update error", res.message || "Cannot update category status");
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Connection error";
+      showError("Error", msg);
+    } finally {
+      setConfirmLoading(false);
+      setConfirmOpen(false);
+      setConfirmingId(null);
+    }
   };
 
   const handleUpdateCategory = async (categoryData: UpdateCategoryRequest) => {
     try {
       const response = await categoryApi.updateCategory(categoryData);
       if (response.success && response.data) {
-        showSuccess('Update successful', `Updated category "${categoryData.name}"`);
+        showSuccess(
+          "Cập nhật thành công",
+          `Đã cập nhật loại "${categoryData.name}"`
+        );
         // Refresh the list
         await fetchCategories();
       } else {
-        showError('Update category error', response.message || 'Unable to update category');
-        throw new Error(response.message || 'Failed to update category');
+        showError(
+          "Lỗi cập nhật",
+          response.message || "Không thể cập nhật loại sản phẩm"
+        );
+        throw new Error(response.message || "Failed to update category");
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Connection error';
-      showError('Error', msg);
+      const msg = err instanceof Error ? err.message : "Lỗi kết nối";
+      showError("Lỗi", msg);
       throw err; // Re-throw to let modal handle the error state
     }
   };
 
   useEffect(() => {
     fetchCategories();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return (
-    <AuthGuard>
-    <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-black">Category Management</h1>
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setShowAddModal(true)}
-              className="bg-black text-white px-4 py-2 rounded-lg"
+  // Recursive node renderer
+  const CategoryNode: React.FC<{
+    node: CategoryBackend;
+    level?: number;
+  }> = ({ node, level = 0 }) => {
+    const [open, setOpen] = useState(true);
+
+    return (
+      <div className="w-full">
+        <div
+          className="flex items-center justify-between p-5 border border-gray-200 rounded-xl mb-3 bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm hover:shadow-md"
+          style={{ marginLeft: level * 24 }}
+        >
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => setOpen((s) => !s)}
+              className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-black hover:bg-gray-100 rounded-lg transition-all duration-200"
             >
-              Add Category
+              {node.children && node.children.length > 0 ? (
+                <svg
+                  className={`w-5 h-5 transition-transform duration-200 ${
+                    open ? "rotate-90" : ""
+                  }`}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    d="M9 18l6-6-6-6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  className="w-5 h-5 text-gray-300"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <circle cx="12" cy="12" r="2" />
+                </svg>
+              )}
             </button>
-            <button onClick={fetchCategories} className="border border-gray-400 text-gray-600 px-4 py-2 rounded-lg">Reload</button>
+
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
+                <svg
+                  className="w-5 h-5 text-gray-600"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-900 text-lg">
+                  {node.name}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-gray-600">Status</span>
+              <button
+                onClick={() => handleToggleStatus(node.id)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                  getDemoStatus(node.id) ? "bg-green-500" : "bg-gray-300"
+                }`}
+                aria-label={`Toggle status - currently ${getDemoStatus(node.id) ? 'active' : 'inactive'}`}
+                title={`Click to ${getDemoStatus(node.id) ? 'deactivate' : 'activate'} category`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    getDemoStatus(node.id) ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+              <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                getDemoStatus(node.id)
+                  ? "bg-green-100 text-green-800" 
+                  : "bg-gray-100 text-gray-600"
+              }`}>
+                {getDemoStatus(node.id) ? "Active" : "Inactive"}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleAddChild(node.id)}
+                className="p-2.5 border border-gray-200 rounded-lg text-gray-600 hover:text-black hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
+                aria-label="Add child"
+                title="Add child category"
+              >
+                <svg
+                  className="w-4 h-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    d="M12 5v14M5 12h14"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+
+              <button
+                onClick={() => handleEditCategory(node)}
+                className="p-2.5 border border-gray-200 rounded-lg text-gray-600 hover:text-black hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
+                aria-label="Edit"
+              >
+                <svg
+                  className="w-4 h-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-black">Category List</h3>
+        {open && node.children && node.children.length > 0 && (
+          <div className="ml-6">
+            {node.children.map((child) => (
+              <CategoryNode key={child.id} node={child} level={level + 1} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <AdminLayout>
+      <div className="space-y-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 tracking-tight">
+              Category Management
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Organize and manage your product categories
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                setCreateParentId(null);
+                setShowAddModal(true);
+              }}
+              className="bg-black text-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-800 transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
+            >
+              <svg
+                className="w-5 h-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  d="M12 5v14M5 12h14"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              Add Category
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="px-8 py-6 border-b border-gray-100 bg-gray-50">
+            <div className="flex items-center gap-3">
+              <h3 className="text-xl font-semibold text-gray-900">
+                Category Tree
+              </h3>
+            </div>
           </div>
 
-          <div className="p-6">
+          <div className="p-8">
             {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-black" />
+              <div className="flex flex-col items-center justify-center py-16">
+                <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-200 border-t-black mb-4" />
+                <p className="text-gray-600 font-medium">
+                  Loading categories...
+                </p>
               </div>
             ) : error ? (
-              <div className="text-center text-red-600">{error}</div>
+              <div className="text-center py-16">
+                <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg
+                    className="w-8 h-8 text-red-500"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M15 9l-6 6M9 9l6 6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+                <p className="text-gray-900 font-semibold text-lg">{error}</p>
+              </div>
             ) : categories.length === 0 ? (
-              <div className="text-gray-600">No categories available.</div>
+              <div className="text-center py-16">
+                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg
+                    className="w-8 h-8 text-gray-400"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+                <p className="text-gray-900 font-semibold text-lg mb-2">
+                  No categories available
+                </p>
+                <p className="text-gray-600">
+                  Get started by creating your first category
+                </p>
+              </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-black text-white">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-sm font-semibold">ID</th>
-                      <th className="px-6 py-3 text-left text-sm font-semibold">Name</th>
-                      <th className="px-6 py-3 text-left text-sm font-semibold">Slug</th>
-                      <th className="px-6 py-3 text-left text-sm font-semibold">Status</th>
-                      <th className="px-6 py-3 text-left text-sm font-semibold">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-100">
-                    {categories.map((cat) => (
-                      <tr key={cat.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 text-sm text-gray-900">{cat.id}</td>
-                        <td className="px-6 py-4 text-sm text-gray-900">{cat.name}</td>
-                        <td className="px-6 py-4 text-sm text-gray-500">{cat.slug}</td>
-                        <td className="px-6 py-4 text-sm">
-                          {cat.isActive ? (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-black text-white">Active</span>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border border-gray-300 text-gray-700">Inactive</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-sm">
-                          <div className="flex items-center gap-2">
-                            <button 
-                              onClick={() => handleEditCategory(cat)}
-                              className="text-sm px-3 py-1 border border-black rounded text-black bg-white"
-                            >
-                              Edit
-                            </button>
-                            <button className="text-sm px-3 py-1 border border-gray-400 text-gray-600 rounded bg-white">Delete</button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="space-y-2">
+                {categories.map((cat) => (
+                  <CategoryNode key={cat.id} node={cat} />
+                ))}
               </div>
             )}
           </div>
@@ -166,9 +452,15 @@ export default function CategoriesPage() {
       {/* Add Category Modal */}
       <AddCategoryModal
         isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onSuccess={() => {
+        presetParentId={createParentId}
+        onClose={() => {
           setShowAddModal(false);
+          setCreateParentId(null);
+        }}
+        onSuccess={async () => {
+          setShowAddModal(false);
+          setCreateParentId(null);
+          await fetchCategories();
         }}
         onSubmit={handleCreateCategory}
       />
@@ -186,8 +478,22 @@ export default function CategoriesPage() {
         }}
         onSubmit={handleUpdateCategory}
         category={selectedCategory}
+        categories={categories}
+      />
+
+      <ConfirmModal
+        isOpen={confirmOpen}
+        title="Confirm switch category status"
+        description="Are you sure you want to switch the status of this category? This action will activate/deactivate the category and may affect related products."
+        confirmLabel="Yes, switch status"
+        cancelLabel="Cancel"
+        loading={confirmLoading}
+        onClose={() => {
+          setConfirmOpen(false);
+          setConfirmingId(null);
+        }}
+        onConfirm={handleConfirmToggle}
       />
     </AdminLayout>
-    </AuthGuard>
   );
 }

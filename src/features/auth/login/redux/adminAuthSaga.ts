@@ -2,6 +2,7 @@ import { call, put } from 'redux-saga/effects';
 import { takeEvery } from '@redux-saga/core/effects';
 import { PayloadAction } from '@reduxjs/toolkit';
 import { loginRequest, loginSuccess, loginFailure, logoutRequest, logout, AdminLoginRequest, AdminLoginResponse } from './adminAuthSlice';
+import { setAdminInfo } from './adminAuthSlice';
 import { adminAuthApi } from '@/services/api/adminAuthApi';
 
 function* handleLogin(action: PayloadAction<AdminLoginRequest>) {
@@ -20,7 +21,20 @@ function* handleLogin(action: PayloadAction<AdminLoginRequest>) {
       email: response.email,
     };
     sessionStorage.setItem('admin_user', JSON.stringify(adminUser));
-    
+    // fetch authenticated user with role/permissions
+    try {
+      const me: any = yield call(() => adminAuthApi.getAuthenticatedUser(response.accessToken));
+      const roles: string[] | undefined = me?.roles || me?.data?.roles || me?.authorities;
+      const primaryRole = Array.isArray(roles) ? roles[0] : undefined;
+      const permissions = me?.permissions || me?.data?.permissions || undefined;
+      if (primaryRole || roles) {
+        yield put(setAdminInfo({ role: primaryRole, roles, permissions }));
+        const stored = JSON.parse(sessionStorage.getItem('admin_user') || '{}');
+        sessionStorage.setItem('admin_user', JSON.stringify({ ...stored, role: primaryRole, roles, permissions }));
+      }
+    } catch (e) {
+      // ignore role fetch failure; AuthGuard will handle redirect if needed
+    }
   } catch (error: any) {
     yield put(loginFailure(error.message || 'Login failed'));
   }

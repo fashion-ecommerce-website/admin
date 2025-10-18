@@ -1,4 +1,5 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api';
+import { adminApiClient, type ApiResponse } from './baseApi';
 
 // API Response types based on your actual backend response
 export interface AdminLoginRequest {
@@ -37,44 +38,18 @@ class AdminAuthApi {
    * Admin login API call
    */
   async login(credentials: AdminLoginRequest): Promise<AdminLoginResponse> {
-    const response = await fetch(`${this.baseUrl}/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(credentials),
-    });
-
-    if (!response.ok) {
-      throw new Error('Login Failure!');
-    }
-
-    const data = await response.json();
-    return data;
+    const res: ApiResponse<AdminLoginResponse> = await adminApiClient.post('/auth/login', credentials);
+    if (!res.success || !res.data) throw new Error(res.message || 'Login Failure!');
+    return res.data;
   }
 
   /**
    * Refresh admin token
    */
   async refreshToken(refreshToken: string): Promise<AdminRefreshTokenResponse> {
-    const response = await fetch(`${this.baseUrl}/auth/refresh`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ refreshToken }),
-    });
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error('Session expired');
-      } else {
-        throw new Error('Unable to refresh token');
-      }
-    }
-
-    const data = await response.json();
-    return data;
+    const res: ApiResponse<AdminRefreshTokenResponse> = await adminApiClient.post('/auth/refresh', { refreshToken });
+    if (!res.success || !res.data) throw new Error(res.message || 'Unable to refresh token');
+    return res.data;
   }
 
   /**
@@ -82,15 +57,10 @@ class AdminAuthApi {
    */
   async logout(accessToken: string): Promise<void> {
     try {
-      const response = await fetch(`${this.baseUrl}/auth/logout`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
+      const res: ApiResponse<unknown> = await adminApiClient.post('/auth/logout', {}, {
+        Authorization: `Bearer ${this.refreshToken}`,
       });
-
-      if (!response.ok) {
+      if (!res.success) {
         console.warn('Backend logout failed, but continuing with local cleanup');
       }
     } catch (error) {
@@ -102,24 +72,26 @@ class AdminAuthApi {
    * Get user profile with access token
    */
   async getProfile(accessToken: string): Promise<any> {
-    const response = await fetch(`${this.baseUrl}/auth/me`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
+    const res: ApiResponse<any> = await adminApiClient.get('/auth/me', {
+      Authorization: `Bearer ${accessToken}`,
     });
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error('Invalid token');
-      } else {
-        throw new Error('Unable to fetch user profile');
-      }
+    if (!res.success) {
+      throw new Error(res.message || 'Unable to fetch user profile');
     }
+    return res.data;
+  }
 
-    const data = await response.json();
-    return data;
+  /**
+   * Get authenticated user info (including role) via auth/users
+   */
+  async getAuthenticatedUser(accessToken: string): Promise<any> {
+    const res: ApiResponse<any> = await adminApiClient.get('/users', {
+      Authorization: `Bearer ${accessToken}`,
+    });
+    if (!res.success) {
+      throw new Error(res.message || 'Unable to fetch authenticated user');
+    }
+    return res.data;
   }
 }
 
