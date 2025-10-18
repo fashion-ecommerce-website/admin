@@ -1,46 +1,62 @@
-import { call, put } from 'redux-saga/effects';
-import { takeEvery } from '@redux-saga/core/effects';
+import { call, put, Effect } from 'redux-saga/effects';
+import { takeEvery, ForkEffect } from '@redux-saga/core/effects';
 import { PayloadAction } from '@reduxjs/toolkit';
 import { loginRequest, loginSuccess, loginFailure, logoutRequest, logout, AdminLoginRequest, AdminLoginResponse } from './adminAuthSlice';
 import { setAdminInfo } from './adminAuthSlice';
 import { adminAuthApi } from '@/services/api/adminAuthApi';
 
-function* handleLogin(action: PayloadAction<AdminLoginRequest>) {
+// Interface for authenticated user response
+interface AuthenticatedUserResponse {
+  id: number;
+  username: string;
+  email: string;
+  roles?: string[];
+  permissions?: string[];
+  authorities?: string[];
+  data?: {
+    roles?: string[];
+    permissions?: string[];
+  };
+}
+
+function* handleLogin(action: PayloadAction<AdminLoginRequest>): Generator<Effect, void, unknown> {
   try {
-    const response: AdminLoginResponse = yield call(
+    const response = yield call(
       () => adminAuthApi.login(action.payload)
     );
     
-    yield put(loginSuccess(response));
+    yield put(loginSuccess(response as AdminLoginResponse));
     
-    sessionStorage.setItem('admin_access_token', response.accessToken);
-    sessionStorage.setItem('admin_refresh_token', response.refreshToken);
+    sessionStorage.setItem('admin_access_token', (response as AdminLoginResponse).accessToken);
+    sessionStorage.setItem('admin_refresh_token', (response as AdminLoginResponse).refreshToken);
     
     const adminUser = {
-      username: response.username,
-      email: response.email,
+      username: (response as AdminLoginResponse).username,
+      email: (response as AdminLoginResponse).email,
     };
     sessionStorage.setItem('admin_user', JSON.stringify(adminUser));
     // fetch authenticated user with role/permissions
     try {
-      const me: any = yield call(() => adminAuthApi.getAuthenticatedUser(response.accessToken));
-      const roles: string[] | undefined = me?.roles || me?.data?.roles || me?.authorities;
+      const me = yield call(() => adminAuthApi.getAuthenticatedUser((response as AdminLoginResponse).accessToken));
+      const meData = me as AuthenticatedUserResponse;
+      const roles: string[] | undefined = meData?.roles || meData?.data?.roles || meData?.authorities;
       const primaryRole = Array.isArray(roles) ? roles[0] : undefined;
-      const permissions = me?.permissions || me?.data?.permissions || undefined;
+      const permissions = meData?.permissions || meData?.data?.permissions || undefined;
       if (primaryRole || roles) {
-        yield put(setAdminInfo({ role: primaryRole, roles, permissions }));
+        yield put(setAdminInfo({ roles, permissions }));
         const stored = JSON.parse(sessionStorage.getItem('admin_user') || '{}');
         sessionStorage.setItem('admin_user', JSON.stringify({ ...stored, role: primaryRole, roles, permissions }));
       }
     } catch (e) {
       // ignore role fetch failure; AuthGuard will handle redirect if needed
     }
-  } catch (error: any) {
-    yield put(loginFailure(error.message || 'Login failed'));
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Login failed';
+    yield put(loginFailure(errorMessage));
   }
 }
 
-function* handleLogout() {
+function* handleLogout(): Generator<Effect, void, unknown> {
   try {
     const accessToken = sessionStorage.getItem('admin_access_token');
     
@@ -58,13 +74,13 @@ function* handleLogout() {
     
     yield put(logout());
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Logout error:', error);
     yield put(logout());
   }
 }
 
-export function* adminAuthSaga() {
+export function* adminAuthSaga(): Generator<ForkEffect<never>, void, unknown> {
   yield takeEvery(loginRequest.type, handleLogin);
   yield takeEvery(logoutRequest.type, handleLogout);
 }
