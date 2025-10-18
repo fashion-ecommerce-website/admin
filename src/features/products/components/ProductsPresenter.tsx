@@ -4,20 +4,36 @@ import React, { useEffect, useState } from 'react';
 import { categoryApi, CategoryBackend } from '../../../services/api/categoryApi';
 import { Product, ProductState, VariantColor, VariantSize } from '../../../types/product.types';
 
+interface ProductFilters {
+  title?: string;
+  categorySlug?: string;
+  isActive?: boolean | null;
+  sortBy?: 'createdAt' | 'updatedAt' | 'title';
+  sortDirection?: 'asc' | 'desc';
+}
+
 interface ProductsPresenterProps {
   products: Product[];
   loading: boolean;
   error: string | null;
-  pagination: ProductState['pagination'];
-  filters: ProductState['filters'];
-  onSearch: (searchTerm: string) => void;
-  onFilterChange: (filters: Partial<ProductState['filters']>) => void;
-  onPageChange: (page: number) => void;
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrevious: boolean;
+  };
+  filters: ProductFilters;
+  onSearch?: (query: string) => void;
+  onFilterChange: (filters: ProductFilters) => void;
+  onPageChange: (page: number, pageSize: number) => void;
   onCreateProduct: () => void;
   onEditProduct: (product: Product) => void;
   onEditVariant?: (product: Product) => void;
   onDeleteProduct: (productId: number) => void;
   onClearError: () => void;
+  onEditProductDetail?: (product: Product) => void; // New prop for editing product detail
 }
 
 export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
@@ -34,6 +50,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
   onEditVariant,
   onDeleteProduct,
   onClearError,
+  onEditProductDetail, // New prop
 }) => {
   const [categoryMap, setCategoryMap] = useState<Record<number, string>>({});
 
@@ -56,7 +73,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
           walk(res.data);
           setCategoryMap(map);
         }
-      } catch (e) {
+      } catch {
         // ignore - presenter should not crash the page for category fetch failures
         // Optionally you could set an error state and show it in the UI
       }
@@ -70,7 +87,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
   }, []);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onSearch(e.target.value);
+    onSearch?.(e.target.value);
   };
 
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -99,7 +116,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
       <button
         key="prev"
         className="px-4 py-2 mx-1 text-sm text-black bg-white border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-        onClick={() => onPageChange(pagination.page - 1)}
+        onClick={() => onPageChange(pagination.page - 1, pagination.pageSize)}
         disabled={!pagination.hasPrevious}
       >
         Previous
@@ -119,7 +136,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
               ? 'bg-black text-white border-black'
               : 'border-gray-300 bg-white text-black'
           }`}
-          onClick={() => onPageChange(i - 1)} // Convert to 0-based
+          onClick={() => onPageChange(i - 1, pagination.pageSize)} // Convert to 0-based
         >
           {i}
         </button>
@@ -131,7 +148,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
       <button
         key="next"
         className="px-4 py-2 mx-1 text-sm text-black bg-white border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-        onClick={() => onPageChange(pagination.page + 1)}
+        onClick={() => onPageChange(pagination.page + 1, pagination.pageSize)}
         disabled={!pagination.hasNext}
       >
         Next
@@ -302,9 +319,15 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
                   {products.map((product) => (
-                    <tr key={product.id} className="hover:bg-gray-50">
+                    <tr 
+                      key={product.id} 
+                      className="hover:bg-gray-50 cursor-pointer"
+                      onClick={() => onEditProductDetail && onEditProductDetail(product)}
+                      title="Click to edit product details"
+                    >
                       <td className="px-6 py-4">
                         {/* Use an inline SVG data URL as a reliable placeholder to avoid missing static asset 404s */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={product.thumbnail || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-family="Arial, Helvetica, sans-serif" font-size="14">No image</text></svg>'}
                           alt={product.title || 'Product image'}
@@ -372,7 +395,10 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
                       <td className="px-6 py-4 text-sm">
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => onEditProduct(product)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEditProduct(product);
+                            }}
                             className="text-sm px-3 py-1 border border-black rounded text-black bg-white"
                           >
                             Edit
@@ -384,7 +410,10 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
                             Edit Variant
                           </button> */}
                           <button
-                            onClick={() => onDeleteProduct(product.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteProduct(product.id);
+                            }}
                             className="text-sm px-3 py-1 border border-gray-400 text-gray-600 rounded bg-white"
                           >
                             Delete

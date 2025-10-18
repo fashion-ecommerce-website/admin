@@ -121,7 +121,7 @@ class AdminBaseApi {
       // Consider token expired if it expires within next 30 seconds
       const isExpired = exp - now < 30;
       return isExpired;
-    } catch (error) {
+    } catch {
       return true;
     }
   }
@@ -202,7 +202,7 @@ class AdminBaseApi {
       }
 
       // Handle 204 No Content or empty responses: do not attempt to parse JSON
-      let parsedData: any = null;
+      let parsedData: T | null = null;
 
       // If status is 204 No Content, there's intentionally no body
       if (response.status === 204) {
@@ -217,40 +217,57 @@ class AdminBaseApi {
 
           if (hasBody) {
             // Attempt to parse JSON; if it fails we'll catch and keep parsedData = null
-            parsedData = await response.json();
+            const jsonData = await response.json();
+            parsedData = jsonData as T;
           } else {
             parsedData = null;
           }
-        } catch (jsonError) {
+        } catch {
           // If response isn't JSON, we don't want to throw here. Keep data null and
           // return message based on status or text if available.
           try {
             const text = await response.text();
-            parsedData = text ? text : null;
-          } catch (_) {
+            parsedData = (text ? text : null) as T;
+          } catch {
             parsedData = null;
           }
         }
       }
 
       if (!response.ok) {
-        // If parsedData is an object and has a message property, prefer that
-        const message = parsedData && typeof parsedData === 'object' && 'message' in parsedData
-          ? parsedData.message
-          : `HTTP Error: ${response.status}`;
+        // Try to extract error message from response
+        let errorMessage = `HTTP Error: ${response.status}`;
+        
+        if (parsedData && typeof parsedData === 'object' && parsedData !== null) {
+          const errorData = parsedData as Record<string, unknown>;
+          if ('message' in errorData && typeof errorData.message === 'string') {
+            errorMessage = errorData.message;
+          } else if ('error' in errorData && typeof errorData.error === 'string') {
+            errorMessage = errorData.error;
+          }
+        }
 
         return {
           success: false,
           data: null,
-          message,
+          message: errorMessage,
         };
+      }
+
+      // Extract message from successful response if available
+      let responseMessage: string | undefined;
+      if (parsedData && typeof parsedData === 'object' && parsedData !== null) {
+        const responseData = parsedData as Record<string, unknown>;
+        if ('message' in responseData && typeof responseData.message === 'string') {
+          responseMessage = responseData.message;
+        }
       }
 
       return {
         success: true,
         // For successful responses with no JSON body, data will be null which is expected
         data: parsedData,
-        message: parsedData && typeof parsedData === 'object' ? parsedData.message : undefined,
+        message: responseMessage,
       };
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Network error occurred';

@@ -32,7 +32,7 @@ const initialState: ProductState = {
 };
 
 // Action types
-export interface FetchProductsRequest extends GetProductsRequest {}
+export type FetchProductsRequest = GetProductsRequest;
 
 export interface FetchProductsSuccess {
   products: Product[];
@@ -120,12 +120,12 @@ const productSlice = createSlice({
   initialState,
   reducers: {
     // Fetch products
-    fetchProductsRequest: (state, action: PayloadAction<FetchProductsRequest>) => {
+    fetchProductsRequest: (state, _action: PayloadAction<FetchProductsRequest>) => {
       state.loading = true;
       state.error = null;
     },
     // Silent fetch - like fetchProductsRequest but don't toggle global loading
-    fetchProductsSilentRequest: (state, action: PayloadAction<FetchProductsRequest>) => {
+    fetchProductsSilentRequest: (state, _action: PayloadAction<FetchProductsRequest>) => {
       // intentionally do not set state.loading to true — background refresh
       state.error = null;
     },
@@ -141,7 +141,7 @@ const productSlice = createSlice({
     },
 
     // Fetch single product
-    fetchProductByIdRequest: (state, action: PayloadAction<FetchProductByIdRequest>) => {
+    fetchProductByIdRequest: (state /* , action: PayloadAction<FetchProductByIdRequest> */) => {
       state.loading = true;
       state.error = null;
     },
@@ -156,7 +156,7 @@ const productSlice = createSlice({
     },
 
     // Create product
-    createProductRequest: (state, action: PayloadAction<CreateProductRequest>) => {
+    createProductRequest: (state /* , action: PayloadAction<CreateProductRequest> */) => {
       state.loading = true;
       state.error = null;
     },
@@ -171,7 +171,7 @@ const productSlice = createSlice({
     },
 
     // Update product
-    updateProductRequest: (state, action: PayloadAction<UpdateProductRequest>) => {
+    updateProductRequest: (state /* , action: PayloadAction<UpdateProductRequest> */) => {
       state.loading = true;
       state.error = null;
     },
@@ -195,7 +195,7 @@ const productSlice = createSlice({
     },
 
     // Delete product
-    deleteProductRequest: (state, action: PayloadAction<DeleteProductRequest>) => {
+    deleteProductRequest: (state /* , action: PayloadAction<DeleteProductRequest> */) => {
       state.loading = true;
       state.error = null;
     },
@@ -223,11 +223,11 @@ const productSlice = createSlice({
     },
 
     // Upload image
-    uploadImageRequest: (state, action: PayloadAction<UploadImageRequest>) => {
+    uploadImageRequest: (state /* , action: PayloadAction<UploadImageRequest> */) => {
       state.loading = true;
       state.error = null;
     },
-    uploadImageSuccess: (state, action: PayloadAction<UploadImageSuccess>) => {
+    uploadImageSuccess: (state /* , action: PayloadAction<UploadImageSuccess> */) => {
       state.loading = false;
       state.error = null;
     },
