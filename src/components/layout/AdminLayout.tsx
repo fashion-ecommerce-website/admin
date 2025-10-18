@@ -108,6 +108,32 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       ),
     },
     { 
+      name: 'Voucher Management', 
+      href: '/vouchers', 
+      icon: (
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path
+            fillRule="evenodd"
+            d="M4 2a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2H4zm6 5a2 2 0 11-4 0 2 2 0 014 0zm-2 7a5 5 0 014.473-4.976L13 8h-2.5a.5.5 0 110-1H13l-.527-.976A5 5 0 008 11v3z"
+            clipRule="evenodd"
+          />
+        </svg>
+      ),
+    },
+    { 
+      name: 'Promotion Management', 
+      href: '/promotions', 
+      icon: (
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path
+            fillRule="evenodd"
+            d="M4 2a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2H4zm6 5a2 2 0 11-4 0 2 2 0 014 0zm-2 7a5 5 0 014.473-4.976L13 8h-2.5a.5.5 0 110-1H13l-.527-.976A5 5 0 008 11v3z"
+            clipRule="evenodd"
+          />
+        </svg>
+      ),
+    },
+    { 
       name: 'Orders', 
       href: '/orders', 
       icon: (
