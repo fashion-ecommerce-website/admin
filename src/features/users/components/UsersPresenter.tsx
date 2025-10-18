@@ -96,7 +96,7 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
       <div className="space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold bg-black bg-clip-text text-transparent">
               User Management
             </h1>
             <div className="flex items-center space-x-2 mt-2">
@@ -116,16 +116,10 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
             </div>
           </div>
           <div className="flex items-center space-x-3">
-            <button onClick={handleExportExcel} className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 py-3 rounded-xl font-medium hover:from-emerald-600 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
+            <button onClick={handleExportExcel} className="bg-black text-white px-6 py-3 rounded-xl font-medium  focus:outline-none focus:ring-2 focus:ring-offset-2  transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
               <div className="flex items-center space-x-2">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
                 <span>Export Excel</span>
-              </div>
-            </button>
-            <button onClick={() => handlers.setAddModalOpen(true)} className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:from-indigo-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
-              <div className="flex items-center space-x-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
-                <span>Add user</span>
               </div>
             </button>
           </div>
@@ -133,36 +127,44 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
 
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 transform transition-all duration-300 hover:shadow-xl">
           <div className="flex flex-col lg:flex-row lg:items-center gap-6">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1">
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="w-5 h-5 text-gray-400 group-focus-within:text-indigo-500 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <div className="flex flex-col sm:flex-row sm:items-end gap-4 flex-1">
+              <div className="flex flex-col">
+                <label className="text-sm font-bold text-gray-700 mb-2">Search User</label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-400 group-focus-within:text-indigo-500 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                  </div>
+                  <input type="text" placeholder="Search by name or email..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 pr-10 py-3 w-full sm:w-80 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white focus:bg-white text-gray-900 placeholder-gray-500" />
+                  {searchTerm && (
+                    <button onClick={() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors duration-200">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  )}
                 </div>
-                <input type="text" placeholder="Search by name or email..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 pr-10 py-3 w-full sm:w-80 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white focus:bg-white text-gray-900 placeholder-gray-500" />
-                {searchTerm && (
-                  <button onClick={() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors duration-200">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
-                )}
               </div>
 
-              <div className="relative group">
-                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="appearance-none bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 pr-10 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 hover:bg-white focus:bg-white text-gray-900 min-w-[160px]">
-                  <option value="" className="text-gray-900">All statuses</option>
-                  <option value="active" className="text-gray-900">Active</option>
-                  <option value="inactive" className="text-gray-900">Inactive</option>
-                  <option value="blocked" className="text-gray-900">Blocked</option>
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none"><svg className="w-4 h-4 text-gray-400 group-focus-within:text-indigo-500 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></div>
+              <div className="flex flex-col">
+                <label className="text-sm font-bold text-gray-700 mb-2">Status</label>
+                <div className="relative group">
+                  <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="appearance-none bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 pr-10 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 hover:bg-white focus:bg-white text-gray-900 min-w-[160px]">
+                    <option value="" className="text-gray-900">All</option>
+                    <option value="active" className="text-gray-900">Active</option>
+
+                    <option value="blocked" className="text-gray-900">Blocked</option>
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none"><svg className="w-4 h-4 text-gray-400 group-focus-within:text-indigo-500 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></div>
+                </div>
               </div>
 
-              <div className="relative group">
-                <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="appearance-none bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 pr-10 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 hover:bg-white focus:bg-white text-gray-900 min-w-[140px]">
-                  <option value="" className="text-gray-900">All roles</option>
-                  <option value="customer" className="text-gray-900">Customer</option>
-                  <option value="vip" className="text-gray-900">VIP Customer</option>
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none"><svg className="w-4 h-4 text-gray-400 group-focus-within:text-indigo-500 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></div>
+              <div className="flex flex-col">
+                <label className="text-sm font-bold text-gray-700 mb-2">Role</label>
+                <div className="relative group">
+                  <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="appearance-none bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 pr-10 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 hover:bg-white focus:bg-white text-gray-900 min-w-[140px]">
+                    <option value="" className="text-gray-900">All</option>
+                    <option value="customer" className="text-gray-900">Customer</option>
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none"><svg className="w-4 h-4 text-gray-400 group-focus-within:text-indigo-500 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></div>
+                </div>
               </div>
             </div>
 
@@ -196,15 +198,17 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-gray-900">Sort by:</span>
-                  <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="text-sm border-0 bg-transparent text-gray-900 font-medium focus:ring-0">
+                  <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="text-sm border border-gray-300 bg-white text-gray-900 font-medium focus:ring-0 focus:border-gray-400 rounded-lg px-2 py-1">
                     <option value="joinDate" className="text-gray-900">Join date</option>
                     <option value="name" className="text-gray-900">Name A-Z</option>
                     <option value="lastLogin" className="text-gray-900">Latest activity</option>
                     <option value="totalOrders" className="text-gray-900">Orders</option>
                     <option value="totalSpent" className="text-gray-900">Total spent</option>
                   </select>
-                  <button onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')} className="ml-2 p-1 text-gray-400 hover:text-gray-600 rounded transition-colors">
-                    <svg className={`w-4 h-4 transition-transform duration-200 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                  <button onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')} className="ml-2 p-1 text-gray-600 hover:text-gray-800 rounded border border-gray-300 hover:border-gray-400 transition-colors">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                    </svg>
                   </button>
                 </div>
               </div>
@@ -220,7 +224,7 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Activity</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Statistics</th>
-                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className={`divide-y divide-gray-100 transition-opacity duration-300 ${isFilteringData || isLoading ? 'opacity-50' : 'opacity-100'}`}>
@@ -280,7 +284,7 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
                       <td className="px-8 py-6">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-12 w-12">
-                            <div className={`h-12 w-12 ${user.role === 'VIP Customer' ? 'bg-gradient-to-r from-purple-500 to-pink-600' : 'bg-gradient-to-r from-indigo-500 to-blue-600'} rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-200`}>
+                            <div className={`h-12 w-12 bg-gray-700 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-200`}>
                               <span className="text-white font-bold text-lg">{user.name.charAt(0)}</span>
                             </div>
                           </div>
@@ -329,23 +333,21 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
                         </div>
                       </td>
                       <td className="px-6 py-6">
-                        <div className="flex items-center justify-end space-x-2">
-                          <button onClick={() => handlers.setViewModalOpen(true)} className="group relative p-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-md border border-blue-100 hover:border-blue-200">
+                        <div className="flex items-center justify-center space-x-2">
+                          <button onClick={() => { handlers.setSelectedUser(user); handlers.setEditModalOpen(false); handlers.setViewModalOpen(true); }} className="group relative w-10 h-10 flex items-center justify-center bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-md border border-blue-100 hover:border-blue-200">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                           </button>
-                          <button onClick={() => handleEditUser(user.id)} className="group relative p-2.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-md border border-indigo-100 hover:border-indigo-200">
+                          <button onClick={() => handleEditUser(user.id)} className="group relative w-10 h-10 flex items-center justify-center bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-md border border-indigo-100 hover:border-indigo-200">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                           </button>
-                          <button onClick={() => handleToggleUserStatus(user.id)} className={`group relative p-2.5 rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-md border ${user.status === 'Blocked' ? 'bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700 border-orange-100 hover:border-orange-200' : 'bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 border-green-100 hover:border-green-200'}`}>
+                          <button onClick={() => handleToggleUserStatus(user.id)} className={`group relative w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-md border ${user.status === 'Blocked' ? 'bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700 border-orange-100 hover:border-orange-200' : 'bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 border-green-100 hover:border-green-200'}`}>
                             {user.status === 'Blocked' ? (
                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" /></svg>
                             ) : (
                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                             )}
                           </button>
-                          <button onClick={() => handleDeleteUser(user.id)} className="group relative p-2.5 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-md border border-red-100 hover:border-red-200">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                          </button>
+                          
                         </div>
                       </td>
                     </tr>
@@ -360,17 +362,8 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center space-x-4">
-                <div className="text-sm text-gray-700">Showing <span className="font-semibold text-indigo-600">{startIndex + 1}-{Math.min(endIndex, totalItems)}</span> of <span className="font-semibold text-gray-900">{totalItems}</span> users</div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600">Show:</span>
-                  <select value={itemsPerPage} onChange={(e) => { handlers.setItemsPerPage(Number(e.target.value)); handlers.setCurrentPage(1); }} className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 transition-all duration-200">
-                    <option value={5}>5</option>
-                    <option value={10}>10</option>
-                    <option value={20}>20</option>
-                    <option value={50}>50</option>
-                  </select>
-                  <span className="text-sm text-gray-600">/ page</span>
-                </div>
+                <div className="text-sm text-gray-700">Showing <span className="font-semibold text-gray-800">{startIndex + 1}-{Math.min(endIndex, totalItems)}</span> of <span className="font-semibold text-gray-900">{totalItems}</span> users</div>
+                
               </div>
               <div className="flex items-center justify-center sm:justify-end space-x-2">
                 <button onClick={goToPrevPage} disabled={vm.currentPage === 1} className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 disabled:hover:scale-100">
@@ -388,7 +381,7 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
                     }
                     for (let i = startPage; i <= endPage; i++) {
                       pages.push(
-                        <button key={i} onClick={() => goToPage(i)} className={`px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 hover:scale-105 ${i === vm.currentPage ? 'text-white bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg' : 'text-gray-700 hover:bg-indigo-50 hover:text-indigo-600'}`}>
+                        <button key={i} onClick={() => goToPage(i)} className={`px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 hover:scale-105 ${i === vm.currentPage ? 'text-white bg-black shadow-lg' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'}`}>
                           {i}
                         </button>
                       );

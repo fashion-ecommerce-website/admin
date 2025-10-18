@@ -45,7 +45,7 @@ const Modal: React.FC<BaseModalProps & { children: React.ReactNode; title: strin
       {/* Modal */}
       <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden animate-fadeInUp">
         {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4">
+        <div className="bg-gray-800 px-6 py-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-white">{title}</h3>
             <button
@@ -176,7 +176,7 @@ export const AddUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, onSave
           </button>
           <button
             type="submit"
-            className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl hover:from-indigo-600 hover:to-purple-700 font-medium transition-all duration-200 transform hover:scale-105"
+            className="px-6 py-3 bg-gray-800 text-white rounded-xl hover:bg-gray-900 font-medium transition-all duration-200 transform hover:scale-105"
           >
             Add user
           </button>
@@ -195,11 +195,7 @@ export const ViewUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user 
       <div className="space-y-6">
         {/* User Avatar & Basic Info */}
         <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl">
-          <div className={`h-16 w-16 ${
-            user.role === 'VIP Customer' 
-              ? 'bg-gradient-to-r from-purple-500 to-pink-600' 
-              : 'bg-gradient-to-r from-indigo-500 to-blue-600'
-          } rounded-full flex items-center justify-center shadow-lg`}>
+          <div className={`h-16 w-16 bg-gray-800 rounded-full flex items-center justify-center shadow-lg`}>
             <span className="text-white font-bold text-xl">{user.name.charAt(0)}</span>
           </div>
           <div>
@@ -238,7 +234,7 @@ export const ViewUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user 
           <div className="p-4 bg-gray-50 rounded-xl">
             <div className="flex items-center space-x-2 mb-2">
               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a4 4 0 118 0v4m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span className="text-sm font-medium text-gray-700">Join date</span>
             </div>
@@ -253,7 +249,7 @@ export const ViewUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user 
           <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
             <div className="flex items-center space-x-2 mb-2">
               <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
               <span className="text-sm font-medium text-blue-700">Total orders</span>
             </div>
@@ -263,9 +259,9 @@ export const ViewUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user 
           <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-100">
             <div className="flex items-center space-x-2 mb-2">
               <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
-              <span className="text-sm font-medium text-green-700">Total spending</span>
+              <span className="text-sm font-medium text-green-700">Total spent</span>
             </div>
             <p className="text-2xl font-bold text-green-900">{user.totalSpent.toLocaleString('en-US')} VND</p>
           </div>
@@ -275,7 +271,7 @@ export const ViewUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user 
         <div className="p-4 bg-gray-50 rounded-xl">
           <div className="flex items-center space-x-2 mb-2">
             <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
             <span className="text-sm font-medium text-gray-700">Last activity</span>
           </div>
@@ -287,7 +283,7 @@ export const ViewUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user 
         <div className="flex justify-end pt-4">
           <button
             onClick={onClose}
-            className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl hover:from-indigo-600 hover:to-purple-700 font-medium transition-all duration-200 transform hover:scale-105"
+            className="px-6 py-3 bg-gray-800 text-white rounded-xl hover:bg-gray-900 font-medium transition-all duration-200 transform hover:scale-105"
           >
             Close
           </button>
@@ -304,19 +300,36 @@ export const EditUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user,
     name: '',
     email: '',
     role: 'Customer',
-    status: 'Active',
+  });
+  const [originalData, setOriginalData] = useState({
+    name: '',
+    email: '',
+    role: 'Customer',
   });
 
   useEffect(() => {
+    if (user && isOpen) {
+      const userData = {
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      };
+      setFormData(userData);
+      setOriginalData(userData);
+    }
+  }, [user, isOpen]);
+
+  const handleCancel = () => {
+    // Reset form data to original user values
     if (user) {
       setFormData({
         name: user.name,
         email: user.email,
         role: user.role,
-        status: user.status,
       });
     }
-  }, [user]);
+    onClose();
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -382,36 +395,21 @@ export const EditUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user,
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-gray-900"
           >
             <option value="Customer">Customer</option>
-            <option value="VIP Customer">VIP Customer</option>
-          </select>
-        </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Status
-          </label>
-          <select
-            value={formData.status}
-            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-gray-900"
-          >
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
-            <option value="Blocked">Blocked</option>
           </select>
         </div>
 
         <div className="flex justify-end space-x-3 pt-4">
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleCancel}
             className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 font-medium transition-colors duration-200"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl hover:from-indigo-600 hover:to-purple-700 font-medium transition-all duration-200 transform hover:scale-105"
+            className="px-6 py-3 bg-gray-800 text-white rounded-xl hover:bg-gray-900 font-medium transition-all duration-200 transform hover:scale-105"
           >
             Save changes
           </button>
@@ -492,11 +490,7 @@ export const LockUserModal: React.FC<LockModalProps> = ({ isOpen, onClose, user,
           <button
             onClick={handleConfirm}
             disabled={isLoading}
-            className={`px-6 py-3 text-white rounded-xl font-medium transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 ${
-              isLocked 
-                ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700'
-                : 'bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700'
-            }`}
+            className={`px-6 py-3 text-white rounded-xl font-medium transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 bg-gray-800 hover:bg-gray-900`}
           >
             {isLoading && (
               <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">

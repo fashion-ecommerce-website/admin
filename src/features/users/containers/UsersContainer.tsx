@@ -154,6 +154,12 @@ export const UsersContainer: React.FC = () => {
 
   const handleExportExcel = () => {
     try {
+      // Kiểm tra nếu không có dữ liệu để export
+      if (!filteredAndSortedUsers || filteredAndSortedUsers.length === 0) {
+        showWarning('No data to export', 'There are no users to export. Please check your filters.');
+        return;
+      }
+
       const exportData = filteredAndSortedUsers.map((user, index) => ({
         'No.': index + 1,
         'Full name': user.name,
@@ -167,8 +173,9 @@ export const UsersContainer: React.FC = () => {
       }));
 
       const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(exportData);
+      const ws = XLSX.utils.aoa_to_sheet([]);
 
+      // Thiết lập độ rộng cột
       const colWidths = [
         { wch: 6 },
         { wch: 25 },
@@ -182,6 +189,7 @@ export const UsersContainer: React.FC = () => {
       ];
       ws['!cols'] = colWidths;
 
+      // Thêm header thông tin trước
       XLSX.utils.sheet_add_aoa(ws, [
         ['FASHION ECOMMERCE ADMIN'],
         ['USERS REPORT'],
@@ -190,12 +198,11 @@ export const UsersContainer: React.FC = () => {
         [''],
       ], { origin: 'A1' });
 
-      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-      range.e.r += 5;
-      ws['!ref'] = XLSX.utils.encode_range(range);
-
+      // Thêm headers cho dữ liệu
       const headers = Object.keys(exportData[0]);
       XLSX.utils.sheet_add_aoa(ws, [headers], { origin: 'A6' });
+      
+      // Thêm dữ liệu từ hàng 7 trở đi
       exportData.forEach((row, index) => {
         const rowData = headers.map(header => row[header as keyof typeof row]);
         XLSX.utils.sheet_add_aoa(ws, [rowData], { origin: `A${7 + index}` });
@@ -306,6 +313,7 @@ export const UsersContainer: React.FC = () => {
     const user = users.find(u => u.id === userId);
     if (user) {
       setSelectedUser(user);
+      setViewModalOpen(false); // Đóng view modal nếu đang mở
       setEditModalOpen(true);
     }
   };
