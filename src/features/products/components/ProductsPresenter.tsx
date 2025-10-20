@@ -2,8 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { categoryApi, CategoryBackend } from '../../../services/api/categoryApi';
-import { Product, ProductState, VariantColor, VariantSize } from '../../../types/product.types';
+import { Product, VariantColor, VariantSize } from '../../../types/product.types';
 import { ProductRowSkeleton, TableSkeletonWithRows } from '../../../components/ui/Skeleton';
+import { CustomDropdown } from '../../../components/ui';
 
 interface ProductFilters {
   title?: string;
@@ -89,20 +90,6 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onSearch?.(e.target.value);
-  };
-
-  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const [sortBy, sortDirection] = e.target.value.split(':') as [
-      ProductState['filters']['sortBy'],
-      ProductState['filters']['sortDirection']
-    ];
-    onFilterChange({ sortBy, sortDirection });
-  };
-
-  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    const isActive = value === 'active';
-    onFilterChange({ isActive });
   };
 
   const renderPagination = () => {
@@ -232,18 +219,23 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
             <label htmlFor="sort" className="block text-sm font-semibold text-black mb-2">
               Sort By
             </label>
-            <select
-              id="sort"
+            <CustomDropdown
               value={`${filters.sortBy}:${filters.sortDirection}`}
-              onChange={handleSortChange}
-              className="w-full px-4 py-3 text-black border border-gray-300 rounded-lg focus:border-black"
-            >
-              <option value="createdAt:desc">Newest First</option>
-              <option value="createdAt:asc">Oldest First</option>
-              <option value="title:asc">Name A-Z</option>
-              <option value="title:desc">Name Z-A</option>
-              <option value="updatedAt:desc">Recently Updated</option>
-            </select>
+              onChange={(value) => {
+                const [sortBy, sortDirection] = value.split(':');
+                onFilterChange({ ...filters, sortBy: sortBy as 'createdAt' | 'updatedAt' | 'title', sortDirection: sortDirection as 'asc' | 'desc' });
+              }}
+              options={[
+                { value: 'createdAt:desc', label: 'Newest First' },
+                { value: 'createdAt:asc', label: 'Oldest First' },
+                { value: 'title:asc', label: 'Name A-Z' },
+                { value: 'title:desc', label: 'Name Z-A' },
+                { value: 'updatedAt:desc', label: 'Recently Updated' }
+              ]}
+              padding="px-4 py-3"
+              borderRadius="rounded-lg"
+              bgColor="bg-white"
+            />
           </div>
 
           {/* Status */}
@@ -251,15 +243,23 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
             <label htmlFor="status" className="block text-sm font-semibold text-black mb-2">
               Status
             </label>
-            <select
-              id="status"
-              value={filters.isActive ? 'active' : 'inactive'}
-              onChange={handleStatusChange}
-              className="w-full text-black px-4 py-3 border border-gray-300 rounded-lg focus:border-black"
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
+            <CustomDropdown
+              value={filters.isActive === null ? 'ALL' : filters.isActive ? 'ACTIVE' : 'INACTIVE'}
+              onChange={(value) => {
+                let isActive: boolean | null = null;
+                if (value === 'ACTIVE') isActive = true;
+                else if (value === 'INACTIVE') isActive = false;
+                onFilterChange({ ...filters, isActive });
+              }}
+              options={[
+                { value: 'ALL', label: 'All Products' },
+                { value: 'ACTIVE', label: 'Active' },
+                { value: 'INACTIVE', label: 'Inactive' }
+              ]}
+              padding="px-4 py-3"
+              borderRadius="rounded-lg"
+              bgColor="bg-white"
+            />
           </div>
         </div>
       </div>

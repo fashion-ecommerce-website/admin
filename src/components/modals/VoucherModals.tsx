@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Voucher, CreateVoucherRequest } from '../../types/voucher.types';
+import { CustomDropdown } from '../ui';
 
 interface VoucherModalProps {
   isOpen: boolean;
@@ -198,17 +199,17 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Voucher Type *
               </label>
-              <select
+              <CustomDropdown
                 value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value as 'PERCENT' | 'FIXED_AMOUNT' })}
-  className="bg-gray-100 text-black border border-gray-300 rounded-md
-             appearance-none focus:outline-none focus-visible:outline-none
-             focus:ring-0 focus:border-gray-400 active:bg-gray-100 cursor-pointer px-3 py-2"
->
-
-                <option value="PERCENT">Percentage (%)</option>
-                <option value="FIXED_AMOUNT">Fixed Amount (VND)</option>
-              </select>
+                onChange={(value) => setFormData({ ...formData, type: value as 'PERCENT' | 'FIXED_AMOUNT' })}
+                options={[
+                  { value: 'PERCENT', label: 'Percentage (%)' },
+                  { value: 'FIXED_AMOUNT', label: 'Fixed Amount (VND)' }
+                ]}
+                bgColor="bg-gray-100"
+                borderRadius="rounded-md"
+                padding="px-3 py-2"
+              />
             </div>
 
             <div>
@@ -318,14 +319,16 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Target Audience *
             </label>
-            <select
+            <CustomDropdown
               value={formData.audienceType}
-              onChange={(e) => setFormData({ ...formData, audienceType: e.target.value as 'ALL' | 'RANK' })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
-            >
-              <option value="ALL">All Customers</option>
-              <option value="RANK">By Membership Rank</option>
-            </select>
+              onChange={(value) => setFormData({ ...formData, audienceType: value as 'ALL' | 'RANK' })}
+              options={[
+                { value: 'ALL', label: 'All Customers' },
+                { value: 'RANK', label: 'By Membership Rank' }
+              ]}
+              borderRadius="rounded-md"
+              padding="px-3 py-2"
+            />
           </div>
 
           {formData.audienceType === 'RANK' && (

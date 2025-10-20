@@ -3,6 +3,7 @@
 import React, { useEffect, useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../../store';
+import { CustomDropdown } from '../../../components/ui';
 import { 
   fetchProductsRequest,
   setFilters,
@@ -281,10 +282,10 @@ const ProductsContainer: React.FC = () => {
                 <div className="space-y-4 text-black">
                   <div>
                     <label className="block text-sm font-medium mb-1">Color</label>
-                    <select
-                      value={selectedColorId ?? ''}
-                      onChange={async (e) => {
-                        const newColorId = e.target.value ? Number(e.target.value) : null;
+                    <CustomDropdown
+                      value={selectedColorId?.toString() ?? ''}
+                      onChange={async (value) => {
+                        const newColorId = value ? Number(value) : null;
                         setSelectedColorId(newColorId);
                         try {
                           const q = await productApi.getProductDetailByQuery(selectedProduct?.id ?? 0, newColorId ?? undefined, selectedSizeId ?? undefined);
@@ -298,21 +299,23 @@ const ProductsContainer: React.FC = () => {
                           console.error('Error querying detail on color change', err);
                         }
                       }}
-                      className="mt-1 block w-full border rounded-md p-2"
-                    >
-                      <option value="">-- Select color --</option>
-                      {productDetailQuery.variantColors?.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                    </select>
+                      options={[
+                        { value: '', label: '-- Select color --' },
+                        ...(productDetailQuery.variantColors?.map((c) => ({ value: c.id.toString(), label: c.name })) ?? [])
+                      ]}
+                      padding="p-2"
+                      borderRadius="rounded-md"
+                      bgColor="bg-white"
+                      className="mt-1 block w-full"
+                    />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium mb-1">Size</label>
-                    <select
-                      value={selectedSizeId ?? ''}
-                      onChange={async (e) => {
-                        const newSizeId = e.target.value ? Number(e.target.value) : null;
+                    <CustomDropdown
+                      value={selectedSizeId?.toString() ?? ''}
+                      onChange={async (value) => {
+                        const newSizeId = value ? Number(value) : null;
                         setSelectedSizeId(newSizeId);
                         try {
                           const q = await productApi.getProductDetailByQuery(selectedProduct?.id ?? 0, selectedColorId ?? undefined, newSizeId ?? undefined);
@@ -326,13 +329,15 @@ const ProductsContainer: React.FC = () => {
                           console.error('Error querying detail on size change', err);
                         }
                       }}
-                      className="mt-1 block w-full border rounded-md p-2"
-                    >
-                      <option value="">-- Select size --</option>
-                      {productDetailQuery.variantSizes?.map((s) => (
-                        <option key={s.id} value={s.id}>{s.code}</option>
-                      ))}
-                    </select>
+                      options={[
+                        { value: '', label: '-- Select size --' },
+                        ...(productDetailQuery.variantSizes?.map((s) => ({ value: s.id.toString(), label: s.code })) ?? [])
+                      ]}
+                      padding="p-2"
+                      borderRadius="rounded-md"
+                      bgColor="bg-white"
+                      className="mt-1 block w-full"
+                    />
                   </div>
 
                   <div className="flex gap-2 items-center">

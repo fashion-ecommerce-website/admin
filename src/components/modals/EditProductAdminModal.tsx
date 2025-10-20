@@ -9,6 +9,7 @@ import { categoryApi } from "@/services/api/categoryApi";
 import { productApi } from "@/services/api/productApi";
 import type { UpdateProductRequest } from "@/types/product.types";
 import type { CategoryBackend } from "@/services/api/categoryApi";
+import { CustomDropdown } from '../ui';
 
 interface Props {
   isOpen: boolean;
@@ -216,22 +217,20 @@ export const EditProductAdminModal: React.FC<Props> = ({
 
           <div>
             <label className="block text-sm font-medium text-black mb-2">Category</label>
-            <select
+            <CustomDropdown
               value={categoryId !== undefined ? String(categoryId) : ''}
-              onChange={(e) => {
-                const v = e.target.value;
-                setCategoryId(v ? parseInt(v, 10) : undefined);
+              onChange={(value) => {
+                setCategoryId(value ? parseInt(value, 10) : undefined);
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+              options={[
+                { value: '', label: categoriesLoading ? 'Loading...' : 'Select a category', disabled: true },
+                ...categories.map((c) => ({ value: String(c.id), label: categoryLabels[c.id] ?? c.name }))
+              ]}
               disabled={categoriesLoading}
-            >
-              <option value="" disabled>
-                {categoriesLoading ? 'Loading...' : 'Select a category'}
-              </option>
-              {categories.map((c) => (
-                <option key={c.id} value={String(c.id)}>{categoryLabels[c.id] ?? c.name}</option>
-              ))}
-            </select>
+              padding="px-3 py-2"
+              borderRadius="rounded-lg"
+              bgColor="bg-white"
+            />
           </div>
 
           <div className="flex justify-end space-x-3 pt-4 border-t">

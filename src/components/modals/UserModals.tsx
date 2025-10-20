@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/providers/ToastProvider';
+import { CustomDropdown } from '../ui';
 
 interface User {
   id: number;
@@ -141,29 +142,31 @@ export const AddUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, onSave
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Role
           </label>
-          <select
+          <CustomDropdown
             value={formData.role}
-            onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-gray-900"
-          >
-            <option value="Customer">Customer</option>
-            <option value="VIP Customer">VIP Customer</option>
-          </select>
+            onChange={(value) => setFormData({ ...formData, role: value })}
+            options={[
+              { value: 'Customer', label: 'Customer' },
+              { value: 'VIP Customer', label: 'VIP Customer' }
+            ]}
+            padding="px-4 py-3"
+          />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Status
           </label>
-          <select
+          <CustomDropdown
             value={formData.status}
-            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-gray-900"
-          >
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
-            <option value="Blocked">Blocked</option>
-          </select>
+            onChange={(value) => setFormData({ ...formData, status: value })}
+            options={[
+              { value: 'Active', label: 'Active' },
+              { value: 'Inactive', label: 'Inactive' },
+              { value: 'Blocked', label: 'Blocked' }
+            ]}
+            padding="px-4 py-3"
+          />
         </div>
 
         <div className="flex justify-end space-x-3 pt-4">

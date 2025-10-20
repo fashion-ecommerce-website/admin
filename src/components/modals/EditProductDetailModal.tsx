@@ -31,6 +31,7 @@ import type React from "react"
 import { useState, useEffect, useCallback } from "react"
 import { useToast } from "@/providers/ToastProvider"
 import { productApi, ProductDetail } from "@/services/api/productApi"
+import { CustomDropdown } from '../ui';
 
 interface EditProductDetailModalProps {
   isOpen: boolean
@@ -578,36 +579,33 @@ export const EditProductDetailModal: React.FC<EditProductDetailModalProps> = ({
                   {/* Color Selection */}
                   <div>
                     <label className="block text-sm font-medium text-black mb-2">Color</label>
-                    <select
+                    <CustomDropdown
                       value={selectedColor}
-                      onChange={(e) => handleColorChange(e.target.value)}
-                      className="w-full text-black px-3 py-2 border border-gray-300 rounded-md"
+                      onChange={(value) => handleColorChange(value)}
+                      options={productDetail.colors.map((color) => ({ value: color, label: color }))}
                       disabled={loading}
-                    >
-                      {productDetail.colors.map((color) => (
-                        <option key={color} value={color} className="text-black">
-                          {color}
-                        </option>
-                      ))}
-                    </select>
+                      padding="px-3 py-2"
+                      borderRadius="rounded-md"
+                      bgColor="bg-white"
+                    />
                   </div>
 
                   {/* Size Selection */}
                   {productDetail.mapSizeToQuantity && Object.keys(productDetail.mapSizeToQuantity).length > 0 && (
                     <div>
                       <label className="block text-sm font-medium text-black mb-2">Size</label>
-                      <select
+                      <CustomDropdown
                         value={selectedSize}
-                        onChange={(e) => handleSizeChange(e.target.value)}
-                        className="w-full text-black px-3 py-2 border border-gray-300 rounded-md"
+                        onChange={(value) => handleSizeChange(value)}
+                        options={Object.keys(productDetail.mapSizeToQuantity).map((size) => ({
+                          value: size,
+                          label: `${size} (Available: ${productDetail.mapSizeToQuantity[size]})`
+                        }))}
                         disabled={loading}
-                      >
-                        {Object.keys(productDetail.mapSizeToQuantity).map((size) => (
-                          <option key={size} value={size} className="text-black">
-                            {size} (Available: {productDetail.mapSizeToQuantity[size]})
-                          </option>
-                        ))}
-                      </select>
+                        padding="px-3 py-2"
+                        borderRadius="rounded-md"
+                        bgColor="bg-white"
+                      />
                     </div>
                   )}
                 </div>

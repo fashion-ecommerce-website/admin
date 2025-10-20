@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
-import { AdminLayout } from '@/components/layout/AdminLayout';
-import { User } from '@/types/user.types';
+import { AdminLayout } from '../../../components/layout/AdminLayout';
+import { User } from '../../../types/user.types';
+import { CustomDropdown } from '../../../components/ui';
 
 interface UsersViewModel {
   users: User[];
@@ -145,26 +146,31 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
 
               <div className="flex flex-col">
                 <label className="text-sm font-bold text-gray-700 mb-2">Status</label>
-                <div className="relative group">
-                  <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="appearance-none bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 pr-10 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 hover:bg-white focus:bg-white text-gray-900 min-w-[160px]">
-                    <option value="" className="text-gray-900">All</option>
-                    <option value="active" className="text-gray-900">Active</option>
-
-                    <option value="blocked" className="text-gray-900">Blocked</option>
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none"><svg className="w-4 h-4 text-gray-400 group-focus-within:text-indigo-500 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></div>
-                </div>
+                <CustomDropdown
+                  value={statusFilter}
+                  onChange={(value) => setStatusFilter(value)}
+                  options={[
+                    { value: '', label: 'All' },
+                    { value: 'active', label: 'Active' },
+                    { value: 'blocked', label: 'Blocked' }
+                  ]}
+                  padding="px-4 py-3"
+                  className="min-w-[160px]"
+                />
               </div>
 
               <div className="flex flex-col">
                 <label className="text-sm font-bold text-gray-700 mb-2">Role</label>
-                <div className="relative group">
-                  <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="appearance-none bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 pr-10 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 hover:bg-white focus:bg-white text-gray-900 min-w-[140px]">
-                    <option value="" className="text-gray-900">All</option>
-                    <option value="customer" className="text-gray-900">Customer</option>
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none"><svg className="w-4 h-4 text-gray-400 group-focus-within:text-indigo-500 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></div>
-                </div>
+                <CustomDropdown
+                  value={roleFilter}
+                  onChange={(value) => setRoleFilter(value)}
+                  options={[
+                    { value: '', label: 'All' },
+                    { value: 'customer', label: 'Customer' }
+                  ]}
+                  padding="px-4 py-3"
+                  className="min-w-[140px]"
+                />
               </div>
             </div>
 
@@ -189,22 +195,38 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-gray-900">Show:</span>
-                  <select value={itemsPerPage} onChange={(e) => { handlers.setItemsPerPage(Number(e.target.value)); handlers.setCurrentPage(1); }} className="text-sm border border-gray-300 rounded-lg px-2 py-1 bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500">
-                    <option value={5}>5</option>
-                    <option value={10}>10</option>
-                    <option value={20}>20</option>
-                    <option value={50}>50</option>
-                  </select>
+                  <CustomDropdown
+                    value={itemsPerPage.toString()}
+                    onChange={(value) => { handlers.setItemsPerPage(Number(value)); handlers.setCurrentPage(1); }}
+                    options={[
+                      { value: '5', label: '5' },
+                      { value: '10', label: '10' },
+                      { value: '20', label: '20' },
+                      { value: '50', label: '50' }
+                    ]}
+                    padding="px-2 py-1"
+                    borderRadius="rounded-lg"
+                    bgColor="bg-white"
+                    className="text-sm"
+                  />
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-gray-900">Sort by:</span>
-                  <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="text-sm border border-gray-300 bg-white text-gray-900 font-medium focus:ring-0 focus:border-gray-400 rounded-lg px-2 py-1">
-                    <option value="joinDate" className="text-gray-900">Join date</option>
-                    <option value="name" className="text-gray-900">Name A-Z</option>
-                    <option value="lastLogin" className="text-gray-900">Latest activity</option>
-                    <option value="totalOrders" className="text-gray-900">Orders</option>
-                    <option value="totalSpent" className="text-gray-900">Total spent</option>
-                  </select>
+                  <CustomDropdown
+                    value={sortBy}
+                    onChange={(value) => setSortBy(value)}
+                    options={[
+                      { value: 'joinDate', label: 'Join date' },
+                      { value: 'name', label: 'Name A-Z' },
+                      { value: 'lastLogin', label: 'Latest activity' },
+                      { value: 'totalOrders', label: 'Orders' },
+                      { value: 'totalSpent', label: 'Total spent' }
+                    ]}
+                    padding="px-2 py-1"
+                    borderRadius="rounded-lg"
+                    bgColor="bg-white"
+                    className="text-sm"
+                  />
                   <button onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')} className="ml-2 p-1 text-gray-600 hover:text-gray-800 rounded border border-gray-300 hover:border-gray-400 transition-colors">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
@@ -279,7 +301,7 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
                     </td>
                   </tr>
                 ) : (
-                  currentUsers.map((user, index) => (
+                  currentUsers.map((user) => (
                     <tr key={user.id} className="hover:bg-gray-50/50 transition-all duration-300 group border-b border-gray-100/50 hover:border-indigo-100 hover:shadow-sm">
                       <td className="px-8 py-6">
                         <div className="flex items-center">
