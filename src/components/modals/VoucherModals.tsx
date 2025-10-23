@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Voucher, CreateVoucherRequest } from '../../types/voucher.types';
 import { CustomDropdown } from '../ui';
+import { useToast } from '@/providers/ToastProvider';
 
 interface VoucherModalProps {
   isOpen: boolean;
@@ -19,44 +20,42 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
   voucher,
   title,
 }) => {
+  const { showError } = useToast();
   const [formData, setFormData] = useState({
     name: '',
-    code: '',
     type: 'PERCENT' as 'PERCENT' | 'FIXED_AMOUNT',
-    value: 0,
-    maxDiscount: 0,
-    minOrderAmount: 0,
-    usageLimitTotal: 1,
-    usageLimitPerUser: 1,
+    value: '',
+    maxDiscount: '',
+    minOrderAmount: '',
+    usageLimitTotal: '',
+    usageLimitPerUser: '1',
     startAt: '',
     endAt: '',
+    startTime: '00:00',
+    endTime: '23:59',
     isActive: true,
     audienceType: 'ALL' as 'ALL' | 'RANK',
     rankIds: [] as number[],
   });
 
-  const generateVoucherCode = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    for (let i = 0; i < 7; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-  };
 
   useEffect(() => {
     if (voucher) {
+      const startDateTime = new Date(voucher.startAt);
+      const endDateTime = new Date(voucher.endAt);
+      
       setFormData({
         name: voucher.name,
-        code: voucher.code,
         type: voucher.type,
-        value: voucher.value,
-        maxDiscount: voucher.maxDiscount || 0,
-        minOrderAmount: voucher.minOrderAmount,
-        usageLimitTotal: voucher.usageLimitTotal,
-        usageLimitPerUser: voucher.usageLimitPerUser,
+        value: voucher.value.toString(),
+        maxDiscount: (voucher.maxDiscount || 0).toString(),
+        minOrderAmount: voucher.minOrderAmount.toString(),
+        usageLimitTotal: voucher.usageLimitTotal.toString(),
+        usageLimitPerUser: voucher.usageLimitPerUser.toString(),
         startAt: voucher.startAt.split('T')[0],
         endAt: voucher.endAt.split('T')[0],
+        startTime: startDateTime.toTimeString().slice(0, 5),
+        endTime: endDateTime.toTimeString().slice(0, 5),
         isActive: voucher.isActive,
         audienceType: voucher.audienceType,
         rankIds: voucher.rankIds,
@@ -64,15 +63,16 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
     } else {
       setFormData({
         name: '',
-        code: '',
         type: 'PERCENT',
-        value: 0,
-        maxDiscount: 0,
-        minOrderAmount: 0,
-        usageLimitTotal: 1,
-        usageLimitPerUser: 1,
+        value: '',
+        maxDiscount: '',
+        minOrderAmount: '',
+        usageLimitTotal: '',
+        usageLimitPerUser: '1',
         startAt: '',
         endAt: '',
+        startTime: '00:00',
+        endTime: '23:59',
         isActive: true,
         audienceType: 'ALL',
         rankIds: [],
@@ -85,40 +85,55 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
     
     // Validation
     if (!formData.name.trim()) {
-      alert('Please enter voucher name');
+      showError('Please enter voucher name');
       return;
     }
     
-    if (!formData.code.trim()) {
-      alert('Please enter voucher code');
+    const value = parseFloat(formData.value.toString());
+    const maxDiscount = parseFloat(formData.maxDiscount.toString());
+    const minOrderAmount = parseFloat(formData.minOrderAmount.toString());
+    const usageLimitTotal = parseInt(formData.usageLimitTotal.toString());
+    const usageLimitPerUser = parseInt(formData.usageLimitPerUser.toString());
+
+    if (!value || value <= 0) {
+      showError('Voucher value must be greater than 0');
       return;
     }
     
-    if (formData.value <= 0) {
-      alert('Voucher value must be greater than 0');
+    if (formData.type === 'PERCENT' && value > 100) {
+      showError('Percentage value cannot exceed 100%');
       return;
     }
     
-    if (formData.type === 'PERCENT' && formData.value > 100) {
-      alert('Percentage value cannot exceed 100%');
+    if (formData.type === 'PERCENT' && (!maxDiscount || maxDiscount <= 0)) {
+      showError('Maximum discount is required for percentage vouchers');
       return;
     }
     
-    if (formData.minOrderAmount < 0) {
-      alert('Minimum order amount cannot be negative');
+    if (minOrderAmount < 0) {
+      showError('Minimum order amount cannot be negative');
+      return;
+    }
+    
+    if (usageLimitTotal < usageLimitPerUser) {
+      showError('Total usage limit must be greater than or equal to usage limit per user');
       return;
     }
     
     if (new Date(formData.startAt) >= new Date(formData.endAt)) {
-      alert('Start date must be before end date');
+      showError('Start date must be before end date');
       return;
     }
     
     const submitData = {
       ...formData,
-      startAt: `${formData.startAt}T00:00:00`,
-      endAt: `${formData.endAt}T23:59:59`,
-      maxDiscount: formData.type === 'PERCENT' ? formData.maxDiscount : undefined,
+      value: value,
+      maxDiscount: formData.type === 'PERCENT' ? maxDiscount : undefined,
+      minOrderAmount: minOrderAmount,
+      usageLimitTotal: usageLimitTotal,
+      usageLimitPerUser: usageLimitPerUser,
+      startAt: `${formData.startAt}T${formData.startTime}:00`,
+      endAt: `${formData.endAt}T${formData.endTime}:59`,
     };
     
     onSubmit(submitData);
@@ -168,30 +183,6 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Voucher Code *
-              </label>
-              <div className="flex space-x-2">
-                <input
-                  type="text"
-                  value={formData.code}
-                  onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
-                  placeholder="Enter code or click to generate"
-                  required
-                />
-                {!voucher && (
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, code: generateVoucherCode() })}
-                    className="px-3 py-2 bg-black text-white rounded-md hover:bg-gray-800 text-sm"
-                  >
-                    Generate
-                  </button>
-                )}
-              </div>
-            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -216,30 +207,31 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Value *
               </label>
-              <input
-                type="number"
-                value={formData.value}
-                onChange={(e) => setFormData({ ...formData, value: parseFloat(e.target.value) || 0 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
-                min="0"
-                step="0.01"
-                required
-              />
+                <input
+                  type="number"
+                  value={formData.value}
+                  onChange={(e) => setFormData({ ...formData, value: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
+                  min="0"
+                  step="0.01"
+                  required
+                />
             </div>
           </div>
 
           {formData.type === 'PERCENT' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Maximum Discount (VND)
+                Maximum Discount (VND) *
               </label>
-              <input
-                type="number"
-                value={formData.maxDiscount}
-                onChange={(e) => setFormData({ ...formData, maxDiscount: parseFloat(e.target.value) || 0 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
-                min="0"
-              />
+                <input
+                  type="number"
+                  value={formData.maxDiscount}
+                  onChange={(e) => setFormData({ ...formData, maxDiscount: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
+                  min="0"
+                  required
+                />
             </div>
           )}
 
@@ -250,7 +242,7 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
             <input
               type="number"
               value={formData.minOrderAmount}
-              onChange={(e) => setFormData({ ...formData, minOrderAmount: parseFloat(e.target.value) || 0 })}
+              onChange={(e) => setFormData({ ...formData, minOrderAmount: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
               min="0"
               required
@@ -265,7 +257,7 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
               <input
                 type="number"
                 value={formData.usageLimitTotal}
-                onChange={(e) => setFormData({ ...formData, usageLimitTotal: parseInt(e.target.value) || 1 })}
+                onChange={(e) => setFormData({ ...formData, usageLimitTotal: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
                 min="1"
                 required
@@ -279,7 +271,7 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
               <input
                 type="number"
                 value={formData.usageLimitPerUser}
-                onChange={(e) => setFormData({ ...formData, usageLimitPerUser: parseInt(e.target.value) || 1 })}
+                onChange={(e) => setFormData({ ...formData, usageLimitPerUser: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
                 min="1"
                 required
@@ -292,26 +284,42 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Start Date *
               </label>
-              <input
-                type="date"
-                value={formData.startAt}
-                onChange={(e) => setFormData({ ...formData, startAt: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
-                required
-              />
+              <div className="flex space-x-2">
+                <input
+                  type="date"
+                  value={formData.startAt}
+                  onChange={(e) => setFormData({ ...formData, startAt: e.target.value })}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
+                  required
+                />
+                <input
+                  type="time"
+                  value={formData.startTime}
+                  onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
+                />
+              </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 End Date *
               </label>
-              <input
-                type="date"
-                value={formData.endAt}
-                onChange={(e) => setFormData({ ...formData, endAt: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
-                required
-              />
+              <div className="flex space-x-2">
+                <input
+                  type="date"
+                  value={formData.endAt}
+                  onChange={(e) => setFormData({ ...formData, endAt: e.target.value })}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
+                  required
+                />
+                <input
+                  type="time"
+                  value={formData.endTime}
+                  onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
+                />
+              </div>
             </div>
           </div>
 

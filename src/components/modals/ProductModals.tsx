@@ -116,6 +116,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [categoryLabels, setCategoryLabels] = useState<Record<number, string>>({});
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   const [formData, setFormData] = useState<ProductFormData>({
     title: "",
@@ -221,6 +222,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
       productDetails: [],
     });
     setErrors({});
+    setHasSubmitted(false);
   }, [isOpen, categories]);
 
   // Normalize productDetails to ensure they have images array
@@ -320,6 +322,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setHasSubmitted(true);
 
     if (!validateForm()) {
       return;
@@ -1005,7 +1008,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
                       );
                     })}
                   </div>
-                  {productDetail.sizes.length === 0 && (
+                  {hasSubmitted && productDetail.sizes.length === 0 && (
                     <p className="text-sm text-red-600 mt-1">
                       At least one size is required
                     </p>

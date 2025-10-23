@@ -65,7 +65,6 @@ export interface GetVouchersRequest {
 
 export interface CreateVoucherRequest {
   name: string;
-  code: string;
   type: 'PERCENT' | 'FIXED_AMOUNT';
   value: number;
   maxDiscount?: number;
