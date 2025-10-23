@@ -1,67 +1,35 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { DashboardPresenter } from '../components/DashboardPresenter';
-import type { DashboardStats } from '../redux/dashboardSlice';
+import { fetchStatsRequest } from '../redux/dashboardSlice';
+import type { RootState } from '@/store';
 
 export const DashboardContainer: React.FC = () => {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchStats = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      // Mock API call - replace with real API later
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const mockStats: DashboardStats = {
-        totalUsers: 1250,
-        totalProducts: 89,
-        todayOrders: 25,
-        todayRevenue: 2750000,
-        userGrowth: 8.2,
-        productGrowth: 12.5,
-        orderGrowth: -3.1,
-        revenueGrowth: 15.7,
-        recentActivities: [
-          {
-            id: '1',
-            type: 'ORDER_PLACED',
-            description: 'Order #12345 placed by Nguyen Van A',
-            timestamp: new Date().toISOString(),
-          },
-          {
-            id: '2',
-            type: 'USER_REGISTERED',
-            description: 'New user registered: user@example.com',
-            timestamp: new Date(Date.now() - 300000).toISOString(),
-          },
-          {
-            id: '3',
-            type: 'PRODUCT_ADDED',
-            description: 'Product "Men T-shirt" added to the system',
-            timestamp: new Date(Date.now() - 600000).toISOString(),
-          },
-        ],
-      };
-      
-      setStats(mockStats);
-    } catch (err) {
-      setError('Unable to load dashboard data');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const dispatch = useDispatch();
+  const { stats, loading, error } = useSelector((state: RootState) => state.dashboard);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    fetchStats();
-  }, []);
+    // Initial load
+    dispatch(fetchStatsRequest());
+
+    // Set up auto-refresh every 5 minutes
+    intervalRef.current = setInterval(() => {
+      dispatch(fetchStatsRequest());
+    }, 5 * 60 * 1000); // 5 minutes
+
+    // Cleanup interval on unmount
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [dispatch]);
 
   const handleRefresh = () => {
-    fetchStats();
+    dispatch(fetchStatsRequest());
   };
 
   return (

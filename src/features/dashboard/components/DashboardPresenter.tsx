@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { DashboardCharts } from './DashboardCharts';
 
 interface DashboardStats {
   totalUsers: number;
@@ -11,6 +12,13 @@ interface DashboardStats {
   productGrowth?: number;
   orderGrowth?: number;
   revenueGrowth?: number;
+  chartData?: Array<{
+    name: string;
+    orders: number;
+    revenue: number;
+    users: number;
+    products: number;
+  }>;
   recentActivities?: RecentActivity[];
 }
 
@@ -75,10 +83,11 @@ export const DashboardPresenter: React.FC<DashboardPresenterProps> = ({
           </h1>
           <p className="text-gray-600 mt-2">Welcome back! Here is an overview of your system.</p>
         </div>
+        
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <StatsCard
           title="Total users"
           value={stats?.totalUsers || 0}
@@ -125,6 +134,9 @@ export const DashboardPresenter: React.FC<DashboardPresenterProps> = ({
         />
       </div>
 
+      {/* Charts Section */}
+      <DashboardCharts chartData={stats?.chartData} />
+
       {/* Recent Activities */}
       <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
         <div className="bg-gray-50 px-8 py-6 border-b border-gray-200">
@@ -167,30 +179,34 @@ interface StatsCardProps {
   value: string | number;
   icon: React.ReactNode;
   trend?: number;
-  accentClass: string; // e.g., 'bg-blue-600'
+  accentClass: string; 
+  description?: string;
 }
 
-const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, trend, accentClass }) => {
+const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, trend, accentClass, description }) => {
   return (
     <div className={`bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100 overflow-hidden group`}>
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <p className="text-sm font-medium text-gray-600 mb-2">{title}</p>
-            <p className="text-3xl font-bold text-gray-900 mb-1">{value}</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-600 mb-2 truncate">{title}</p>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">{value}</p>
+            {description && (
+              <p className="text-xs text-gray-500 mb-2">{description}</p>
+            )}
             {trend !== undefined && (
-              <div className={`flex items-center space-x-1 text-sm font-medium ${
+              <div className={`flex items-center space-x-1 text-xs sm:text-sm font-medium ${
                 trend >= 0 ? 'text-green-600' : 'text-red-600'
               }`}>
-                <svg className={`w-4 h-4 ${trend >= 0 ? 'rotate-0' : 'rotate-180'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-3 h-3 sm:w-4 sm:h-4 ${trend >= 0 ? 'rotate-0' : 'rotate-180'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17l9.2-9.2M17 17V7H7" />
                 </svg>
                 <span>{Math.abs(trend)}%</span>
-                <span className="text-gray-500">vs last month</span>
+                <span className="text-gray-500 hidden sm:inline">vs last month</span>
               </div>
             )}
           </div>
-          <div className={`flex-shrink-0 w-16 h-16 ${accentClass} rounded-2xl flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+          <div className={`flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 ${accentClass} rounded-2xl flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}>
             {icon}
           </div>
         </div>
