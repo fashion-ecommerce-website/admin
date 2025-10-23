@@ -17,6 +17,8 @@ export interface ChartPoint {
   name: string;
   orders: number;
   revenue: number;
+  users: number;
+  products: number;
 }
 
 export interface RecentActivity {
