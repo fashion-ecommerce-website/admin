@@ -1,31 +1,41 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { useAppDispatch, useAppSelector } from '@/hooks/redux';
 import { useToast } from '@/providers/ToastProvider';
+import { useMinimumLoadingTime } from '@/hooks/useMinimumLoadingTime';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { fetchUsersRequest } from '../redux/userSlice';
 import { userApi } from '@/services/api/userApi';
 import { User, convertBackendUserToUser } from '@/types/user.types';
 import { AddUserModal, ViewUserModal, EditUserModal, LockUserModal } from '@/components/modals/UserModals';
 import { UsersPresenter } from '../components/UsersPresenter';
 
 export const UsersContainer: React.FC = () => {
+  const dispatch = useAppDispatch();
   const { showSuccess, showError, showWarning } = useToast();
 
+  // Get loading state from Redux
+  const { loading } = useAppSelector((state) => state.users);
+  
+  // Local state for users and error (keeping old behavior for now)
   const [users, setUsers] = useState<User[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  const fetchUsers = async () => {
-    try {
-      setIsLoading(true);
-      setApiError(null);
+  // Use minimum loading time hook to ensure skeleton shows for at least 500ms
+  const displayLoading = useMinimumLoadingTime(loading, 500);
 
+  const fetchUsers = async () => {
+    dispatch(fetchUsersRequest({ page: 1, limit: 100 }));
+    
+    try {
       const response = await userApi.getAllUsers();
 
       if (response.success && response.data) {
         const convertedUsers = response.data.users.map(convertBackendUserToUser);
         setUsers(convertedUsers);
+        setApiError(null);
       } else {
         setApiError(response.message || 'Failed to fetch users');
         showError('Data load error', response.message || 'Unable to fetch users from server');
@@ -52,8 +62,6 @@ export const UsersContainer: React.FC = () => {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       setApiError(errorMessage);
       showError('Connection error', 'Unable to connect to the server. Please try again.');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -361,7 +369,7 @@ export const UsersContainer: React.FC = () => {
 
   const vm = {
     users,
-    isLoading,
+    isLoading: displayLoading,
     apiError,
     searchTerm,
     statusFilter,

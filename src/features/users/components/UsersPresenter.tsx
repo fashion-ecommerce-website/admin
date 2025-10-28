@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AdminLayout } from '../../../components/layout/AdminLayout';
 import { User } from '../../../types/user.types';
 import { CustomDropdown } from '../../../components/ui';
+import { Skeleton } from '../../../components/ui/Skeleton';
 
 interface UsersViewModel {
   users: User[];
@@ -88,6 +89,26 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
     handleDeleteUser,
   } = handlers;
 
+  const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Real-time search with 300ms debounce
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    searchTimeoutRef.current = setTimeout(() => {
+      setSearchTerm(localSearchTerm);
+    }, 300);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [localSearchTerm, setSearchTerm]);
+
   return (
     <AdminLayout>
       <style jsx global>{`
@@ -102,18 +123,6 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
             </h1>
             <div className="flex items-center space-x-2 mt-2">
               <p className="text-gray-600">Manage user information and permissions across the system</p>
-              {isLoading && (
-                <div className="flex items-center space-x-1 text-blue-600">
-                  <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                  <span className="text-sm">Loading data...</span>
-                </div>
-              )}
-              {apiError && (
-                <div className="flex items-center space-x-1 text-red-600">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  <span className="text-sm">API connection error</span>
-                </div>
-              )}
             </div>
           </div>
           <div className="flex items-center space-x-3">
@@ -126,62 +135,65 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 transform transition-all duration-300 hover:shadow-xl">
-          <div className="flex flex-col lg:flex-row lg:items-center gap-6">
-            <div className="flex flex-col sm:flex-row sm:items-end gap-4 flex-1">
-              <div className="flex flex-col">
-                <label className="text-sm font-bold text-gray-700 mb-2">Search User</label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="w-5 h-5 text-gray-400 group-focus-within:text-indigo-500 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                  </div>
-                  <input type="text" placeholder="Search by name or email..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 pr-10 py-3 w-full sm:w-80 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white focus:bg-white text-gray-900 placeholder-gray-500" />
-                  {searchTerm && (
-                    <button onClick={() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors duration-200">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
-                  )}
+        {/* Search & Filters */}
+        <div className="w-full">
+          <label className="block text-sm font-medium text-black mb-2">
+            Search
+          </label>
+          <div className="flex justify-between">
+            <div className="w-[40%] relative">
+              <input
+                type="text"
+                value={localSearchTerm}
+                onChange={(e) => setLocalSearchTerm(e.target.value)}
+                placeholder="Search by name or email..."
+                className="w-full px-4 py-2 rounded-md border border-gray-600 text-black focus:outline-none focus:ring-2 focus:ring-black"
+              />
+              {isLoading && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
                 </div>
-              </div>
-
-              <div className="flex flex-col">
-                <label className="text-sm font-bold text-gray-700 mb-2">Status</label>
-                <CustomDropdown
-                  value={statusFilter}
-                  onChange={(value) => setStatusFilter(value)}
-                  options={[
-                    { value: '', label: 'All' },
-                    { value: 'active', label: 'Active' },
-                    { value: 'blocked', label: 'Blocked' }
-                  ]}
-                  padding="px-4 py-3"
-                  className="min-w-[160px]"
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <label className="text-sm font-bold text-gray-700 mb-2">Role</label>
-                <CustomDropdown
-                  value={roleFilter}
-                  onChange={(value) => setRoleFilter(value)}
-                  options={[
-                    { value: '', label: 'All' },
-                    { value: 'customer', label: 'Customer' }
-                  ]}
-                  padding="px-4 py-3"
-                  className="min-w-[140px]"
-                />
-              </div>
+              )}
             </div>
+                     </div>
+        </div>
 
-            {(searchTerm || statusFilter || roleFilter) && (
-              <div>
-                <button onClick={() => { setSearchTerm(''); setStatusFilter(''); setRoleFilter(''); }} className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 hover:text-gray-800 transition-all duration-300 transform hover:scale-105 flex items-center space-x-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                  <span>Clear filters</span>
-                </button>
-              </div>
-            )}
+        {/* Status Filter Buttons */}
+        <div>
+          <label className="block text-sm font-medium text-black mb-2">
+            Status
+          </label>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setStatusFilter('')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                statusFilter === ''
+                  ? 'bg-black text-white'
+                  : 'bg-gray-200 text-black hover:bg-gray-300'
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setStatusFilter('active')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                statusFilter === 'active'
+                  ? 'bg-black text-white'
+                  : 'bg-gray-200 text-black hover:bg-gray-300'
+              }`}
+            >
+              Active
+            </button>
+            <button
+              onClick={() => setStatusFilter('blocked')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                statusFilter === 'blocked'
+                  ? 'bg-black text-white'
+                  : 'bg-gray-200 text-black hover:bg-gray-300'
+              }`}
+            >
+              Blocked
+            </button>
           </div>
         </div>
 
@@ -190,7 +202,6 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-bold text-gray-900">User List</h3>
-                <p className="text-gray-600 text-sm mt-1">Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of {totalItems} users</p>
               </div>
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
@@ -251,14 +262,42 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
               </thead>
               <tbody className={`divide-y divide-gray-100 transition-opacity duration-300 ${isFilteringData || isLoading ? 'opacity-50' : 'opacity-100'}`}>
                 {isLoading ? (
-                  Array.from({ length: 5 }).map((_, index) => (
-                    <tr key={`api-loading-${index}`} className="animate-pulse">
-                      <td className="px-8 py-6"><div className="flex items-center"><div className="h-12 w-12 bg-gray-200 rounded-full" /><div className="ml-4 space-y-2"><div className="h-4 w-32 bg-gray-200 rounded" /><div className="h-3 w-40 bg-gray-200 rounded" /></div></div></td>
-                      <td className="px-6 py-6"><div className="h-6 w-20 bg-gray-200 rounded-full" /></td>
-                      <td className="px-6 py-6"><div className="h-6 w-24 bg-gray-200 rounded-full" /></td>
-                      <td className="px-6 py-6"><div className="space-y-2"><div className="h-4 w-24 bg-gray-200 rounded" /><div className="h-3 w-20 bg-gray-200 rounded" /></div></td>
-                      <td className="px-6 py-6"><div className="space-y-2"><div className="h-4 w-16 bg-gray-200 rounded" /><div className="h-3 w-20 bg-gray-200 rounded" /></div></td>
-                      <td className="px-6 py-6"><div className="flex justify-end space-x-2"><div className="h-8 w-8 bg-gray-200 rounded-lg" /><div className="h-8 w-8 bg-gray-200 rounded-lg" /><div className="h-8 w-8 bg-gray-200 rounded-lg" /></div></td>
+                  [...Array(5)].map((_, index) => (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="px-8 py-4">
+                        <div className="flex items-center space-x-3">
+                          <Skeleton className="w-10 h-10 rounded-full" />
+                          <div className="space-y-2">
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-3 w-40" />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Skeleton className="h-6 w-20 rounded-full" />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Skeleton className="h-6 w-16 rounded-full" />
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-24" />
+                          <Skeleton className="h-3 w-20" />
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-20" />
+                          <Skeleton className="h-3 w-24" />
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex justify-center space-x-2">
+                          <Skeleton className="h-8 w-8 rounded" />
+                          <Skeleton className="h-8 w-8 rounded" />
+                          <Skeleton className="h-8 w-8 rounded" />
+                        </div>
+                      </td>
                     </tr>
                   ))
                 ) : apiError ? (
@@ -275,14 +314,42 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
                     </td>
                   </tr>
                 ) : isFilteringData ? (
-                  Array.from({ length: 3 }).map((_, index) => (
-                    <tr key={`loading-${index}`} className="animate-pulse">
-                      <td className="px-8 py-6"><div className="flex items-center"><div className="h-12 w-12 bg-gray-200 rounded-full" /><div className="ml-4 space-y-2"><div className="h-4 w-32 bg-gray-200 rounded" /><div className="h-3 w-40 bg-gray-200 rounded" /></div></div></td>
-                      <td className="px-6 py-6"><div className="h-6 w-20 bg-gray-200 rounded-full" /></td>
-                      <td className="px-6 py-6"><div className="h-6 w-24 bg-gray-200 rounded-full" /></td>
-                      <td className="px-6 py-6"><div className="space-y-2"><div className="h-4 w-24 bg-gray-200 rounded" /><div className="h-3 w-20 bg-gray-200 rounded" /></div></td>
-                      <td className="px-6 py-6"><div className="space-y-2"><div className="h-4 w-16 bg-gray-200 rounded" /><div className="h-3 w-20 bg-gray-200 rounded" /></div></td>
-                      <td className="px-6 py-6"><div className="flex justify-end space-x-2"><div className="h-8 w-8 bg-gray-200 rounded-lg" /><div className="h-8 w-8 bg-gray-200 rounded-lg" /><div className="h-8 w-8 bg-gray-200 rounded-lg" /></div></td>
+                  [...Array(3)].map((_, index) => (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="px-8 py-4">
+                        <div className="flex items-center space-x-3">
+                          <Skeleton className="w-10 h-10 rounded-full" />
+                          <div className="space-y-2">
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-3 w-40" />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Skeleton className="h-6 w-20 rounded-full" />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Skeleton className="h-6 w-16 rounded-full" />
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-24" />
+                          <Skeleton className="h-3 w-20" />
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-20" />
+                          <Skeleton className="h-3 w-24" />
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex justify-center space-x-2">
+                          <Skeleton className="h-8 w-8 rounded" />
+                          <Skeleton className="h-8 w-8 rounded" />
+                          <Skeleton className="h-8 w-8 rounded" />
+                        </div>
+                      </td>
                     </tr>
                   ))
                 ) : currentUsers.length === 0 ? (
