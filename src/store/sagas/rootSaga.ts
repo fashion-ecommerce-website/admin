@@ -6,6 +6,7 @@ import { productSaga } from '../../features/products/redux/productSaga';
 import { voucherSaga } from '../../features/vouchers/redux/voucherSaga';
 import { promotionSaga } from '../../features/promotions/redux/promotionSaga';
 import { categorySaga } from '../../features/categories/redux/categorySaga';
+import { orderSaga } from '../../features/orders/redux/orderSaga';
 
 export function* rootSaga() {
   yield all([
@@ -16,5 +17,6 @@ export function* rootSaga() {
     voucherSaga(),
     promotionSaga(),
     categorySaga(),
+    orderSaga(),
   ]);
 }
