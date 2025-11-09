@@ -134,7 +134,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       ),
     },
     { 
-      name: 'Orders', 
+      name: 'Orders Management', 
       href: '/orders', 
       icon: (
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
