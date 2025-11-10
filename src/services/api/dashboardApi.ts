@@ -1,6 +1,33 @@
 import { adminApiClient, ApiResponse } from './baseApi';
-import type { DashboardStats } from '@/features/dashboard/redux/dashboardSlice';
 
+// Dashboard Response Types matching backend
+export interface DashboardResponse {
+  period: string;
+  summary: SummaryDto;
+  chartData: ChartDataDto[];
+}
+
+export interface SummaryDto {
+  totalUsers: number;
+  totalProducts: number;
+  totalOrders: number;
+  totalRevenue: number;
+}
+
+export interface ChartDataDto {
+  date: string;
+  label: string;
+  totalOrders: number;
+  completedOrders: number;
+  cancelledOrders: number;
+  pendingOrders: number;
+  totalRevenue: number;
+  unpaidRevenue: number;
+  paidRevenue: number;
+  refundedRevenue: number;
+}
+
+// Legacy types for backward compatibility
 export interface DashboardApiResponse {
   totalUsers: number;
   totalProducts: number;
@@ -25,17 +52,12 @@ export interface DashboardApiResponse {
 
 class DashboardApi {
   /**
-   * Get dashboard statistics
+   * Get dashboard data with period filter
+   * @param period - 'day' | 'week' | 'month' | 'year'
    */
-  async getStats(): Promise<ApiResponse<DashboardApiResponse>> {
-    return adminApiClient.get<DashboardApiResponse>('/admin/dashboard/stats');
-  }
-
-  /**
-   * Get dashboard chart data for a specific period
-   */
-  async getChartData(period: 'week' | 'month' | 'year' = 'week'): Promise<ApiResponse<DashboardApiResponse>> {
-    return adminApiClient.get<DashboardApiResponse>(`/admin/dashboard/chart?period=${period}`);
+  async getDashboard(period: 'day' | 'week' | 'month' | 'year' = 'week'): Promise<DashboardResponse> {
+    const response = await adminApiClient.get<DashboardResponse>(`/reports/dashboard?period=${period}`);
+    return response.data as DashboardResponse;
   }
 
   /**

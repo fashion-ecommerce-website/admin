@@ -32,13 +32,13 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ReduxProvider>
-          <EnumProvider>
-            <ToastProvider>
-              <AuthGuard>
+          <ToastProvider>
+            <AuthGuard>
+              <EnumProvider>
                 {children}
-              </AuthGuard>
-            </ToastProvider>
-          </EnumProvider>
+              </EnumProvider>
+            </AuthGuard>
+          </ToastProvider>
         </ReduxProvider>
       </body>
     </html>

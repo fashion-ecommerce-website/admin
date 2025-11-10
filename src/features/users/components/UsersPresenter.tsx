@@ -126,7 +126,7 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
             </div>
           </div>
           <div className="flex items-center space-x-3">
-            <button onClick={handleExportExcel} className="bg-black text-white px-6 py-3 rounded-xl font-medium  focus:outline-none focus:ring-2 focus:ring-offset-2  transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
+            <button onClick={handleExportExcel} className="cursor-pointer bg-black text-white px-6 py-3 rounded-xl font-medium  focus:outline-none focus:ring-2 focus:ring-offset-2  transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
               <div className="flex items-center space-x-2">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
                 <span>Export Excel</span>
@@ -166,7 +166,7 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
           <div className="flex space-x-2">
             <button
               onClick={() => setStatusFilter('')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`cursor-pointer px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 statusFilter === ''
                   ? 'bg-black text-white'
                   : 'bg-gray-200 text-black hover:bg-gray-300'
@@ -176,7 +176,7 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
             </button>
             <button
               onClick={() => setStatusFilter('active')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`cursor-pointer px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 statusFilter === 'active'
                   ? 'bg-black text-white'
                   : 'bg-gray-200 text-black hover:bg-gray-300'
@@ -186,7 +186,7 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
             </button>
             <button
               onClick={() => setStatusFilter('blocked')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`cursor-pointer px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 statusFilter === 'blocked'
                   ? 'bg-black text-white'
                   : 'bg-gray-200 text-black hover:bg-gray-300'
@@ -238,7 +238,7 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
                     bgColor="bg-white"
                     className="text-sm"
                   />
-                  <button onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')} className="ml-2 p-1 text-gray-600 hover:text-gray-800 rounded border border-gray-300 hover:border-gray-400 transition-colors">
+                  <button onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')} className="cursor-pointer ml-2 p-1 text-gray-600 hover:text-gray-800 rounded border border-gray-300 hover:border-gray-400 transition-colors">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
                     </svg>
@@ -308,7 +308,7 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
                         <div className="text-center">
                           <h3 className="text-lg font-medium text-gray-900 mb-2">Data load error</h3>
                           <p className="text-gray-500 mb-4">{apiError}</p>
-                          <button onClick={handlers.fetchUsers} className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200">Retry</button>
+                          <button onClick={handlers.fetchUsers} className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200">Retry</button>
                         </div>
                       </div>
                     </td>
@@ -362,7 +362,7 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
                           <p className="text-gray-500">Try adjusting filters or your search keywords.</p>
                         </div>
                         {(searchTerm || statusFilter || roleFilter) && (
-                          <button onClick={() => { setSearchTerm(''); setStatusFilter(''); setRoleFilter(''); }} className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200">Clear all filters</button>
+                          <button onClick={() => { setSearchTerm(''); setStatusFilter(''); setRoleFilter(''); }} className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200">Clear all filters</button>
                         )}
                       </div>
                     </td>
@@ -423,13 +423,13 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
                       </td>
                       <td className="px-6 py-6">
                         <div className="flex items-center justify-center space-x-2">
-                          <button onClick={() => { handlers.setSelectedUser(user); handlers.setEditModalOpen(false); handlers.setViewModalOpen(true); }} className="group relative w-10 h-10 flex items-center justify-center bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-md border border-blue-100 hover:border-blue-200">
+                          <button onClick={() => { handlers.setSelectedUser(user); handlers.setEditModalOpen(false); handlers.setViewModalOpen(true); }} className="cursor-pointer group relative w-10 h-10 flex items-center justify-center bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-md border border-blue-100 hover:border-blue-200">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                           </button>
-                          <button onClick={() => handleEditUser(user.id)} className="group relative w-10 h-10 flex items-center justify-center bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-md border border-indigo-100 hover:border-indigo-200">
+                          <button onClick={() => handleEditUser(user.id)} className="cursor-pointer group relative w-10 h-10 flex items-center justify-center bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-md border border-indigo-100 hover:border-indigo-200">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                           </button>
-                          <button onClick={() => handleToggleUserStatus(user.id)} className={`group relative w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-md border ${user.status === 'Blocked' ? 'bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700 border-orange-100 hover:border-orange-200' : 'bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 border-green-100 hover:border-green-200'}`}>
+                          <button onClick={() => handleToggleUserStatus(user.id)} className={`cursor-pointer group relative w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-md border ${user.status === 'Blocked' ? 'bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700 border-orange-100 hover:border-orange-200' : 'bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 border-green-100 hover:border-green-200'}`}>
                             {user.status === 'Blocked' ? (
                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" /></svg>
                             ) : (
@@ -455,7 +455,7 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
                 
               </div>
               <div className="flex items-center justify-center sm:justify-end space-x-2">
-                <button onClick={goToPrevPage} disabled={vm.currentPage === 1} className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 disabled:hover:scale-100">
+                <button onClick={goToPrevPage} disabled={vm.currentPage === 1} className="cursor-pointer flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 disabled:hover:scale-100">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                   <span className="hidden sm:inline">Previous</span>
                 </button>
@@ -465,24 +465,24 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
                     const startPage = Math.max(1, vm.currentPage - 2);
                     const endPage = Math.min(vm.totalPages, vm.currentPage + 2);
                     if (startPage > 1) {
-                      pages.push(<button key={1} onClick={() => goToPage(1)} className="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition-all duration-200 hover:scale-105">1</button>);
+                      pages.push(<button key={1} onClick={() => goToPage(1)} className="cursor-pointer px-3 py-2 text-sm font-medium text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition-all duration-200 hover:scale-105">1</button>);
                       if (startPage > 2) pages.push(<span key="start-ellipsis" className="px-2 text-gray-400">...</span>);
                     }
                     for (let i = startPage; i <= endPage; i++) {
                       pages.push(
-                        <button key={i} onClick={() => goToPage(i)} className={`px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 hover:scale-105 ${i === vm.currentPage ? 'text-white bg-black shadow-lg' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'}`}>
+                        <button key={i} onClick={() => goToPage(i)} className={`cursor-pointer px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 hover:scale-105 ${i === vm.currentPage ? 'text-white bg-black shadow-lg' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'}`}>
                           {i}
                         </button>
                       );
                     }
                     if (endPage < vm.totalPages) {
                       if (endPage < vm.totalPages - 1) pages.push(<span key="end-ellipsis" className="px-2 text-gray-400">...</span>);
-                      pages.push(<button key={vm.totalPages} onClick={() => goToPage(vm.totalPages)} className="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition-all duration-200 hover:scale-105">{vm.totalPages}</button>);
+                      pages.push(<button key={vm.totalPages} onClick={() => goToPage(vm.totalPages)} className="cursor-pointer px-3 py-2 text-sm font-medium text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition-all duration-200 hover:scale-105">{vm.totalPages}</button>);
                     }
                     return pages;
                   })()}
                 </div>
-                <button onClick={goToNextPage} disabled={vm.currentPage === vm.totalPages} className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 disabled:hover:scale-100">
+                <button onClick={goToNextPage} disabled={vm.currentPage === vm.totalPages} className="cursor-pointer flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 disabled:hover:scale-100">
                   <span className="hidden sm:inline">Next</span>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                 </button>

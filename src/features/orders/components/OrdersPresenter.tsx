@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Order, OrderStatus, PaymentStatus } from '../../../types/order.types';
 import { Skeleton } from '../../../components/ui/Skeleton';
+import ExportExcelButton from '@/components/ui/ExportExcelButton';
 
 interface OrdersPresenterProps {
   orders: Order[];
@@ -22,6 +23,7 @@ interface OrdersPresenterProps {
   onSearch?: (query: string) => void;
   onFilterStatus?: (status: OrderStatus | null) => void;
   onFilterPaymentStatus?: (status: PaymentStatus | null) => void;
+  onExportExcel?: () => void;
 }
 
 export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
@@ -37,6 +39,7 @@ export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
   onSearch,
   onFilterStatus,
   onFilterPaymentStatus,
+  onExportExcel,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeStatusFilter, setActiveStatusFilter] = useState<string>('all');
@@ -150,6 +153,7 @@ export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
             Manage and track all customer orders
           </p>
         </div>
+        {onExportExcel && <ExportExcelButton onClick={onExportExcel} />}
       </div>
 
       {/* Search & Filters */}
@@ -183,7 +187,7 @@ export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => handleCombinedStatusFilter('all')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`cursor-pointer px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeStatusFilter === 'all'
                 ? 'bg-black text-white'
                 : 'bg-gray-200 text-black hover:bg-gray-300'
@@ -193,7 +197,7 @@ export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
           </button>
           <button
             onClick={() => handleCombinedStatusFilter(OrderStatus.UNFULFILLED)}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`cursor-pointer px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeStatusFilter === OrderStatus.UNFULFILLED
                 ? 'bg-black text-white'
                 : 'bg-gray-200 text-black hover:bg-gray-300'
@@ -203,7 +207,7 @@ export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
           </button>
           <button
             onClick={() => handleCombinedStatusFilter(OrderStatus.FULFILLED)}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`cursor-pointer px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeStatusFilter === OrderStatus.FULFILLED
                 ? 'bg-black text-white'
                 : 'bg-gray-200 text-black hover:bg-gray-300'
@@ -213,7 +217,7 @@ export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
           </button>
           <button
             onClick={() => handleCombinedStatusFilter(OrderStatus.PARTIALLY_FULFILLED)}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`cursor-pointer px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeStatusFilter === OrderStatus.PARTIALLY_FULFILLED
                 ? 'bg-black text-white'
                 : 'bg-gray-200 text-black hover:bg-gray-300'
@@ -223,7 +227,7 @@ export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
           </button>
           <button
             onClick={() => handleCombinedStatusFilter(OrderStatus.CANCELLED)}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`cursor-pointer px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeStatusFilter === OrderStatus.CANCELLED
                 ? 'bg-black text-white'
                 : 'bg-gray-200 text-black hover:bg-gray-300'
@@ -233,7 +237,7 @@ export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
           </button>
           <button
             onClick={() => handleCombinedStatusFilter(PaymentStatus.UNPAID)}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`cursor-pointer px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeStatusFilter === PaymentStatus.UNPAID
                 ? 'bg-black text-white'
                 : 'bg-gray-200 text-black hover:bg-gray-300'
@@ -243,7 +247,7 @@ export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
           </button>
           <button
             onClick={() => handleCombinedStatusFilter(PaymentStatus.PAID)}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`cursor-pointer px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeStatusFilter === PaymentStatus.PAID
                 ? 'bg-black text-white'
                 : 'bg-gray-200 text-black hover:bg-gray-300'
@@ -253,7 +257,7 @@ export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
           </button>
           <button
             onClick={() => handleCombinedStatusFilter(PaymentStatus.REFUNDED)}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`cursor-pointer px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeStatusFilter === PaymentStatus.REFUNDED
                 ? 'bg-black text-white'
                 : 'bg-gray-200 text-black hover:bg-gray-300'
@@ -271,7 +275,7 @@ export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
             <span>{error}</span>
             <button
               onClick={onRefresh}
-              className="ml-4 text-red-800 hover:text-red-900 font-medium"
+              className="cursor-pointer ml-4 text-red-800 hover:text-red-900 font-medium"
             >
               Retry
             </button>
@@ -435,7 +439,7 @@ export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
                         <div className="flex items-center justify-end space-x-3">
                           <button
                             onClick={() => onViewDetail(order)}
-                            className="text-black hover:text-gray-700 transition-colors"
+                            className="cursor-pointer text-black hover:text-gray-700 transition-colors"
                             title="View order details"
                           >
                             <svg
@@ -464,7 +468,7 @@ export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
                             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
                               order.paymentStatus === PaymentStatus.PAID || order.paymentStatus === PaymentStatus.REFUNDED || order.paymentStatus === PaymentStatus.PARTIALLY_REFUNDED || order.status === OrderStatus.CANCELLED
                                 ? 'text-gray-400 bg-gray-100 border border-gray-300 cursor-not-allowed'
-                                : 'text-black bg-white border border-black hover:bg-gray-50'
+                                : 'cursor-pointer text-black bg-white border border-black hover:bg-gray-50'
                             }`}
                             title={
                               order.paymentStatus === PaymentStatus.PAID
@@ -508,7 +512,7 @@ export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
             <button
               onClick={() => onPageChange(pagination.currentPage - 1)}
               disabled={pagination.currentPage === 0}
-              className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
+              className="cursor-pointer inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
             >
               <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -544,7 +548,7 @@ export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
                   <button
                     key={i}
                     onClick={() => onPageChange(i)}
-                    className={`min-w-[40px] px-3 py-2 text-sm font-medium rounded-lg transition-all ${
+                    className={`cursor-pointer min-w-[40px] px-3 py-2 text-sm font-medium rounded-lg transition-all ${
                       isCurrent
                         ? 'bg-black text-white shadow-sm'
                         : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400'
@@ -565,7 +569,7 @@ export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
             <button
               onClick={() => onPageChange(pagination.currentPage + 1)}
               disabled={pagination.currentPage >= pagination.totalPages - 1}
-              className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
+              className="cursor-pointer inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
             >
               Next
               <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

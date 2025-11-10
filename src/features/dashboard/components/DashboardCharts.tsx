@@ -29,6 +29,14 @@ interface ChartData {
   revenue: number;
   users: number;
   products: number;
+  cancelledOrders?: number;
+  refundedRevenue?: number;
+  completedOrders?: number;
+  pendingOrders?: number;
+  paidRevenue?: number;
+  unpaidRevenue?: number;
+  totalOrders?: number;
+  totalRevenue?: number;
 }
 
 interface DashboardChartsProps {
@@ -71,7 +79,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ chartData = []
 
   return (
     <div className="space-y-6">
-      {/* First Row - Revenue and Orders */}
+      {/* Charts Row - Side by Side */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Revenue Area Chart */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
@@ -79,21 +87,47 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ chartData = []
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-bold text-gray-900">Revenue Trend</h3>
-                <p className="text-gray-600 text-sm mt-1">Daily revenue over the past week</p>
+                <p className="text-gray-600 text-sm mt-1">Daily revenue breakdown</p>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span className="text-sm text-gray-600">Revenue (VND)</span>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm text-gray-600">Total</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="text-sm text-gray-600">Paid</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                  <span className="text-sm text-gray-600">Unpaid</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                  <span className="text-sm text-gray-600">Refunded</span>
+                </div>
               </div>
             </div>
           </div>
           <div className="p-4 sm:p-6">
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={chartData}>
+            <ResponsiveContainer width="100%" height={450}>
+            <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
                     <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="paidGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="unpaidGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="refundGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -118,7 +152,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ chartData = []
                     borderRadius: '12px',
                     boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
                   }}
-                  formatter={(value: number) => [`${value.toLocaleString('en-US')} VND`, 'Revenue']}
+                  formatter={(value: number) => [`${value.toLocaleString('en-US')} VND`]}
                   labelStyle={{ color: '#374151', fontWeight: '600' }}
                 />
                 <Area
@@ -129,6 +163,37 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ chartData = []
                   fill="url(#revenueGradient)"
                   dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
                   activeDot={{ r: 6, stroke: '#3b82f6', strokeWidth: 2 }}
+                  name="Total Revenue"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="paidRevenue"
+                  stroke="#10b981"
+                  strokeWidth={2}
+                  fill="url(#paidGradient)"
+                  dot={{ fill: '#10b981', strokeWidth: 2, r: 3 }}
+                  activeDot={{ r: 5, stroke: '#10b981', strokeWidth: 2 }}
+                  name="Paid"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="unpaidRevenue"
+                  stroke="#f59e0b"
+                  strokeWidth={2}
+                  fill="url(#unpaidGradient)"
+                  dot={{ fill: '#f59e0b', strokeWidth: 2, r: 3 }}
+                  activeDot={{ r: 5, stroke: '#f59e0b', strokeWidth: 2 }}
+                  name="Unpaid"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="refundedRevenue"
+                  stroke="#ef4444"
+                  strokeWidth={2}
+                  fill="url(#refundGradient)"
+                  dot={{ fill: '#ef4444', strokeWidth: 2, r: 3 }}
+                  activeDot={{ r: 5, stroke: '#ef4444', strokeWidth: 2 }}
+                  name="Refunded"
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -141,16 +206,26 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ chartData = []
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-bold text-gray-900">Orders Trend</h3>
-                <p className="text-gray-600 text-sm mt-1">Daily orders over the past week</p>
+                <p className="text-gray-600 text-sm mt-1">Daily orders breakdown</p>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-gray-600">Orders</span>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="text-sm text-gray-600">Completed</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                  <span className="text-sm text-gray-600">Pending</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                  <span className="text-sm text-gray-600">Cancelled</span>
+                </div>
               </div>
             </div>
           </div>
           <div className="p-4 sm:p-6">
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={450}>
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis
@@ -173,142 +248,31 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ chartData = []
                     borderRadius: '12px',
                     boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
                   }}
-                  formatter={(value: number) => [value, 'Orders']}
                   labelStyle={{ color: '#374151', fontWeight: '600' }}
                 />
                 <Bar
-                  dataKey="orders"
+                  dataKey="completedOrders"
+                  stackId="orders"
                   fill="#10b981"
-                  radius={[6, 6, 0, 0]}
+                  radius={[0, 0, 0, 0]}
+                  name="Completed"
+                />
+                <Bar
+                  dataKey="pendingOrders"
+                  stackId="orders"
+                  fill="#f59e0b"
+                  radius={[0, 0, 0, 0]}
+                  name="Pending"
+                />
+                <Bar
+                  dataKey="cancelledOrders"
+                  stackId="orders"
+                  fill="#ef4444"
+                  radius={[8, 8, 0, 0]}
+                  name="Cancelled"
                 />
               </BarChart>
             </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      {/* Second Row - Combined Chart and Pie Chart */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* Combined Chart */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-          <div className="bg-gradient-to-r from-purple-50 to-pink-50 px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">Performance Overview</h3>
-                <p className="text-gray-600 text-sm mt-1">Orders, Revenue, and Users comparison</p>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-1">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">Revenue</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">Orders</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">Users</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="p-4 sm:p-6">
-            <ResponsiveContainer width="100%" height={300}>
-              <ComposedChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis
-                  dataKey="name"
-                  stroke="#6b7280"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  stroke="#6b7280"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  yAxisId="left"
-                />
-                <YAxis
-                  stroke="#6b7280"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  yAxisId="right"
-                  orientation="right"
-                  tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'white',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '12px',
-                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
-                  }}
-                  formatter={(value: number, name: string) => {
-                    if (name === 'revenue') return [`${value.toLocaleString('en-US')} VND`, 'Revenue'];
-                    return [value, name];
-                  }}
-                  labelStyle={{ color: '#374151', fontWeight: '600' }}
-                />
-                <Bar yAxisId="left" dataKey="orders" fill="#10b981" radius={[4, 4, 0, 0]} />
-                <Line yAxisId="right" type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={3} />
-                <Line yAxisId="left" type="monotone" dataKey="users" stroke="#f59e0b" strokeWidth={3} strokeDasharray="5 5" />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Pie Chart */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">Product Categories</h3>
-                <p className="text-gray-600 text-sm mt-1">Distribution by category</p>
-              </div>
-            </div>
-          </div>
-          <div className="p-4 sm:p-6">
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'white',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '12px',
-                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
-                  }}
-                  formatter={(value: number, name: string) => [`${value}%`, name]}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="grid grid-cols-2 gap-2 mt-4">
-              {pieData.map((item, index) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: item.color }}
-                  ></div>
-                  <span className="text-sm text-gray-600">{item.name}</span>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </div>

@@ -44,14 +44,14 @@ const Modal: React.FC<BaseModalProps & { children: React.ReactNode; title: strin
       ></div>
 
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden animate-fadeInUp">
+      <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-fadeInUp">
         {/* Header */}
         <div className="bg-gray-800 px-6 py-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-white">{title}</h3>
             <button
               onClick={onClose}
-              className="text-white hover:text-gray-200 transition-colors p-1 rounded-full hover:bg-white/20"
+              className="cursor-pointer text-white hover:text-gray-200 transition-colors p-1 rounded-full hover:bg-white/20"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -61,7 +61,7 @@ const Modal: React.FC<BaseModalProps & { children: React.ReactNode; title: strin
         </div>
 
         {/* Content */}
-        <div className="px-6 py-6 max-h-[calc(90vh-80px)] overflow-y-auto">
+        <div className="px-6 py-6">
           {children}
         </div>
       </div>
@@ -173,13 +173,13 @@ export const AddUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, onSave
           <button
             type="button"
             onClick={onClose}
-            className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 font-medium transition-colors duration-200"
+            className="cursor-pointer px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 font-medium transition-colors duration-200"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="px-6 py-3 bg-gray-800 text-white rounded-xl hover:bg-gray-900 font-medium transition-all duration-200 transform hover:scale-105"
+            className="cursor-pointer px-6 py-3 bg-gray-800 text-white rounded-xl hover:bg-gray-900 font-medium transition-all duration-200 transform hover:scale-105"
           >
             Add user
           </button>
@@ -286,7 +286,7 @@ export const ViewUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user 
         <div className="flex justify-end pt-4">
           <button
             onClick={onClose}
-            className="px-6 py-3 bg-gray-800 text-white rounded-xl hover:bg-gray-900 font-medium transition-all duration-200 transform hover:scale-105"
+            className="cursor-pointer px-6 py-3 bg-gray-800 text-white rounded-xl hover:bg-gray-900 font-medium transition-all duration-200 transform hover:scale-105"
           >
             Close
           </button>
@@ -406,13 +406,13 @@ export const EditUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user,
           <button
             type="button"
             onClick={handleCancel}
-            className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 font-medium transition-colors duration-200"
+            className="cursor-pointer px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 font-medium transition-colors duration-200"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="px-6 py-3 bg-gray-800 text-white rounded-xl hover:bg-gray-900 font-medium transition-all duration-200 transform hover:scale-105"
+            className="cursor-pointer px-6 py-3 bg-gray-800 text-white rounded-xl hover:bg-gray-900 font-medium transition-all duration-200 transform hover:scale-105"
           >
             Save changes
           </button>
@@ -486,14 +486,14 @@ export const LockUserModal: React.FC<LockModalProps> = ({ isOpen, onClose, user,
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="cursor-pointer px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
           <button
             onClick={handleConfirm}
             disabled={isLoading}
-            className={`px-6 py-3 text-white rounded-xl font-medium transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 bg-gray-800 hover:bg-gray-900`}
+            className={`cursor-pointer px-6 py-3 text-white rounded-xl font-medium transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 bg-gray-800 hover:bg-gray-900`}
           >
             {isLoading && (
               <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
