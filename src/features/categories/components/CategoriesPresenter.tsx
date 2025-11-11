@@ -102,7 +102,7 @@ export const CategoriesPresenter: React.FC<CategoriesPresenterProps> = ({
             <button
               type="button"
               onClick={() => setOpen((s) => !s)}
-              className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-black hover:bg-gray-100 rounded-lg transition-all duration-200"
+              className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-black hover:bg-gray-100 rounded-lg transition-all duration-200 cursor-pointer"
             >
               {node.children && node.children.length > 0 ? (
                 <svg
@@ -181,7 +181,7 @@ export const CategoriesPresenter: React.FC<CategoriesPresenterProps> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => handleAddChild(node.id)}
-                className="p-2.5 border border-gray-200 rounded-lg text-gray-600 hover:text-black hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
+                className="p-2.5 border border-gray-200 rounded-lg text-gray-600 hover:text-black hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 cursor-pointer"
                 aria-label="Add child"
                 title="Add child category"
               >
@@ -202,7 +202,7 @@ export const CategoriesPresenter: React.FC<CategoriesPresenterProps> = ({
 
               <button
                 onClick={() => handleEditCategory(node)}
-                className="p-2.5 border border-gray-200 rounded-lg text-gray-600 hover:text-black hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
+                className="p-2.5 border border-gray-200 rounded-lg text-gray-600 hover:text-black hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 cursor-pointer"
                 aria-label="Edit"
               >
                 <svg
@@ -256,7 +256,7 @@ export const CategoriesPresenter: React.FC<CategoriesPresenterProps> = ({
               setCreateParentId(null);
               setShowAddModal(true);
             }}
-            className="bg-black text-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-800 transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
+            className="bg-black text-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-800 transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2 cursor-pointer"
           >
             <svg
               className="w-5 h-5"
