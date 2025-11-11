@@ -101,7 +101,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
           <button
             onClick={handleClose}
             disabled={isSubmitting}
-            className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
+            className="text-gray-400 hover:text-gray-600 disabled:opacity-50 cursor-pointer"
           >
             <svg
               className="w-6 h-6"
@@ -157,7 +157,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
               type="button"
               onClick={handleClose}
               disabled={isSubmitting}
-              className="flex-1 px-4 py-2 border border-gray-500 text-black rounded-lg"
+              className="flex-1 px-4 py-2 border border-gray-500 text-black rounded-lg cursor-pointer"
             >
               Cancel
             </button>
@@ -166,7 +166,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
               disabled={
                 isSubmitting || !formData.name.trim() || !formData.slug.trim()
               }
-              className="flex-1 px-4 py-2 bg-black text-white rounded-lg flex items-center justify-center"
+              className="flex-1 px-4 py-2 bg-black text-white rounded-lg flex items-center justify-center cursor-pointer"
             >
               {isSubmitting ? (
                 <>
@@ -287,7 +287,7 @@ export const EditCategoryModal: React.FC<EditCategoryModalProps> = ({
           <button
             onClick={handleClose}
             disabled={isSubmitting}
-            className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
+            className="text-gray-400 hover:text-gray-600 disabled:opacity-50 cursor-pointer"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -382,7 +382,7 @@ export const EditCategoryModal: React.FC<EditCategoryModalProps> = ({
               type="button"
               onClick={handleClose}
               disabled={isSubmitting}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg disabled:opacity-50"
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg disabled:opacity-50 cursor-pointer"
             >
               Cancel
             </button>
@@ -393,7 +393,7 @@ export const EditCategoryModal: React.FC<EditCategoryModalProps> = ({
                 !formData.name.trim() ||
                 !formData.slug.trim()
               }
-              className="flex-1 px-4 py-2 bg-black text-white rounded-lg disabled:opacity-50 flex items-center justify-center"
+              className="flex-1 px-4 py-2 bg-black text-white rounded-lg disabled:opacity-50 flex items-center justify-center cursor-pointer"
             >
               {isSubmitting ? (
                 <>

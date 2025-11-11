@@ -1,5 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import type { DashboardResponse } from '@/services/api/dashboardApi';
 
+// Legacy types for backward compatibility
 export interface DashboardStats {
   totalUsers: number;
   totalProducts: number;
@@ -29,21 +31,45 @@ export interface RecentActivity {
 }
 
 export interface DashboardState {
-  stats: DashboardStats | null;
+  data: DashboardResponse | null;
+  period: 'day' | 'week' | 'month' | 'year';
   loading: boolean;
   error: string | null;
+  // Legacy stats for backward compatibility
+  stats: DashboardStats | null;
 }
 
 const initialState: DashboardState = {
-  stats: null,
+  data: null,
+  period: 'week',
   loading: false,
   error: null,
+  stats: null,
 };
 
 export const dashboardSlice = createSlice({
   name: 'dashboard',
   initialState,
   reducers: {
+    // New actions for /reports/dashboard API
+    fetchDashboardRequest: (state, action: PayloadAction<'day' | 'week' | 'month' | 'year'>) => {
+      state.loading = true;
+      state.error = null;
+      state.period = action.payload;
+    },
+    fetchDashboardSuccess: (state, action: PayloadAction<DashboardResponse>) => {
+      state.loading = false;
+      state.data = action.payload;
+      state.error = null;
+    },
+    fetchDashboardFailure: (state, action: PayloadAction<string>) => {
+      state.loading = false;
+      state.error = action.payload;
+    },
+    setPeriod: (state, action: PayloadAction<'day' | 'week' | 'month' | 'year'>) => {
+      state.period = action.payload;
+    },
+    // Legacy actions for backward compatibility
     fetchStatsRequest: (state) => {
       state.loading = true;
       state.error = null;
@@ -64,6 +90,10 @@ export const dashboardSlice = createSlice({
 });
 
 export const { 
+  fetchDashboardRequest,
+  fetchDashboardSuccess,
+  fetchDashboardFailure,
+  setPeriod,
   fetchStatsRequest, 
   fetchStatsSuccess, 
   fetchStatsFailure, 

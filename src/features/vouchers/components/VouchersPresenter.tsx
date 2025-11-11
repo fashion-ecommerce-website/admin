@@ -113,7 +113,7 @@ export const VouchersPresenter: React.FC<VouchersPresenterProps> = ({
           </div>
           <button 
             onClick={() => setIsCreateModalOpen(true)}
-            className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 flex items-center space-x-2"
+            className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 flex items-center space-x-2 cursor-pointer"
           >
             <svg
               className="w-5 h-5"
@@ -270,7 +270,7 @@ export const VouchersPresenter: React.FC<VouchersPresenterProps> = ({
                           <div className="flex items-center justify-end space-x-3">
                             <button
                               onClick={() => openEditModal(voucher)}
-                              className="text-black hover:text-gray-700"
+                              className="text-black hover:text-gray-700 cursor-pointer"
                               title="Edit voucher"
                             >
                               <svg
@@ -337,14 +337,14 @@ export const VouchersPresenter: React.FC<VouchersPresenterProps> = ({
             <button
               onClick={() => onPageChange(pagination.page - 1)}
               disabled={!pagination.hasPrevious}
-              className="px-3 py-2 text-sm font-medium text-black bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-2 text-sm font-medium text-black bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               Previous
             </button>
             <button
               onClick={() => onPageChange(pagination.page + 1)}
               disabled={!pagination.hasNext}
-              className="px-3 py-2 text-sm font-medium text-black bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-2 text-sm font-medium text-black bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               Next
             </button>

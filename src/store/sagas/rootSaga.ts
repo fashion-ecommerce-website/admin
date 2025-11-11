@@ -1,6 +1,7 @@
 import { all } from '@redux-saga/core/effects';
 import { adminAuthSaga } from '../../features/auth/login/redux/adminAuthSaga';
 import { dashboardSaga } from '../../features/dashboard/redux/dashboardSaga';
+import { commonSaga } from '../../features/common/redux/commonSaga';
 import { userSaga } from '../../features/users/redux/userSaga';
 import { productSaga } from '../../features/products/redux/productSaga';
 import { voucherSaga } from '../../features/vouchers/redux/voucherSaga';
@@ -12,6 +13,7 @@ export function* rootSaga() {
   yield all([
     adminAuthSaga(),
     dashboardSaga(),
+    commonSaga(),
     userSaga(),
     productSaga(),
     voucherSaga(),

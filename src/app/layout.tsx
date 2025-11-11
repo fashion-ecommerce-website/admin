@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ReduxProvider } from "@/providers/ReduxProvider";
 import { ToastProvider } from "@/providers/ToastProvider";
+import { EnumProvider } from "@/providers/EnumProvider";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 
 const geistSans = Geist({
@@ -33,7 +34,9 @@ export default function RootLayout({
         <ReduxProvider>
           <ToastProvider>
             <AuthGuard>
-              {children}
+              <EnumProvider>
+                {children}
+              </EnumProvider>
             </AuthGuard>
           </ToastProvider>
         </ReduxProvider>

@@ -2,6 +2,8 @@
 
 import React, { useEffect, useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 import { RootState } from '../../../store';
 import { CustomDropdown } from '../../../components/ui';
 import { 
@@ -17,9 +19,11 @@ import EditProductDetailModal from '../../../components/modals/EditProductDetail
 import { Product, ProductDetailQueryResponse } from '../../../types/product.types';
 import { productApi } from '../../../services/api/productApi';
 import { useMinimumLoadingTime } from '../../../hooks/useMinimumLoadingTime';
+import { useToast } from '../../../providers/ToastProvider';
 
 const ProductsContainer: React.FC = () => {
   const dispatch = useDispatch();
+  const { showSuccess, showWarning } = useToast();
   
   const { 
     products, 
@@ -219,6 +223,236 @@ const ProductsContainer: React.FC = () => {
     }
   }, []);
 
+  const handleExportExcel = useCallback(async () => {
+    try {
+      if (!products || products.length === 0) {
+        showWarning('No data to export', 'There are no products to export.');
+        return;
+      }
+
+      // Fetch product details for all products
+      const allDetails: any[] = [];
+      
+      for (const product of products) {
+        try {
+          // Step 1: Get product info with all colors
+          const productDetailRes = await productApi.getProductByIdPublic(product.id.toString());
+          
+          if (!productDetailRes.success || !productDetailRes.data) {
+            console.error(`Failed to load product info for product ${product.id}`);
+            continue;
+          }
+          
+          const productInfo = productDetailRes.data;
+          const colors = (productInfo as any).colors || [];
+          
+          // Step 2: For each color, get color-specific details with mapSizeToQuantity
+          for (const colorName of colors) {
+            try {
+              const colorDetailRes = await productApi.getProductByColorPublic(
+                product.id.toString(),
+                colorName,
+                undefined // No specific size - get all sizes in mapSizeToQuantity
+              );
+              
+              if (!colorDetailRes.success || !colorDetailRes.data) {
+                console.error(`Failed to load detail for product ${product.id}, color ${colorName}`);
+                continue;
+              }
+              
+              const colorDetail: any = colorDetailRes.data;
+              const mapSizeToQuantity = colorDetail.mapSizeToQuantity || {};
+              
+              // Get color hex from variantColors in the original product
+              const colorObj = product.variantColors?.find((c: any) => c.name === colorName);
+              const colorHex = colorObj?.hex || 'N/A';
+              
+              // Get image URLs
+              const imageUrls = colorDetail.images?.join('\n') || 'N/A';
+              
+              // Step 3: Parse mapSizeToQuantity to create rows for each size
+              const sizes = Object.keys(mapSizeToQuantity);
+              
+              if (sizes.length > 0) {
+                for (const sizeName of sizes) {
+                  const quantity = mapSizeToQuantity[sizeName];
+                  
+                  allDetails.push({
+                    'No.': allDetails.length + 1,
+                    'Product ID': product.id,
+                    'Product Title': colorDetail.title || product.title,
+                    'Description': product.description || 'N/A',
+                    'Category ID': product.categoryId,
+                    'Color': colorName,
+                    'Color Hex': colorHex,
+                    'Size': sizeName,
+                    'Price (VND)': colorDetail.price?.toLocaleString('en-US') || 'N/A',
+                    'Final Price (VND)': colorDetail.finalPrice?.toLocaleString('en-US') || 'N/A',
+                    'Discount (%)': colorDetail.percentOff || 0,
+                    'Quantity': quantity || 0,
+                    'Detail ID': colorDetail.detailId || 'N/A',
+                    'Images Count': colorDetail.images?.length || 0,
+                    'Image URLs': imageUrls,
+                    'Promotion': colorDetail.promotionName || 'N/A',
+                    'Created At': product.createdAt ? new Date(product.createdAt).toLocaleDateString('en-US') : 'N/A',
+                    'Updated At': product.updatedAt ? new Date(product.updatedAt).toLocaleDateString('en-US') : 'N/A',
+                  });
+                }
+              } else {
+                // No sizes in mapSizeToQuantity, add a single row for color
+                allDetails.push({
+                  'No.': allDetails.length + 1,
+                  'Product ID': product.id,
+                  'Product Title': colorDetail.title || product.title,
+                  'Description': product.description || 'N/A',
+                  'Category ID': product.categoryId,
+                  'Color': colorName,
+                  'Color Hex': colorHex,
+                  'Size': 'N/A',
+                  'Price (VND)': colorDetail.price?.toLocaleString('en-US') || 'N/A',
+                  'Final Price (VND)': colorDetail.finalPrice?.toLocaleString('en-US') || 'N/A',
+                  'Discount (%)': colorDetail.percentOff || 0,
+                  'Quantity': 0,
+                  'Detail ID': colorDetail.detailId || 'N/A',
+                  'Images Count': colorDetail.images?.length || 0,
+                  'Image URLs': imageUrls,
+                  'Promotion': colorDetail.promotionName || 'N/A',
+                  'Created At': product.createdAt ? new Date(product.createdAt).toLocaleDateString('en-US') : 'N/A',
+                  'Updated At': product.updatedAt ? new Date(product.updatedAt).toLocaleDateString('en-US') : 'N/A',
+                });
+              }
+            } catch (error) {
+              console.error(`Error fetching color ${colorName} for product ${product.id}:`, error);
+            }
+          }
+        } catch (error) {
+          console.error(`Error fetching details for product ${product.id}:`, error);
+        }
+      }
+
+      if (allDetails.length === 0) {
+        showWarning('No data to export', 'Could not fetch product details.');
+        return;
+      }
+
+      const exportData = allDetails;
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet([]);
+
+      // Column widths - updated for new columns (18 total)
+      const colWidths = [
+        { wch: 6 },   // No.
+        { wch: 12 },  // Product ID
+        { wch: 35 },  // Product Title
+        { wch: 40 },  // Description
+        { wch: 12 },  // Category ID
+        { wch: 20 },  // Color
+        { wch: 12 },  // Color Hex
+        { wch: 10 },  // Size
+        { wch: 18 },  // Price (VND)
+        { wch: 18 },  // Final Price (VND)
+        { wch: 12 },  // Discount (%)
+        { wch: 10 },  // Quantity
+        { wch: 12 },  // Detail ID
+        { wch: 12 },  // Images Count
+        { wch: 80 },  // Image URLs
+        { wch: 25 },  // Promotion
+        { wch: 15 },  // Created At
+        { wch: 15 },  // Updated At
+      ];
+      ws['!cols'] = colWidths;
+
+      // Add header
+      XLSX.utils.sheet_add_aoa(ws, [
+        ['FASHION ECOMMERCE ADMIN'],
+        ['PRODUCT DETAILS REPORT'],
+        [`Export date: ${new Date().toLocaleDateString('en-US')}`],
+        [`Total product variants: ${exportData.length}`],
+        [`Filters: ${filters.title ? `Search: ${filters.title}` : ''}${filters.categorySlug ? ` Category: ${filters.categorySlug}` : ''}${filters.isActive !== null && filters.isActive !== undefined ? ` Status: ${filters.isActive ? 'Active' : 'Inactive'}` : ''}`],
+        [''],
+      ], { origin: 'A1' });
+
+      // Add column headers
+      const headers = Object.keys(exportData[0]);
+      XLSX.utils.sheet_add_aoa(ws, [headers], { origin: 'A7' });
+
+      // Add data
+      exportData.forEach((row, index) => {
+        const rowData = headers.map(header => row[header as keyof typeof row]);
+        XLSX.utils.sheet_add_aoa(ws, [rowData], { origin: `A${8 + index}` });
+      });
+
+      // Styling
+      const titleStyle = {
+        font: { bold: true, sz: 16, color: { rgb: 'FFFFFF' } },
+        fill: { fgColor: { rgb: '312E81' } },
+        alignment: { horizontal: 'center', vertical: 'center' },
+      } as any;
+
+      const headerStyle = {
+        font: { bold: true, sz: 14, color: { rgb: 'FFFFFF' } },
+        fill: { fgColor: { rgb: '4F46E5' } },
+        alignment: { horizontal: 'center', vertical: 'center' },
+      } as any;
+
+      const columnHeaderStyle = {
+        font: { bold: true, sz: 12, color: { rgb: 'FFFFFF' } },
+        fill: { fgColor: { rgb: '059669' } },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        border: {
+          top: { style: 'thin', color: { rgb: '000000' } },
+          bottom: { style: 'thin', color: { rgb: '000000' } },
+          left: { style: 'thin', color: { rgb: '000000' } },
+          right: { style: 'thin', color: { rgb: '000000' } }
+        },
+      } as any;
+
+      // Apply styles to title row - updated for 18 columns (A-R)
+      const columnLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R'];
+      columnLetters.forEach(col => {
+        const cell = col + '1';
+        if (!ws[cell]) ws[cell] = {};
+        ws[cell].s = titleStyle;
+      });
+
+      // Apply styles to header rows (2-5)
+      for (let row = 2; row <= 5; row++) {
+        columnLetters.forEach(col => {
+          const cellRef = col + row;
+          if (!ws[cellRef]) ws[cellRef] = {};
+          ws[cellRef].s = headerStyle;
+        });
+      }
+
+      // Apply styles to column headers (row 7)
+      headers.forEach((_, index) => {
+        const cellRef = String.fromCharCode(65 + index) + '7';
+        if (!ws[cellRef]) ws[cellRef] = {};
+        ws[cellRef].s = columnHeaderStyle;
+      });
+
+      // Merge cells for headers - updated for 18 columns (0-17)
+      ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 17 } }, // Title
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 17 } }, // Subtitle
+        { s: { r: 2, c: 0 }, e: { r: 2, c: 17 } }, // Export date
+        { s: { r: 3, c: 0 }, e: { r: 3, c: 17 } }, // Total
+        { s: { r: 4, c: 0 }, e: { r: 4, c: 17 } }, // Filters
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Product Details');
+      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      saveAs(blob, `product_details_${new Date().getTime()}.xlsx`);
+
+      showSuccess('Export successful', 'Product details have been exported to Excel.');
+    } catch (error) {
+      console.error('Error exporting Excel:', error);
+      showWarning('Export failed', 'Failed to export products to Excel.');
+    }
+  }, [products, filters, showSuccess, showWarning]);
+
   const handleCloseModals = useCallback(() => {
     setIsCreateModalOpen(false);
     setIsEditModalOpen(false);
@@ -245,6 +479,7 @@ const ProductsContainer: React.FC = () => {
         onEditProduct={handleEditProduct}
         onEditVariant={handleEditVariant}
         onDeleteProduct={handleDeleteProduct}
+        onExportExcel={handleExportExcel}
         onClearError={handleClearError}
         onEditProductDetail={handleEditProductDetail}
       />

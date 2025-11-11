@@ -5,6 +5,7 @@ import { categoryApi, CategoryBackend } from '../../../services/api/categoryApi'
 import { Product, VariantColor, VariantSize } from '../../../types/product.types';
 import { ProductRowSkeleton, TableSkeletonWithRows } from '../../../components/ui/Skeleton';
 import { CustomDropdown } from '../../../components/ui';
+import ExportExcelButton from '@/components/ui/ExportExcelButton';
 
 interface ProductFilters {
   title?: string;
@@ -36,6 +37,7 @@ interface ProductsPresenterProps {
   onDeleteProduct: (productId: number) => void;
   onClearError: () => void;
   onEditProductDetail?: (product: Product) => void; // New prop for editing product detail
+  onExportExcel?: () => void; // New prop for exporting to Excel
 }
 
 export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
@@ -53,6 +55,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
   onDeleteProduct,
   onClearError,
   onEditProductDetail, // New prop
+  onExportExcel, // New prop
 }) => {
   const [categoryMap, setCategoryMap] = useState<Record<number, string>>({});
 
@@ -174,15 +177,18 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
             Product Management
           </h1>
         </div>
-        <button
-          onClick={onCreateProduct}
-          className="bg-black text-white px-6 py-3 rounded-lg font-medium flex items-center space-x-2"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-          <span>Add Product</span>
-        </button>
+        <div className="flex gap-3">
+          {onExportExcel && <ExportExcelButton onClick={onExportExcel} />}
+          <button
+            onClick={onCreateProduct}
+            className="bg-black text-white px-6 py-3 rounded-lg font-medium flex items-center space-x-2 hover:bg-gray-800 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            <span>Add Product</span>
+          </button>
+        </div>
       </div>
 
       {/* Filters */}

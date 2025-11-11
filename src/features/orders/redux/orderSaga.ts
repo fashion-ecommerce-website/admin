@@ -119,7 +119,12 @@ function* handleUpdateOrder(action: PayloadAction<UpdateOrderRequestPayload>) {
       );
       
       // Refetch orders to get updated list
-      yield put(fetchOrdersRequest({ page: 0, size: 10 }));
+      yield put(fetchOrdersRequest({ 
+        page: 0, 
+        size: 10,
+        sortBy: 'createdAt',
+        direction: 'desc'
+      }));
     } else {
       yield put(
         updateOrderFailure({
@@ -153,7 +158,12 @@ function* handleUpdateOrderStatus(action: PayloadAction<UpdateOrderStatusRequest
       );
       
       // Refetch orders to get updated list
-      yield put(fetchOrdersRequest({ page: 0, size: 10 }));
+      yield put(fetchOrdersRequest({ 
+        page: 0, 
+        size: 10,
+        sortBy: 'createdAt',
+        direction: 'desc'
+      }));
     } else {
       yield put(
         updateOrderFailure({
@@ -187,7 +197,12 @@ function* handleCancelOrder(action: PayloadAction<CancelOrderRequest>) {
       );
       
       // Refetch orders to get updated list
-      yield put(fetchOrdersRequest({ page: 0, size: 10 }));
+      yield put(fetchOrdersRequest({ 
+        page: 0, 
+        size: 10,
+        sortBy: 'createdAt',
+        direction: 'desc'
+      }));
     } else {
       yield put(
         updateOrderFailure({
@@ -221,7 +236,12 @@ function* handleDeleteOrder(action: PayloadAction<DeleteOrderRequest>) {
       );
       
       // Refetch orders to get updated list
-      yield put(fetchOrdersRequest({ page: 0, size: 10 }));
+      yield put(fetchOrdersRequest({ 
+        page: 0, 
+        size: 10,
+        sortBy: 'createdAt',
+        direction: 'desc'
+      }));
     } else {
       yield put(
         deleteOrderFailure({
