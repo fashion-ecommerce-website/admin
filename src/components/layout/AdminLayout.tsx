@@ -148,6 +148,40 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     },
   ];
 
+  // Build multi-level breadcrumb from pathname
+  const segmentLabel = (seg: string) => {
+    switch (seg) {
+      case 'dashboard':
+        return 'Dashboard';
+      case 'users':
+        return 'User Management';
+      case 'products':
+        return 'Product Management';
+      case 'categories':
+        return 'Category Management';
+      case 'vouchers':
+        return 'Voucher Management';
+      case 'promotions':
+        return 'Promotion Management';
+      case 'orders':
+        return 'Orders Management';
+      case 'import-csv':
+        return 'Import CSV';
+      default:
+        return null;
+    }
+  };
+  const segments = (usePathname() || '').split('/').filter(Boolean);
+  const crumbs: Array<{ name: string; href?: string }> = [{ name: 'FIT Admin', href: '/dashboard' }];
+  let accum = '';
+  segments.forEach((seg) => {
+    accum += `/${seg}`;
+    const label = segmentLabel(seg);
+    if (label) {
+      crumbs.push({ name: label, href: accum });
+    }
+  });
+
   return (
     <div className="flex h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Sidebar */}
@@ -264,14 +298,25 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
               {/* Breadcrumb */}
               <nav className="hidden md:flex items-center space-x-2 text-sm text-gray-600">
-                <span>FIT Admin</span>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-                <span className="text-gray-900 font-medium">
-                  {navigation.find((nav) => nav.href === pathname)?.name ||
-                    "Dashboard"}
-                </span>
+                {crumbs.map((c, idx) => {
+                  const isLast = idx === crumbs.length - 1;
+                  return (
+                    <React.Fragment key={`${c.name}-${idx}`}>
+                      {isLast ? (
+                        <span className="text-gray-900 font-medium">{c.name}</span>
+                      ) : (
+                        <Link href={c.href || '#'} className="hover:text-gray-900 font-medium">
+                          {c.name}
+                        </Link>
+                      )}
+                      {!isLast && (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </nav>
             </div>
 

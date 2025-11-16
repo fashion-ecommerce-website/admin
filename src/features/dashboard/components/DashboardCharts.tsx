@@ -86,7 +86,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ chartData = []
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-bold text-gray-900">Revenue Trend</h3>
+                <h3 className="text-lg font-bold text-gray-900">Revenue chart</h3>
                 <p className="text-gray-600 text-sm mt-1">Daily revenue breakdown</p>
               </div>
               <div className="flex items-center gap-4">
@@ -205,7 +205,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ chartData = []
           <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-6 py-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-bold text-gray-900">Orders Trend</h3>
+                <h3 className="text-lg font-bold text-gray-900">Orders chart</h3>
                 <p className="text-gray-600 text-sm mt-1">Daily orders breakdown</p>
               </div>
               <div className="flex items-center gap-4">
