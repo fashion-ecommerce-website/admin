@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { adminApiClient } from '../../../services/api/baseApi';
 import { categoryApi, CategoryBackend } from '../../../services/api/categoryApi';
 import { Product, VariantColor, VariantSize } from '../../../types/product.types';
 import { ProductRowSkeleton, TableSkeletonWithRows } from '../../../components/ui/Skeleton';
@@ -58,6 +60,44 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
   onExportExcel, // New prop
 }) => {
   const [categoryMap, setCategoryMap] = useState<Record<number, string>>({});
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<{ name: string; size: number; file?: File }[]>([]);
+  // Preview state
+  const [previewData, setPreviewData] = useState<any[]>([]); // Array of ProductGroupResponse
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [activePreviewFile, setActivePreviewFile] = useState<{ name: string; size: number; file?: File } | null>(null);
+
+  // Handle upload file
+  const handleUploadCSV = (file: File) => {
+    setUploadedFiles((prev) => [...prev, { name: file.name, size: file.size, file }]);
+  };
+
+  // Handle preview file (calls backend)
+  const handlePreviewCSV = async (file: { name: string; size: number; file?: File }) => {
+    if (!file.file) return;
+    setActivePreviewFile(file);
+    setPreviewLoading(true);
+    setPreviewData([]);
+    try {
+      const formData = new FormData();
+      formData.append('file', file.file);
+      const res = await adminApiClient.post<any[]>('/products/import/preview', formData);
+      setPreviewData(res.data || []);
+    } catch (err) {
+      setPreviewData([]);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  // Handle delete file
+  const handleDeleteCSV = (file: { name: string; size: number }) => {
+    setUploadedFiles((prev) => prev.filter((f) => f.name !== file.name));
+    if (activePreviewFile && activePreviewFile.name === file.name) {
+      setActivePreviewFile(null);
+      setPreviewData([]);
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -179,6 +219,18 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
         </div>
         <div className="flex gap-3">
           {onExportExcel && <ExportExcelButton onClick={onExportExcel} />}
+          {/* Import CSV Button client-side navigation */}
+          <Link
+            href="/products/import-csv"
+            className="bg-black text-white px-6 py-3 rounded-lg font-medium flex items-center space-x-2 hover:bg-gray-800 transition-colors"
+            prefetch
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 9l5-5 5 5M12 4v12" />
+            </svg>
+            <span>Import CSV</span>
+          </Link>
           <button
             onClick={onCreateProduct}
             className="bg-black text-white px-6 py-3 rounded-lg font-medium flex items-center space-x-2 hover:bg-gray-800 transition-colors"

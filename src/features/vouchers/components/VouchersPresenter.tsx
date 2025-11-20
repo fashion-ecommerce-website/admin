@@ -68,7 +68,11 @@ export const VouchersPresenter: React.FC<VouchersPresenterProps> = ({
 
   const handleEditVoucher = (voucherData: CreateVoucherRequest) => {
     if (selectedVoucher) {
-      onUpdateVoucher(selectedVoucher.id, voucherData);
+      const updateData: UpdateVoucherRequest = {
+        ...voucherData,
+        code: selectedVoucher.code
+      };
+      onUpdateVoucher(selectedVoucher.id, updateData);
       setIsEditModalOpen(false);
       setSelectedVoucher(null);
     }

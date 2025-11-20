@@ -95,6 +95,16 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       ),
     },
     { 
+      name: 'System Variable Management', 
+      href: '/system-variables', 
+      icon: (
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M4 3a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1V3zM11 3a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1V3zM4 10a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM11 10a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-3z" />
+        </svg>
+      ),
+    },
+    
+    { 
       name: 'Category Management', 
       href: '/categories', 
       icon: (
@@ -147,6 +157,46 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       ),
     },
   ];
+
+  // Build multi-level breadcrumb from pathname
+  const segmentLabel = (seg: string) => {
+    switch (seg) {
+      case 'dashboard':
+        return 'Dashboard';
+      case 'users':
+        return 'User Management';
+      case 'products':
+        return 'Product Management';
+      case 'system-variables':
+        return 'System Variable Management';
+      case 'colors':
+        return 'Color Management';
+      case 'sizes':
+        return 'Size Management';
+      case 'categories':
+        return 'Category Management';
+      case 'vouchers':
+        return 'Voucher Management';
+      case 'promotions':
+        return 'Promotion Management';
+      case 'orders':
+        return 'Orders Management';
+      case 'import-csv':
+        return 'Import CSV';
+      default:
+        return null;
+    }
+  };
+  const segments = (usePathname() || '').split('/').filter(Boolean);
+  const crumbs: Array<{ name: string; href?: string }> = [{ name: 'FIT Admin', href: '/dashboard' }];
+  let accum = '';
+  segments.forEach((seg) => {
+    accum += `/${seg}`;
+    const label = segmentLabel(seg);
+    if (label) {
+      crumbs.push({ name: label, href: accum });
+    }
+  });
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -264,14 +314,25 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
               {/* Breadcrumb */}
               <nav className="hidden md:flex items-center space-x-2 text-sm text-gray-600">
-                <span>FIT Admin</span>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-                <span className="text-gray-900 font-medium">
-                  {navigation.find((nav) => nav.href === pathname)?.name ||
-                    "Dashboard"}
-                </span>
+                {crumbs.map((c, idx) => {
+                  const isLast = idx === crumbs.length - 1;
+                  return (
+                    <React.Fragment key={`${c.name}-${idx}`}>
+                      {isLast ? (
+                        <span className="text-gray-900 font-medium">{c.name}</span>
+                      ) : (
+                        <Link href={c.href || '#'} className="hover:text-gray-900 font-medium">
+                          {c.name}
+                        </Link>
+                      )}
+                      {!isLast && (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </nav>
             </div>
 

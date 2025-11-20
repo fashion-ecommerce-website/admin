@@ -15,7 +15,7 @@ export interface CustomDropdownProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
-  
+
   // Customization props
   bgColor?: string;
   hoverBgColor?: string;
@@ -25,7 +25,7 @@ export interface CustomDropdownProps {
   focusBorderColor?: string;
   borderRadius?: string;
   padding?: string;
-  
+
   // Dropdown menu customization
   dropdownBgColor?: string;
   dropdownBorderColor?: string;
@@ -36,23 +36,23 @@ export interface CustomDropdownProps {
   dropdownItemBorderRadius?: string;
   dropdownMaxHeight?: string;
   dropdownShadow?: string;
-  
+
   // Icon customization
   iconColor?: string;
   iconSize?: string;
-  
+
   // Animation
   animationDuration?: string;
 }
 
-const CustomDropdown: React.FC<CustomDropdownProps> = ({
+export const CustomDropdown: React.FC<CustomDropdownProps> = ({
   value,
   onChange,
   options,
   placeholder = 'Select an option',
   disabled = false,
   className = '',
-  
+
   // Default customization
   bgColor = 'bg-gray-50',
   hoverBgColor = 'hover:bg-white',
@@ -62,7 +62,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
   focusBorderColor = 'focus:border-indigo-500',
   borderRadius = 'rounded-xl',
   padding = 'px-4 py-3',
-  
+
   // Dropdown menu defaults
   dropdownBgColor = 'bg-white',
   dropdownBorderColor = 'border-gray-200',
@@ -73,11 +73,11 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
   dropdownItemBorderRadius = 'rounded-lg',
   dropdownMaxHeight = 'max-h-60',
   dropdownShadow = 'shadow-xl',
-  
+
   // Icon defaults
   iconColor = 'text-gray-400',
   iconSize = 'w-4 h-4',
-  
+
   // Animation
   animationDuration = 'duration-300',
 }) => {
@@ -152,7 +152,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
         <span className={selectedOption ? '' : 'opacity-50'}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
-        
+
         {/* Chevron Icon */}
         <svg
           className={`
@@ -228,5 +228,3 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
     </div>
   );
 };
-
-export default CustomDropdown;

@@ -211,3 +211,48 @@ export const TableSkeletonWithRows: React.FC<TableSkeletonWithRowsProps> = ({
     </>
   );
 };
+
+// Color Row Skeleton
+export const ColorRowSkeleton: React.FC = () => {
+  return (
+    <tr className="hover:bg-gray-50">
+      <td className="px-8 py-6">
+        <div className="flex items-center space-x-3">
+          <Skeleton className="w-10 h-10 rounded-full" />
+          <Skeleton className="h-4 w-24" />
+        </div>
+      </td>
+      <td className="px-6 py-6">
+        <Skeleton className="h-4 w-20" />
+      </td>
+      <td className="px-6 py-6">
+        <div className="flex items-center justify-end space-x-3">
+          <Skeleton className="h-8 w-8 rounded-xl" />
+          <Skeleton className="h-4 w-12" />
+          <Skeleton className="h-6 w-11 rounded-full" />
+        </div>
+      </td>
+    </tr>
+  );
+};
+
+// Size Row Skeleton
+export const SizeRowSkeleton: React.FC = () => {
+  return (
+    <tr className="hover:bg-gray-50">
+      <td className="px-8 py-6">
+        <Skeleton className="w-8 h-8 rounded-lg" />
+      </td>
+      <td className="px-6 py-6">
+        <Skeleton className="h-4 w-32" />
+      </td>
+      <td className="px-6 py-6">
+        <div className="flex items-center justify-end space-x-3">
+          <Skeleton className="h-8 w-8 rounded-xl" />
+          <Skeleton className="h-4 w-12" />
+          <Skeleton className="h-6 w-11 rounded-full" />
+        </div>
+      </td>
+    </tr>
+  );
+};
