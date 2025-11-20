@@ -95,6 +95,16 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       ),
     },
     { 
+      name: 'System Variable Management', 
+      href: '/system-variables', 
+      icon: (
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M4 3a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1V3zM11 3a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1V3zM4 10a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM11 10a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-3z" />
+        </svg>
+      ),
+    },
+    
+    { 
       name: 'Category Management', 
       href: '/categories', 
       icon: (
@@ -157,6 +167,12 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         return 'User Management';
       case 'products':
         return 'Product Management';
+      case 'system-variables':
+        return 'System Variable Management';
+      case 'colors':
+        return 'Color Management';
+      case 'sizes':
+        return 'Size Management';
       case 'categories':
         return 'Category Management';
       case 'vouchers':
