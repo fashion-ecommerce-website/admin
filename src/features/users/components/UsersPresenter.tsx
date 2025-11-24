@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { AdminLayout } from '../../../components/layout/AdminLayout';
 import { User } from '../../../types/user.types';
 import { CustomDropdown } from '../../../components/ui';
 import { Skeleton } from '../../../components/ui/Skeleton';
@@ -110,7 +109,7 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
   }, [localSearchTerm, setSearchTerm]);
 
   return (
-    <AdminLayout>
+    <>
       <style jsx global>{`
         .scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -491,7 +490,7 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
           </div>
         )}
       </div>
-    </AdminLayout>
+    </>
   );
 };
 
