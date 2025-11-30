@@ -47,7 +47,7 @@ function* handleLogin(action: PayloadAction<AdminLoginRequest>): Generator<Effec
         const stored = JSON.parse(sessionStorage.getItem('admin_user') || '{}');
         sessionStorage.setItem('admin_user', JSON.stringify({ ...stored, role: primaryRole, roles, permissions }));
       }
-    } catch (e) {
+    } catch {
       // ignore role fetch failure; AuthGuard will handle redirect if needed
     }
   } catch (error: unknown) {

@@ -7,13 +7,26 @@ import { saveAs } from 'file-saver';
 import { useToast } from '@/providers/ToastProvider';
 import { useMinimumLoadingTime } from '@/hooks/useMinimumLoadingTime';
 import { DashboardPresenter } from '../components/DashboardPresenter';
-import { fetchDashboardRequest, fetchStatsRequest } from '../redux/dashboardSlice';
+import { fetchDashboardRequest } from '../redux/dashboardSlice';
 import type { RootState } from '@/store';
+
+interface AggregatedChartData {
+  label: string;
+  date: string;
+  totalOrders: number;
+  completedOrders: number;
+  pendingOrders: number;
+  cancelledOrders: number;
+  totalRevenue: number;
+  paidRevenue: number;
+  unpaidRevenue: number;
+  refundedRevenue: number;
+}
 
 export const DashboardContainer: React.FC = () => {
   const dispatch = useDispatch();
   const { showSuccess, showError, showWarning } = useToast();
-  const { data, stats, loading, error, period } = useSelector((state: RootState) => state.dashboard);
+  const { data, stats, loading, error } = useSelector((state: RootState) => state.dashboard);
   const displayLoading = useMinimumLoadingTime(loading, 300);
   const [currentPeriod, setCurrentPeriod] = useState<'day' | 'week' | 'month' | 'year'>('week');
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -56,7 +69,7 @@ export const DashboardContainer: React.FC = () => {
       
       if (currentPeriod === 'month') {
         // Group by week
-        const weeklyMap: Record<string, any> = {};
+        const weeklyMap: Record<string, AggregatedChartData> = {};
         processedData.forEach((item, index) => {
           const weekNumber = Math.floor(index / 7);
           const weekKey = `Week ${weekNumber + 1}`;
@@ -64,6 +77,7 @@ export const DashboardContainer: React.FC = () => {
           if (!weeklyMap[weekKey]) {
             weeklyMap[weekKey] = {
               label: weekKey,
+              date: '',
               totalOrders: 0,
               completedOrders: 0,
               pendingOrders: 0,
@@ -89,7 +103,7 @@ export const DashboardContainer: React.FC = () => {
         // Group by month
         const currentYear = new Date().getFullYear();
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const monthlyMap: Map<number, any> = new Map();
+        const monthlyMap: Map<number, AggregatedChartData> = new Map();
         
         processedData.forEach((item) => {
           const dateStr = item.date || item.label;
@@ -102,6 +116,7 @@ export const DashboardContainer: React.FC = () => {
           if (!monthlyMap.has(monthIndex)) {
             monthlyMap.set(monthIndex, {
               label: monthNames[monthIndex],
+              date: '',
               totalOrders: 0,
               completedOrders: 0,
               pendingOrders: 0,
@@ -126,7 +141,7 @@ export const DashboardContainer: React.FC = () => {
         
         processedData = Array.from(monthlyMap.entries())
           .sort((a, b) => a[0] - b[0])
-          .map(([_, data]) => data);
+          .map(([, data]) => data);
       }
 
       // Chuẩn bị dữ liệu export từ processed data
@@ -189,74 +204,86 @@ export const DashboardContainer: React.FC = () => {
       });
 
       // Styling
-      const headerStyle = {
+      interface CellStyle {
+        font?: { bold?: boolean; sz?: number; color?: { rgb: string } };
+        fill?: { fgColor?: { rgb: string } };
+        alignment?: { horizontal?: string; vertical?: string };
+        border?: {
+          top?: { style: string; color: { rgb: string } };
+          bottom?: { style: string; color: { rgb: string } };
+          left?: { style: string; color: { rgb: string } };
+          right?: { style: string; color: { rgb: string } };
+        };
+      }
+      
+      const headerStyle: CellStyle = {
         font: { bold: true, sz: 14, color: { rgb: 'FFFFFF' } },
         fill: { fgColor: { rgb: '4F46E5' } },
         alignment: { horizontal: 'center', vertical: 'center' },
-      } as any;
+      };
 
-      const titleStyle = {
+      const titleStyle: CellStyle = {
         font: { bold: true, sz: 16, color: { rgb: 'FFFFFF' } },
         fill: { fgColor: { rgb: '312E81' } },
         alignment: { horizontal: 'center', vertical: 'center' },
-      } as any;
+      };
 
-      const summaryTitleStyle = {
+      const summaryTitleStyle: CellStyle = {
         font: { bold: true, sz: 14, color: { rgb: 'FFFFFF' } },
         fill: { fgColor: { rgb: '7C3AED' } },
         alignment: { horizontal: 'left', vertical: 'center' },
-      } as any;
+      };
 
-      const summaryStyle = {
+      const summaryStyle: CellStyle = {
         font: { bold: true, sz: 12, color: { rgb: '1F2937' } },
         fill: { fgColor: { rgb: 'EDE9FE' } },
         alignment: { horizontal: 'left', vertical: 'center' },
-      } as any;
+      };
 
-      const sectionTitleStyle = {
+      const sectionTitleStyle: CellStyle = {
         font: { bold: true, sz: 13, color: { rgb: 'FFFFFF' } },
         fill: { fgColor: { rgb: '059669' } },
         alignment: { horizontal: 'left', vertical: 'center' },
-      } as any;
+      };
 
       // Style cho title row (A1-J1)
       ['A1','B1','C1','D1','E1','F1','G1','H1','I1','J1'].forEach(cell => {
-        if (!ws[cell]) (ws as any)[cell] = {};
-        (ws as any)[cell].s = titleStyle;
+        if (!ws[cell]) ws[cell] = {};
+        ws[cell].s = titleStyle;
       });
 
       // Style cho header info (rows 2-4)
       for (let row = 2; row <= 4; row++) {
         ['A','B','C','D','E','F','G','H','I','J'].forEach(col => {
           const cellRef = col + row;
-          if (!ws[cellRef]) (ws as any)[cellRef] = {};
-          (ws as any)[cellRef].s = headerStyle;
+          if (!ws[cellRef]) ws[cellRef] = {};
+          ws[cellRef].s = headerStyle;
         });
       }
 
       // Style cho "SUMMARY STATISTICS" title (row 6)
       ['A6','B6','C6','D6','E6','F6','G6','H6','I6','J6'].forEach(cell => {
-        if (!ws[cell]) (ws as any)[cell] = {};
-        (ws as any)[cell].s = summaryTitleStyle;
+        if (!ws[cell]) ws[cell] = {};
+        ws[cell].s = summaryTitleStyle;
       });
 
       // Style cho summary data (rows 7-10)
       for (let row = 7; row <= 10; row++) {
         ['A','B','C','D','E','F','G','H','I','J'].forEach(col => {
           const cellRef = col + row;
-          if (!ws[cellRef]) (ws as any)[cellRef] = {};
-          (ws as any)[cellRef].s = summaryStyle;
+          if (!ws[cellRef]) ws[cellRef] = {};
+          ws[cellRef].s = summaryStyle;
         });
       }
 
       // Style cho "DETAILED DATA" title (row 12)
       ['A12','B12','C12','D12','E12','F12','G12','H12','I12','J12'].forEach(cell => {
-        if (!ws[cell]) (ws as any)[cell] = {};
-        (ws as any)[cell].s = sectionTitleStyle;
+        if (!ws[cell]) ws[cell] = {};
+        ws[cell].s = sectionTitleStyle;
       });
 
       // Style cho column headers (row 14)
-      const columnHeaderStyle = {
+      const columnHeaderStyle: CellStyle = {
         font: { bold: true, sz: 12, color: { rgb: 'FFFFFF' } },
         fill: { fgColor: { rgb: '059669' } },
         alignment: { horizontal: 'center', vertical: 'center' },
@@ -266,16 +293,16 @@ export const DashboardContainer: React.FC = () => {
           left: { style: 'thin', color: { rgb: '000000' } }, 
           right: { style: 'thin', color: { rgb: '000000' } } 
         },
-      } as any;
+      };
 
       headers.forEach((_, index) => {
         const cellRef = String.fromCharCode(65 + index) + '14';
-        if (!ws[cellRef]) (ws as any)[cellRef] = {};
-        (ws as any)[cellRef].s = columnHeaderStyle;
+        if (!ws[cellRef]) ws[cellRef] = {};
+        ws[cellRef].s = columnHeaderStyle;
       });
 
       // Style cho data rows (alternating colors)
-      const evenRowStyle = { 
+      const evenRowStyle: CellStyle = { 
         fill: { fgColor: { rgb: 'F8FAFC' } }, 
         alignment: { horizontal: 'center', vertical: 'center' }, 
         border: { 
@@ -284,9 +311,9 @@ export const DashboardContainer: React.FC = () => {
           left: { style: 'thin', color: { rgb: 'E2E8F0' } }, 
           right: { style: 'thin', color: { rgb: 'E2E8F0' } } 
         } 
-      } as any;
+      };
       
-      const oddRowStyle = { 
+      const oddRowStyle: CellStyle = { 
         fill: { fgColor: { rgb: 'FFFFFF' } }, 
         alignment: { horizontal: 'center', vertical: 'center' }, 
         border: { 
@@ -295,20 +322,20 @@ export const DashboardContainer: React.FC = () => {
           left: { style: 'thin', color: { rgb: 'E2E8F0' } }, 
           right: { style: 'thin', color: { rgb: 'E2E8F0' } } 
         } 
-      } as any;
+      };
 
       exportData.forEach((_, rowIndex) => {
         const isEven = rowIndex % 2 === 0;
         const style = isEven ? evenRowStyle : oddRowStyle;
         headers.forEach((_, colIndex) => {
           const cellRef = String.fromCharCode(65 + colIndex) + (15 + rowIndex);
-          if (!ws[cellRef]) (ws as any)[cellRef] = {};
-          (ws as any)[cellRef].s = style;
+          if (!ws[cellRef]) ws[cellRef] = {};
+          ws[cellRef].s = style;
         });
       });
 
       // Merge cells cho headers
-      (ws as any)['!merges'] = [
+      ws['!merges'] = [
         { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }, // Title (row 1)
         { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } }, // Subtitle (row 2)
         { s: { r: 2, c: 0 }, e: { r: 2, c: 9 } }, // Export date (row 3)

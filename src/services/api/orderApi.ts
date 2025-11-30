@@ -36,12 +36,13 @@ class OrderApi {
         data: response.data,
         message: response.message,
       };
-    } catch (error: any) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to fetch orders';
       console.error('Error fetching orders:', error);
       return {
         success: false,
         data: null,
-        message: error.message || 'Failed to fetch orders',
+        message,
       };
     }
   }
@@ -58,12 +59,13 @@ class OrderApi {
         data: response.data,
         message: response.message,
       };
-    } catch (error: any) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to fetch order';
       console.error('Error fetching order:', error);
       return {
         success: false,
         data: null,
-        message: error.message || 'Failed to fetch order',
+        message,
       };
     }
   }
@@ -80,12 +82,13 @@ class OrderApi {
         data: response.data,
         message: response.message || 'Order updated successfully',
       };
-    } catch (error: any) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update order';
       console.error('Error updating order:', error);
       return {
         success: false,
         data: null,
-        message: error.message || 'Failed to update order',
+        message,
       };
     }
   }
@@ -106,12 +109,13 @@ class OrderApi {
         data: response.data,
         message: response.message || 'Order status updated successfully',
       };
-    } catch (error: any) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update order status';
       console.error('Error updating order status:', error);
       return {
         success: false,
         data: null,
-        message: error.message || 'Failed to update order status',
+        message,
       };
     }
   }
@@ -132,12 +136,13 @@ class OrderApi {
         data: response.data,
         message: response.message || 'Order cancelled successfully',
       };
-    } catch (error: any) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to cancel order';
       console.error('Error cancelling order:', error);
       return {
         success: false,
         data: null,
-        message: error.message || 'Failed to cancel order',
+        message,
       };
     }
   }
@@ -154,12 +159,13 @@ class OrderApi {
         data: null,
         message: response.message || 'Order deleted successfully',
       };
-    } catch (error: any) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete order';
       console.error('Error deleting order:', error);
       return {
         success: false,
         data: null,
-        message: error.message || 'Failed to delete order',
+        message,
       };
     }
   }

@@ -2,8 +2,6 @@
 
 import React from 'react';
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -12,15 +10,7 @@ import {
   BarChart,
   Bar,
   AreaChart,
-  Area,
-  PieChart,
-  Pie,
-  Cell,
-  ComposedChart,
-  Scatter,
-  ScatterChart,
-  RadialBarChart,
-  RadialBar
+  Area
 } from 'recharts';
 
 interface ChartData {
@@ -44,20 +34,6 @@ interface DashboardChartsProps {
 }
 
 export const DashboardCharts: React.FC<DashboardChartsProps> = ({ chartData = [] }) => {
-  // Mock data for pie chart
-  const pieData = [
-    { name: 'Clothing', value: 45, color: '#3b82f6' },
-    { name: 'Shoes', value: 25, color: '#10b981' },
-    { name: 'Accessories', value: 20, color: '#f59e0b' },
-    { name: 'Others', value: 10, color: '#ef4444' },
-  ];
-
-  // Mock data for radial chart
-  const radialData = [
-    { name: 'Completed', value: 85, fill: '#10b981' },
-    { name: 'Processing', value: 15, fill: '#f59e0b' },
-  ];
-
   if (!chartData || chartData.length === 0) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">

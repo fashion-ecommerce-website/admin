@@ -99,39 +99,8 @@ export interface Order {
   voucherCode?: string;
 }
 
-// Pagination interfaces
-export interface Pageable {
-  pageNumber: number;
-  pageSize: number;
-  sort: {
-    empty: boolean;
-    sorted: boolean;
-    unsorted: boolean;
-  };
-  offset: number;
-  paged: boolean;
-  unpaged: boolean;
-}
-
-export interface Sort {
-  empty: boolean;
-  sorted: boolean;
-  unsorted: boolean;
-}
-
-export interface PaginatedResponse<T> {
-  content: T[];
-  pageable: Pageable;
-  totalElements: number;
-  totalPages: number;
-  last: boolean;
-  size: number;
-  number: number;
-  sort: Sort;
-  numberOfElements: number;
-  first: boolean;
-  empty: boolean;
-}
+// Re-export BackendPaginatedResponse as PaginatedResponse for backward compatibility
+export type { BackendPaginatedResponse as PaginatedResponse } from './common.types';
 
 // Order query parameters for admin
 export interface OrderQueryParams {

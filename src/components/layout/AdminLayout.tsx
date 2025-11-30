@@ -55,7 +55,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             if (!adminState?.email && parsed?.email) setAdminEmail(parsed.email);
           }
         }
-      } catch (e) {
+      } catch {
         // ignore parsing errors
       }
     };

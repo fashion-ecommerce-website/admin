@@ -27,6 +27,20 @@ export interface AdminRefreshTokenResponse {
   expiresIn: number;
 }
 
+export interface AdminProfile {
+  id: number;
+  username: string;
+  email: string;
+  role?: string;
+}
+
+export interface AuthenticatedUser {
+  id: number;
+  username: string;
+  email: string;
+  role: string;
+}
+
 class AdminAuthApi {
   private baseUrl: string;
 
@@ -55,7 +69,7 @@ class AdminAuthApi {
   /**
    * Admin logout API call (if implemented in backend)
    */
-  async logout(accessToken: string): Promise<void> {
+  async logout(): Promise<void> {
     try {
       const res: ApiResponse<unknown> = await adminApiClient.post('/auth/logout', {}, {
         Authorization: `Bearer ${this.refreshToken}`,
@@ -71,27 +85,27 @@ class AdminAuthApi {
   /**
    * Get user profile with access token
    */
-  async getProfile(accessToken: string): Promise<any> {
-    const res: ApiResponse<any> = await adminApiClient.get('/auth/me', {
+  async getProfile(accessToken: string): Promise<AdminProfile> {
+    const res: ApiResponse<AdminProfile> = await adminApiClient.get('/auth/me', {
       Authorization: `Bearer ${accessToken}`,
     });
     if (!res.success) {
       throw new Error(res.message || 'Unable to fetch user profile');
     }
-    return res.data;
+    return res.data!;
   }
 
   /**
    * Get authenticated user info (including role) via auth/users
    */
-  async getAuthenticatedUser(accessToken: string): Promise<any> {
-    const res: ApiResponse<any> = await adminApiClient.get('/users', {
+  async getAuthenticatedUser(accessToken: string): Promise<AuthenticatedUser> {
+    const res: ApiResponse<AuthenticatedUser> = await adminApiClient.get('/users', {
       Authorization: `Bearer ${accessToken}`,
     });
     if (!res.success) {
       throw new Error(res.message || 'Unable to fetch authenticated user');
     }
-    return res.data;
+    return res.data!;
   }
 }
 

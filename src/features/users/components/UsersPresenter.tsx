@@ -69,7 +69,6 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
     endIndex,
     totalItems,
     currentUsers,
-    isFilteringData,
   } = vm;
 
   const {
@@ -78,14 +77,12 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
     setRoleFilter,
     setSortBy,
     setSortOrder,
-    setItemsPerPage,
     goToPrevPage,
     goToNextPage,
     goToPage,
     handleExportExcel,
     handleEditUser,
     handleToggleUserStatus,
-    handleDeleteUser,
   } = handlers;
 
   const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
@@ -259,7 +256,7 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
                   <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className={`divide-y divide-gray-100 transition-opacity duration-300 ${isFilteringData || isLoading ? 'opacity-50' : 'opacity-100'}`}>
+              <tbody className={`divide-y divide-gray-100 transition-opacity duration-300 ${isLoading ? 'opacity-50' : 'opacity-100'}`}>
                 {isLoading ? (
                   [...Array(5)].map((_, index) => (
                     <tr key={index} className="hover:bg-gray-50">
@@ -312,50 +309,15 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
                       </div>
                     </td>
                   </tr>
-                ) : isFilteringData ? (
-                  [...Array(3)].map((_, index) => (
-                    <tr key={index} className="hover:bg-gray-50">
-                      <td className="px-8 py-4">
-                        <div className="flex items-center space-x-3">
-                          <Skeleton className="w-10 h-10 rounded-full" />
-                          <div className="space-y-2">
-                            <Skeleton className="h-4 w-32" />
-                            <Skeleton className="h-3 w-40" />
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Skeleton className="h-6 w-20 rounded-full" />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Skeleton className="h-6 w-16 rounded-full" />
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="space-y-2">
-                          <Skeleton className="h-4 w-24" />
-                          <Skeleton className="h-3 w-20" />
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="space-y-2">
-                          <Skeleton className="h-4 w-20" />
-                          <Skeleton className="h-3 w-24" />
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex justify-center space-x-2">
-                          <Skeleton className="h-8 w-8 rounded" />
-                          <Skeleton className="h-8 w-8 rounded" />
-                          <Skeleton className="h-8 w-8 rounded" />
-                        </div>
-                      </td>
-                    </tr>
-                  ))
                 ) : currentUsers.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-8 py-16 text-center">
                       <div className="flex flex-col items-center justify-center space-y-4">
-                        <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center"><svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" /></svg></div>
+                        <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center">
+                          <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                          </svg>
+                        </div>
                         <div className="text-center">
                           <h3 className="text-lg font-medium text-gray-900 mb-2">No users found</h3>
                           <p className="text-gray-500">Try adjusting filters or your search keywords.</p>

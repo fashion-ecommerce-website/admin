@@ -14,7 +14,7 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
       },
-    }).concat(sagaMiddleware as any),
+    }).concat(sagaMiddleware),
   devTools: process.env.NODE_ENV !== 'production',
 });
 

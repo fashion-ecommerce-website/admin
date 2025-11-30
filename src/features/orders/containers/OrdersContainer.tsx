@@ -47,7 +47,14 @@ export const OrdersContainer: React.FC = () => {
 
   // Fetch orders on mount and when filters change
   useEffect(() => {
-    const params: any = { 
+    const params: {
+      page: number;
+      size: number;
+      sortBy: string;
+      direction: string;
+      status?: OrderStatus;
+      paymentStatus?: PaymentStatus;
+    } = { 
       page: 0, 
       size: pageSize,
       sortBy: 'createdAt',
@@ -85,7 +92,14 @@ export const OrdersContainer: React.FC = () => {
 
   // Handlers
   const handlePageChange = (page: number) => {
-    const params: any = { 
+    const params: {
+      page: number;
+      size: number;
+      sortBy: string;
+      direction: string;
+      status?: OrderStatus;
+      paymentStatus?: PaymentStatus;
+    } = { 
       page, 
       size: pageSize,
       sortBy: 'createdAt',
@@ -223,7 +237,14 @@ export const OrdersContainer: React.FC = () => {
   };
 
   const handleRefresh = () => {
-    const params: any = { 
+    const params: {
+      page: number;
+      size: number;
+      sortBy: string;
+      direction: string;
+      status?: OrderStatus;
+      paymentStatus?: PaymentStatus;
+    } = { 
       page: currentPage, 
       size: pageSize,
       sortBy: 'createdAt',
@@ -248,7 +269,15 @@ export const OrdersContainer: React.FC = () => {
   const handleExportExcel = async () => {
     try {
       // Fetch all orders without pagination
-      const params: any = { 
+      const params: {
+        page: number;
+        size: number;
+        sortBy: string;
+        direction: string;
+        search?: string;
+        status?: OrderStatus;
+        paymentStatus?: PaymentStatus;
+      } = { 
         page: 0, 
         size: 10000,
         sortBy: 'createdAt',
@@ -329,19 +358,31 @@ export const OrdersContainer: React.FC = () => {
       });
 
       // Styling
-      const titleStyle = {
+      interface CellStyle {
+        font?: { bold?: boolean; sz?: number; color?: { rgb: string } };
+        fill?: { fgColor?: { rgb: string } };
+        alignment?: { horizontal?: string; vertical?: string };
+        border?: {
+          top?: { style: string; color: { rgb: string } };
+          bottom?: { style: string; color: { rgb: string } };
+          left?: { style: string; color: { rgb: string } };
+          right?: { style: string; color: { rgb: string } };
+        };
+      }
+
+      const titleStyle: CellStyle = {
         font: { bold: true, sz: 16, color: { rgb: 'FFFFFF' } },
         fill: { fgColor: { rgb: '312E81' } },
         alignment: { horizontal: 'center', vertical: 'center' },
-      } as any;
+      };
 
-      const headerStyle = {
+      const headerStyle: CellStyle = {
         font: { bold: true, sz: 14, color: { rgb: 'FFFFFF' } },
         fill: { fgColor: { rgb: '4F46E5' } },
         alignment: { horizontal: 'center', vertical: 'center' },
-      } as any;
+      };
 
-      const columnHeaderStyle = {
+      const columnHeaderStyle: CellStyle = {
         font: { bold: true, sz: 12, color: { rgb: 'FFFFFF' } },
         fill: { fgColor: { rgb: '059669' } },
         alignment: { horizontal: 'center', vertical: 'center' },
@@ -351,7 +392,7 @@ export const OrdersContainer: React.FC = () => {
           left: { style: 'thin', color: { rgb: '000000' } },
           right: { style: 'thin', color: { rgb: '000000' } }
         },
-      } as any;
+      };
 
       // Apply styles
       ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'I1', 'J1', 'K1', 'L1'].forEach(cell => {

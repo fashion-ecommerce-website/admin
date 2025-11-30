@@ -20,7 +20,7 @@ const initialState: OrderState = {
 };
 
 // Action payload types
-export interface FetchOrdersRequest extends OrderQueryParams {}
+export type FetchOrdersRequest = OrderQueryParams;
 
 export interface FetchOrdersSuccess {
   orders: Order[];
@@ -77,7 +77,7 @@ const orderSlice = createSlice({
   initialState,
   reducers: {
     // Fetch orders
-    fetchOrdersRequest: (state, action: PayloadAction<FetchOrdersRequest>) => {
+    fetchOrdersRequest: (state) => {
       state.loading = true;
       state.error = null;
     },
@@ -95,7 +95,7 @@ const orderSlice = createSlice({
     },
 
     // Fetch order by ID
-    fetchOrderByIdRequest: (state, action: PayloadAction<FetchOrderByIdRequest>) => {
+    fetchOrderByIdRequest: (state) => {
       state.detailLoading = true;
       state.error = null;
     },
@@ -110,7 +110,7 @@ const orderSlice = createSlice({
     },
 
     // Update order
-    updateOrderRequest: (state, action: PayloadAction<UpdateOrderRequestPayload>) => {
+    updateOrderRequest: (state) => {
       state.loading = true;
       state.error = null;
     },
@@ -131,19 +131,19 @@ const orderSlice = createSlice({
     },
 
     // Update order status
-    updateOrderStatusRequest: (state, action: PayloadAction<UpdateOrderStatusRequest>) => {
+    updateOrderStatusRequest: (state) => {
       state.loading = true;
       state.error = null;
     },
 
     // Cancel order
-    cancelOrderRequest: (state, action: PayloadAction<CancelOrderRequest>) => {
+    cancelOrderRequest: (state) => {
       state.loading = true;
       state.error = null;
     },
 
     // Delete order
-    deleteOrderRequest: (state, action: PayloadAction<DeleteOrderRequest>) => {
+    deleteOrderRequest: (state) => {
       state.loading = true;
       state.error = null;
     },

@@ -1,4 +1,4 @@
-import { call, put } from 'redux-saga/effects';
+import { call, put, CallEffect, PutEffect } from 'redux-saga/effects';
 import { takeEvery, takeLatest } from '@redux-saga/core/effects';
 import { PayloadAction } from '@reduxjs/toolkit';
 import { 
@@ -14,7 +14,7 @@ import { dashboardApi, DashboardResponse } from '@/services/api/dashboardApi';
 /**
  * Fetch dashboard data with period filter
  */
-function* handleFetchDashboard(action: PayloadAction<'day' | 'week' | 'month' | 'year'>): Generator<any, void, any> {
+function* handleFetchDashboard(action: PayloadAction<'day' | 'week' | 'month' | 'year'>): Generator<CallEffect | PutEffect, void, DashboardResponse> {
   try {
     const period = action.payload;
     const response: DashboardResponse = yield call([dashboardApi, dashboardApi.getDashboard], period);
@@ -29,7 +29,7 @@ function* handleFetchDashboard(action: PayloadAction<'day' | 'week' | 'month' | 
  * Legacy: Fetch stats (for backward compatibility)
  * Will use mock data since old API endpoints don't exist
  */
-function* handleFetchStats(): Generator<any, void, any> {
+function* handleFetchStats(): Generator<PutEffect, void, never> {
   try {
     // Use mock data for legacy stats
     const mockStats = {

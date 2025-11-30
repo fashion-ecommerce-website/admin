@@ -54,7 +54,18 @@ export const DashboardPresenter: React.FC<DashboardPresenterProps> = ({
   onExportExcel,
 }) => {
   // Function to aggregate chart data by period
-  const aggregateChartData = (chartData: any[], periodType: string): Array<{
+  const aggregateChartData = (chartData: Array<{
+    label: string;
+    date?: string;
+    totalOrders: number;
+    totalRevenue: number;
+    cancelledOrders?: number;
+    refundedRevenue?: number;
+    completedOrders?: number;
+    pendingOrders?: number;
+    paidRevenue?: number;
+    unpaidRevenue?: number;
+  }>, periodType: string): Array<{
     name: string;
     orders: number;
     revenue: number;
@@ -210,7 +221,7 @@ export const DashboardPresenter: React.FC<DashboardPresenterProps> = ({
       // Sort by month index and return
       return Array.from(monthlyData.entries())
         .sort((a, b) => a[0] - b[0])
-        .map(([_, data]) => data);
+        .map(([, data]) => data);
     }
 
     return chartData.map(item => ({
@@ -379,7 +390,7 @@ interface StatsCardProps {
   description?: string;
 }
 
-const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, trend, accentColor, description }) => {
+const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, trend, accentColor }) => {
   const colorClasses = {
     blue: {
       bg: 'bg-gradient-to-br from-blue-500 to-blue-600',

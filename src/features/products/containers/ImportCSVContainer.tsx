@@ -22,13 +22,42 @@ interface EditForm {
   imageUrls: string[];
 }
 
+interface ProductDetail {
+  productTitle?: string;
+  title?: string;
+  description?: string;
+  category?: string;
+  color?: string;
+  size?: string;
+  price: number;
+  quantity: number;
+  imageUrls?: string[];
+  isError?: boolean;
+  error?: boolean;
+  errorMessage?: string | null;
+}
+
+interface ProductGroup {
+  productTitle?: string;
+  title?: string;
+  description?: string;
+  category?: string;
+  imageUrls?: string[];
+  productDetails?: ProductDetail[];
+}
+
+interface CategoryNode {
+  name: string;
+  children?: CategoryNode[];
+}
+
 const ImportCSVContainer: React.FC = () => {
   const router = useRouter();
   const { showSuccess, showError } = useToast();
 
   // State
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
-  const [previewData, setPreviewData] = useState<any[]>([]);
+  const [previewData, setPreviewData] = useState<ProductGroup[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -54,11 +83,11 @@ const ImportCSVContainer: React.FC = () => {
     let mounted = true;
     const fetchCategories = async () => {
       try {
-        const res = await adminApiClient.get<any[]>('/categories/active-tree');
+        const res = await adminApiClient.get<CategoryNode[]>('/categories/active-tree');
         if (!res.success || !res.data || !mounted) return;
 
         const leafCategoriesWithLabels: { name: string; label: string }[] = [];
-        const traverse = (nodes: any[] = [], parents: string[] = []) => {
+        const traverse = (nodes: CategoryNode[] = [], parents: string[] = []) => {
           for (const n of nodes || []) {
             if (!n || typeof n.name !== 'string') continue;
             const currentPath = [...parents, n.name];
@@ -73,7 +102,7 @@ const ImportCSVContainer: React.FC = () => {
             }
           }
         };
-        traverse(res.data as any[]);
+        traverse(res.data);
 
         leafCategoriesWithLabels.sort((a, b) =>
           a.label.localeCompare(b.label, 'vi', { sensitivity: 'base' })
@@ -82,7 +111,7 @@ const ImportCSVContainer: React.FC = () => {
         if (mounted) {
           setAllowedCategories(leafCategoriesWithLabels.map(c => c.label));
         }
-      } catch (e) {
+      } catch {
         // Silently ignore
       }
     };
@@ -92,12 +121,7 @@ const ImportCSVContainer: React.FC = () => {
     };
   }, []);
 
-  const handleFileChange = useCallback((file: File) => {
-    setUploadedFile({ name: file.name, size: file.size, file });
-    handlePreview(file);
-  }, []);
-
-  const handlePreview = async (file: File | Blob) => {
+  const handlePreview = useCallback(async (file: File | Blob) => {
     setPreviewLoading(true);
     setError(null);
     setPreviewData([]);
@@ -105,36 +129,44 @@ const ImportCSVContainer: React.FC = () => {
       const formData = new FormData();
       const toSend = file instanceof File ? file : new File([file], uploadedFile?.name || 'import.csv', { type: 'text/csv' });
       formData.append('file', toSend);
-      const res = await adminApiClient.post<any[]>('/products/import/preview', formData as unknown as FormData);
+      const res = await adminApiClient.post<ProductGroup[]>('/products/import/preview', formData as unknown as FormData);
       if (!res.success) throw new Error(res.message || 'Failed to preview CSV');
       setPreviewData(res.data || []);
-    } catch (err: any) {
-      setError(err.message || 'Preview failed');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Preview failed';
+      setError(message);
     } finally {
       setPreviewLoading(false);
     }
-  };
+  }, [uploadedFile?.name]);
+
+  const handleFileChange = useCallback((file: File) => {
+    setUploadedFile({ name: file.name, size: file.size, file });
+    handlePreview(file);
+  }, [handlePreview]);
+
+
 
   const handleDeleteProduct = useCallback((idx: number) => {
     setPreviewData((prev) => {
       let currentIndex = 0;
-      const newGroups = prev.map((group: any) => {
+      const newGroups = prev.map((group) => {
         const details = group.productDetails || [];
-        const updatedDetails = details.filter((_: any, dIdx: number) => {
+        const updatedDetails = details.filter(() => {
           const match = currentIndex === idx;
           currentIndex += 1;
           return !match;
         });
         return { ...group, productDetails: updatedDetails };
-      }).filter((g: any) => (g.productDetails || []).length > 0);
+      }).filter((g) => (g.productDetails || []).length > 0);
       return newGroups;
     });
   }, []);
 
   const handleEditProduct = useCallback((idx: number) => {
     let currentIndex = 0;
-    let found: any | null = null;
-    let foundGroup: any | null = null;
+    let found: ProductDetail | null = null;
+    let foundGroup: ProductGroup | null = null;
     for (const group of previewData) {
       const details = group.productDetails || [];
       for (const row of details) {
@@ -231,14 +263,14 @@ const ImportCSVContainer: React.FC = () => {
     setError(null);
     setPreviewData((prev) => {
       let currentIndex = 0;
-      return prev.map((group: any) => {
+      return prev.map((group) => {
         const details = group.productDetails || [];
         let touchedThisGroup = false;
-        const updatedDetails = details.map((row: any) => {
+        const updatedDetails = details.map((row) => {
           const isTarget = currentIndex === editingIndex;
           currentIndex += 1;
           if (!isTarget) return row;
-          const next: any = { ...row };
+          const next: ProductDetail = { ...row };
           if ('productTitle' in next) {
             next.productTitle = editForm.title;
           } else {
@@ -267,7 +299,7 @@ const ImportCSVContainer: React.FC = () => {
     setError(null);
 
     const hasErrors = previewData.some(group =>
-      (group.productDetails || []).some((detail: any) => detail.error || detail.isError)
+      (group.productDetails || []).some((detail) => detail.error || detail.isError)
     );
 
     if (hasErrors) {
@@ -287,8 +319,9 @@ const ImportCSVContainer: React.FC = () => {
       const totalProducts = previewData.reduce((sum, group) => sum + (group.productDetails?.length || 0), 0);
       showSuccess('Import Successful', `Imported ${totalProducts} products successfully.`);
       setPreviewData([]);
-    } catch (err: any) {
-      showError('Save Failed', err.message || 'Save failed');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Save failed';
+      showError('Save Failed', message);
     }
   }, [previewData, showSuccess, showError]);
 

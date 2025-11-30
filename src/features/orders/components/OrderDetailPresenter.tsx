@@ -6,7 +6,6 @@ import { Order, OrderStatus, PaymentStatus } from '../../../types/order.types';
 interface OrderDetailPresenterProps {
   order: Order | null;
   isOpen: boolean;
-  loading: boolean;
   onClose: () => void;
   onUpdateStatus?: (orderId: number, status: OrderStatus) => void;
   onUpdatePaymentStatus?: (orderId: number, status: PaymentStatus) => void;
@@ -15,7 +14,6 @@ interface OrderDetailPresenterProps {
 export const OrderDetailPresenter: React.FC<OrderDetailPresenterProps> = ({
   order,
   isOpen,
-  loading,
   onClose,
   onUpdateStatus,
   onUpdatePaymentStatus,
@@ -208,6 +206,7 @@ export const OrderDetailPresenter: React.FC<OrderDetailPresenterProps> = ({
                 >
                   <div className="flex items-start gap-4 flex-1">
                     {item.imageUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={item.imageUrl}
                         alt={item.title}

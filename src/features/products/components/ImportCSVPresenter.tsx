@@ -20,9 +20,31 @@ interface EditForm {
   imageUrls: string[];
 }
 
+interface ProductDetail {
+  productTitle?: string;
+  title?: string;
+  description?: string;
+  category?: string;
+  color?: string;
+  size?: string;
+  price: number;
+  quantity: number;
+  imageUrls?: string[];
+  isError?: boolean;
+  error?: boolean;
+  errorMessage?: string;
+}
+
+interface ProductGroup {
+  productTitle?: string;
+  description?: string;
+  category?: string;
+  productDetails?: ProductDetail[];
+}
+
 interface ImportCSVPresenterProps {
   uploadedFile: UploadedFile | null;
-  previewData: any[];
+  previewData: ProductGroup[];
   previewLoading: boolean;
   error: string | null;
   isEditOpen: boolean;
@@ -96,9 +118,9 @@ const ImportCSVPresenter: React.FC<ImportCSVPresenterProps> = ({
     URL.revokeObjectURL(url);
   };
 
-  const allDetails = previewData.flatMap((group: any) => {
+  const allDetails = previewData.flatMap((group) => {
     const details = group.productDetails || [];
-    return details.map((detail: any) => ({
+    return details.map((detail) => ({
       ...detail,
       isError: detail.error || detail.isError,
       productTitle: detail.productTitle ?? group.productTitle ?? detail.title ?? '',
@@ -108,7 +130,7 @@ const ImportCSVPresenter: React.FC<ImportCSVPresenterProps> = ({
   });
 
   const totalProducts = allDetails.length;
-  const errorProducts = allDetails.filter((detail: any) => detail.isError).length;
+  const errorProducts = allDetails.filter((detail) => detail.isError).length;
 
   return (
     <div className="flex flex-col h-full min-h-screen bg-gradient-to-br from-white to-gray-100">
@@ -200,6 +222,7 @@ const ImportCSVPresenter: React.FC<ImportCSVPresenterProps> = ({
             </div>
           ) : allDetails.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center min-h-[560px] text-gray-500">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/file.svg" alt="No data" className="w-10 h-10 mb-2 opacity-70" />
               <span className="text-base">No preview data. Please upload a CSV file.</span>
             </div>
@@ -220,10 +243,11 @@ const ImportCSVPresenter: React.FC<ImportCSVPresenterProps> = ({
                   </tr>
                 </thead>
                 <tbody>
-                  {allDetails.map((row: any, idx: number) => (
+                  {allDetails.map((row, idx: number) => (
                     <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50 transition">
                       <td className="px-4 py-3">
                         {row.imageUrls && row.imageUrls.length > 0 ? (
+                          // eslint-disable-next-line @next/next/no-img-element
                           <img src={row.imageUrls[0]} alt="Prd" className="w-10 h-10 object-cover rounded border border-gray-200" />
                         ) : (
                           <div className="w-10 h-10 bg-gray-100 rounded border border-gray-200 flex items-center justify-center text-gray-400 text-xs">No img</div>
@@ -287,8 +311,9 @@ const ImportCSVPresenter: React.FC<ImportCSVPresenterProps> = ({
 
               {editForm.imageUrls && editForm.imageUrls.length > 0 && (
                 <div className="flex gap-3 overflow-x-auto pb-2 mb-3 pt-2 px-1">
-                  {editForm.imageUrls.map((url: string, idx: number) => (
+                  {editForm.imageUrls.map((url, idx: number) => (
                     <div key={idx} className="relative group flex-shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={url}
                         alt={`Product ${idx + 1}`}

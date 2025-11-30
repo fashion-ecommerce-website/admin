@@ -1,4 +1,5 @@
 import { adminApiClient, ApiResponse } from './baseApi';
+import type { PaginatedResponse } from '../../types/common.types';
 
 export interface Size {
   id: number;
@@ -13,25 +14,17 @@ export interface GetSizesRequest {
   codeOrLabel?: string;
 }
 
-export interface PaginatedResponse<T> {
-  items: T[];
-  page: number;
-  pageSize: number;
-  totalItems: number;
-  totalPages: number;
-}
-
-export interface SizeListResponse extends PaginatedResponse<Size> { }
+export type SizeListResponse = PaginatedResponse<Size>;
 
 export interface CreateSizeRequest {
   code: string;
   label?: string;
 }
 
-export interface UpdateSizeRequest extends CreateSizeRequest { }
+export type UpdateSizeRequest = CreateSizeRequest;
 
 export const sizeApi = {
-  async getAllSizes(_params: GetSizesRequest): Promise<ApiResponse<SizeListResponse>> {
+  async getAllSizes(): Promise<ApiResponse<SizeListResponse>> {
     try {
       const response = await adminApiClient.get<Array<{ id: number; code: string; label?: string; isActive: boolean }>>(`/sizes`);
       if (response.success && response.data) {
