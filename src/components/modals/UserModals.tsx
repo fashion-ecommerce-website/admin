@@ -3,18 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/providers/ToastProvider';
 import { CustomDropdown } from '../ui';
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-  status: string;
-  joinDate: string;
-  lastLogin: string;
-  totalOrders: number;
-  totalSpent: number;
-}
+import { User } from '@/types/user.types';
 
 interface BaseModalProps {
   isOpen: boolean;
@@ -85,7 +74,10 @@ export const AddUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, onSave
       if (onSave) {
         const newUser: User = {
           id: Date.now(), // Temporary ID
-          ...formData,
+          name: formData.name,
+          email: formData.email,
+          role: formData.role,
+          status: formData.status as 'Active' | 'Inactive' | 'Blocked',
           joinDate: new Date().toISOString(),
           lastLogin: new Date().toISOString(),
           totalOrders: 0,
@@ -99,7 +91,7 @@ export const AddUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, onSave
       }
       setFormData({ name: '', email: '', role: 'Customer', status: 'Active' });
       onClose();
-    } catch (error) {
+    } catch {
       showError(
         'Add user error',
         'An error occurred while adding a new user.'
@@ -304,11 +296,6 @@ export const EditUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user,
     email: '',
     role: 'Customer',
   });
-  const [originalData, setOriginalData] = useState({
-    name: '',
-    email: '',
-    role: 'Customer',
-  });
 
   useEffect(() => {
     if (user && isOpen) {
@@ -318,7 +305,6 @@ export const EditUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user,
         role: user.role,
       };
       setFormData(userData);
-      setOriginalData(userData);
     }
   }, [user, isOpen]);
 
@@ -349,7 +335,7 @@ export const EditUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user,
         );
       }
       onClose();
-    } catch (error) {
+    } catch {
       showError(
         'Update error',
         'An error occurred while updating the user.'

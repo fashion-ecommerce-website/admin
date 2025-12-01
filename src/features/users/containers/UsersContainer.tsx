@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { useAppDispatch, useAppSelector } from '@/hooks/redux';
+import { useAppDispatch } from '@/hooks/redux';
 import { useToast } from '@/providers/ToastProvider';
 import { useMinimumLoadingTime } from '@/hooks/useMinimumLoadingTime';
 import * as XLSX from 'xlsx';
@@ -16,18 +16,17 @@ export const UsersContainer: React.FC = () => {
   const dispatch = useAppDispatch();
   const { showSuccess, showError, showWarning } = useToast();
 
-  // Get loading state from Redux
-  const { loading } = useAppSelector((state) => state.users);
-  
-  // Local state for users and error (keeping old behavior for now)
+  // Local state for users and error
   const [users, setUsers] = useState<User[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Use minimum loading time hook to ensure skeleton shows for at least 500ms
-  const displayLoading = useMinimumLoadingTime(loading, 500);
+  const displayLoading = useMinimumLoadingTime(isLoading, 500);
 
   const fetchUsers = async () => {
-    dispatch(fetchUsersRequest({ page: 1, limit: 100 }));
+    setIsLoading(true);
+    dispatch(fetchUsersRequest());
     
     try {
       const response = await userApi.getAllUsers();
@@ -62,11 +61,14 @@ export const UsersContainer: React.FC = () => {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       setApiError(errorMessage);
       showError('Connection error', 'Unable to connect to the server. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
     fetchUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -156,7 +158,7 @@ export const UsersContainer: React.FC = () => {
     }
   };
 
-  useMemo(() => {
+  useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, statusFilter, roleFilter]);
 
@@ -216,58 +218,70 @@ export const UsersContainer: React.FC = () => {
         XLSX.utils.sheet_add_aoa(ws, [rowData], { origin: `A${7 + index}` });
       });
 
-      const headerStyle = {
+      type CellStyle = {
+        font?: { bold?: boolean; sz?: number; color?: { rgb: string } };
+        fill?: { fgColor: { rgb: string } };
+        alignment?: { horizontal?: string; vertical?: string };
+        border?: {
+          top?: { style: string; color: { rgb: string } };
+          bottom?: { style: string; color: { rgb: string } };
+          left?: { style: string; color: { rgb: string } };
+          right?: { style: string; color: { rgb: string } };
+        };
+      };
+
+      const headerStyle: CellStyle = {
         font: { bold: true, sz: 14, color: { rgb: 'FFFFFF' } },
         fill: { fgColor: { rgb: '4F46E5' } },
         alignment: { horizontal: 'center', vertical: 'center' },
-      } as any;
+      };
 
-      const titleStyle = {
+      const titleStyle: CellStyle = {
         font: { bold: true, sz: 16, color: { rgb: 'FFFFFF' } },
         fill: { fgColor: { rgb: '312E81' } },
         alignment: { horizontal: 'center', vertical: 'center' },
-      } as any;
+      };
 
       ['A1','B1','C1','D1','E1','F1','G1','H1','I1'].forEach(cell => {
-        if (!ws[cell]) (ws as any)[cell] = {};
-        (ws as any)[cell].s = titleStyle;
+        if (!ws[cell]) ws[cell] = {};
+        ws[cell].s = titleStyle;
       });
 
       for (let row = 2; row <= 4; row++) {
         ['A','B','C','D','E','F','G','H','I'].forEach(col => {
           const cellRef = col + row;
-          if (!ws[cellRef]) (ws as any)[cellRef] = {};
-          (ws as any)[cellRef].s = headerStyle;
+          if (!ws[cellRef]) ws[cellRef] = {};
+          ws[cellRef].s = headerStyle;
         });
       }
 
-      const columnHeaderStyle = {
+      const columnHeaderStyle: CellStyle = {
         font: { bold: true, sz: 12, color: { rgb: 'FFFFFF' } },
         fill: { fgColor: { rgb: '059669' } },
         alignment: { horizontal: 'center', vertical: 'center' },
         border: { top: { style: 'thin', color: { rgb: '000000' } }, bottom: { style: 'thin', color: { rgb: '000000' } }, left: { style: 'thin', color: { rgb: '000000' } }, right: { style: 'thin', color: { rgb: '000000' } } },
-      } as any;
+      };
 
       headers.forEach((_, index) => {
         const cellRef = String.fromCharCode(65 + index) + '6';
-        if (!ws[cellRef]) (ws as any)[cellRef] = {};
-        (ws as any)[cellRef].s = columnHeaderStyle;
+        if (!ws[cellRef]) ws[cellRef] = {};
+        ws[cellRef].s = columnHeaderStyle;
       });
 
-      const evenRowStyle = { fill: { fgColor: { rgb: 'F8FAFC' } }, alignment: { horizontal: 'center', vertical: 'center' }, border: { top: { style: 'thin', color: { rgb: 'E2E8F0' } }, bottom: { style: 'thin', color: { rgb: 'E2E8F0' } }, left: { style: 'thin', color: { rgb: 'E2E8F0' } }, right: { style: 'thin', color: { rgb: 'E2E8F0' } } } } as any;
-      const oddRowStyle = { fill: { fgColor: { rgb: 'FFFFFF' } }, alignment: { horizontal: 'center', vertical: 'center' }, border: { top: { style: 'thin', color: { rgb: 'E2E8F0' } }, bottom: { style: 'thin', color: { rgb: 'E2E8F0' } }, left: { style: 'thin', color: { rgb: 'E2E8F0' } }, right: { style: 'thin', color: { rgb: 'E2E8F0' } } } } as any;
+      const evenRowStyle: CellStyle = { fill: { fgColor: { rgb: 'F8FAFC' } }, alignment: { horizontal: 'center', vertical: 'center' }, border: { top: { style: 'thin', color: { rgb: 'E2E8F0' } }, bottom: { style: 'thin', color: { rgb: 'E2E8F0' } }, left: { style: 'thin', color: { rgb: 'E2E8F0' } }, right: { style: 'thin', color: { rgb: 'E2E8F0' } } } };
+      const oddRowStyle: CellStyle = { fill: { fgColor: { rgb: 'FFFFFF' } }, alignment: { horizontal: 'center', vertical: 'center' }, border: { top: { style: 'thin', color: { rgb: 'E2E8F0' } }, bottom: { style: 'thin', color: { rgb: 'E2E8F0' } }, left: { style: 'thin', color: { rgb: 'E2E8F0' } }, right: { style: 'thin', color: { rgb: 'E2E8F0' } } } };
 
       exportData.forEach((_, rowIndex) => {
         const isEven = rowIndex % 2 === 0;
         const style = isEven ? evenRowStyle : oddRowStyle;
         headers.forEach((_, colIndex) => {
           const cellRef = String.fromCharCode(65 + colIndex) + (7 + rowIndex);
-          if (!ws[cellRef]) (ws as any)[cellRef] = {};
-          (ws as any)[cellRef].s = style;
+          if (!ws[cellRef]) ws[cellRef] = {};
+          ws[cellRef].s = style;
         });
       });
 
-      (ws as any)['!merges'] = [
+      ws['!merges'] = [
         { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } },
         { s: { r: 1, c: 0 }, e: { r: 1, c: 8 } },
         { s: { r: 2, c: 0 }, e: { r: 2, c: 8 } },
@@ -283,7 +297,7 @@ export const UsersContainer: React.FC = () => {
       saveAs(data, filename);
 
       showSuccess('Export successful!', `Exported ${exportData.length} users to Excel: ${filename}`);
-    } catch (error) {
+    } catch {
       showError('Export error', 'An error occurred while exporting Excel. Please try again.');
     }
   };
@@ -292,7 +306,7 @@ export const UsersContainer: React.FC = () => {
     return status === 'Active' || status === 'Inactive' || status === 'Blocked' ? status : 'Active';
   };
 
-  const convertModalUserToTyped = (modalUser: any): User => {
+  const convertModalUserToTyped = (modalUser: User): User => {
     const typed: User = {
       id: modalUser.id,
       name: modalUser.name,
@@ -312,7 +326,7 @@ export const UsersContainer: React.FC = () => {
     return typed;
   };
 
-  const handleAddUser = (newUser: any) => {
+  const handleAddUser = (newUser: User) => {
     const typed = convertModalUserToTyped(newUser);
     setUsers(prev => [...prev, typed]);
   };
@@ -326,7 +340,7 @@ export const UsersContainer: React.FC = () => {
     }
   };
 
-  const handleSaveEdit = (updatedUser: any) => {
+  const handleSaveEdit = (updatedUser: User) => {
     const typed = convertModalUserToTyped(updatedUser);
     setUsers(prev => prev.map(user => user.id === typed.id ? typed : user));
   };
@@ -355,7 +369,7 @@ export const UsersContainer: React.FC = () => {
       } else {
         showError('An error occurred', response.message || 'Unable to perform this action. Please try again.');
       }
-    } catch (error) {
+    } catch {
       showError('System error', 'An error occurred while performing the action. Please try again later.');
     }
   };

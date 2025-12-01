@@ -48,7 +48,8 @@ export const adminAuthSlice = createSlice({
   initialState,
   reducers: {
     // Login actions
-    loginRequest: (state, action: PayloadAction<AdminLoginRequest>) => {
+    loginRequest: (state, _: PayloadAction<AdminLoginRequest>) => {
+      void _;
       state.loading = true;
       state.error = null;
     },

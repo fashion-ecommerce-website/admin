@@ -22,6 +22,7 @@ export interface ProductDetail {
   colors: string[];
   mapSizeToQuantity: { [size: string]: number };
   description: string[];
+  categorySlug: string;   // Category slug for navigation
   colorId?: number;
   sizeId?: number;
   quantity?: number;

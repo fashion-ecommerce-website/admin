@@ -17,7 +17,6 @@ interface OrdersPresenterProps {
   };
   onPageChange: (page: number) => void;
   onViewDetail: (order: Order) => void;
-  onUpdateStatus: (orderId: number, status: OrderStatus) => void;
   onCancelOrder: (orderId: number) => void;
   onRefresh: () => void;
   onSearch?: (query: string) => void;
@@ -33,7 +32,6 @@ export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
   pagination,
   onPageChange,
   onViewDetail,
-  onUpdateStatus,
   onCancelOrder,
   onRefresh,
   onSearch,

@@ -120,12 +120,14 @@ const productSlice = createSlice({
   initialState,
   reducers: {
     // Fetch products
-    fetchProductsRequest: (state, _action: PayloadAction<FetchProductsRequest>) => {
+    fetchProductsRequest: (state, _: PayloadAction<FetchProductsRequest>) => {
+      void _;
       state.loading = true;
       state.error = null;
     },
     // Silent fetch - like fetchProductsRequest but don't toggle global loading
-    fetchProductsSilentRequest: (state, _action: PayloadAction<FetchProductsRequest>) => {
+    fetchProductsSilentRequest: (state, _: PayloadAction<FetchProductsRequest>) => {
+      void _;
       // intentionally do not set state.loading to true — background refresh
       state.error = null;
     },

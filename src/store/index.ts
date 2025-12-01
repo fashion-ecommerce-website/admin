@@ -1,4 +1,4 @@
-import { configureStore } from '@reduxjs/toolkit';
+import { configureStore, Middleware } from '@reduxjs/toolkit';
 import createSagaMiddleware from 'redux-saga';
 import { rootReducer } from './rootReducer';
 import { rootSaga } from './sagas/rootSaga';
@@ -14,7 +14,7 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
       },
-    }).concat(sagaMiddleware as any),
+    }).concat(sagaMiddleware as Middleware),
   devTools: process.env.NODE_ENV !== 'production',
 });
 

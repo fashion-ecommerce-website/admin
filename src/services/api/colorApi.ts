@@ -1,4 +1,5 @@
 import { adminApiClient, ApiResponse } from './baseApi';
+import type { PaginatedResponse } from '../../types/common.types';
 
 export interface Color {
   id: number;
@@ -13,25 +14,17 @@ export interface GetColorsRequest {
   name?: string;
 }
 
-export interface PaginatedResponse<T> {
-  items: T[];
-  page: number;
-  pageSize: number;
-  totalItems: number;
-  totalPages: number;
-}
-
-export interface ColorListResponse extends PaginatedResponse<Color> { }
+export type ColorListResponse = PaginatedResponse<Color>;
 
 export interface CreateColorRequest {
   name: string;
   hexCode?: string;
 }
 
-export interface UpdateColorRequest extends CreateColorRequest { }
+export type UpdateColorRequest = CreateColorRequest;
 
 export const colorApi = {
-  async getAllColors(_params: GetColorsRequest): Promise<ApiResponse<ColorListResponse>> {
+  async getAllColors(): Promise<ApiResponse<ColorListResponse>> {
     try {
       const response = await adminApiClient.get<Array<{ id: number; name: string; hex?: string; isActive: boolean }>>(`/colors`);
       if (response.success && response.data) {

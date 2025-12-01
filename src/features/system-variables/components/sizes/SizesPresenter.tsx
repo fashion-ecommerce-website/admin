@@ -1,16 +1,13 @@
 "use client";
 
 import React from 'react';
-import { Input, Switch, Pagination } from '@/components/ui';
+import { Input } from '@/components/ui';
 import type { Size } from '@/services/api/sizeApi';
-import { CustomDropdown } from '@/components/ui';
-import { SizeRowSkeleton, TableSkeletonWithRows } from '@/components/ui/Skeleton';
+import { TableSkeletonWithRows, SizeRowSkeleton } from '@/components/ui/Skeleton';
 import {
   Plus,
-  Search,
   AlertCircle,
   Loader2,
-  Pencil,
   X,
   Check,
   Ruler
@@ -20,30 +17,20 @@ interface SizesPresenterProps {
   sizes: Size[];
   loading: boolean;
   error?: string | null;
-  page: number;
-  pageSize: number;
-  totalItems: number;
   onCreate: (payload: { code: string; label?: string }) => void;
   onUpdate: (id: number, payload: { code: string; label?: string }) => void;
   onToggleStatus: (id: number) => void;
   onSearchByCodeOrLabel: (codeOrLabel: string) => void;
-  onChangePage: (page: number) => void;
-  onChangePageSize: (size: number) => void;
 }
 
 export const SizesPresenter: React.FC<SizesPresenterProps> = ({
   sizes,
   loading,
   error,
-  page,
-  pageSize,
-  totalItems,
   onCreate,
   onUpdate,
   onToggleStatus,
   onSearchByCodeOrLabel,
-  onChangePage,
-  onChangePageSize,
 }) => {
   // Create Form State
   const [code, setCode] = React.useState('');

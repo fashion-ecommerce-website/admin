@@ -37,7 +37,7 @@ export const SizesContainer: React.FC<SizesContainerProps> = ({ onPaginationChan
 
     const fetchSizes = async () => {
         setLoading(true);
-        const res = await sizeApi.getAllSizes({});
+        const res = await sizeApi.getAllSizes();
         if (res.success && res.data) {
             const data = res.data as SizeListResponse;
             setAllItems(data.items);
@@ -99,23 +99,19 @@ export const SizesContainer: React.FC<SizesContainerProps> = ({ onPaginationChan
         }
     };
 
-    const handleChangePage = (p: number) => setPage(p);
-    const handleChangePageSize = (s: number) => setPageSize(s);
     const handleSearchByCodeOrLabel = (term: string) => setSearchTerm(term);
+    // Pagination handlers kept for future use
+    void setPage;
+    void setPageSize;
 
     return (
         <SizesPresenter
             sizes={items}
             loading={displayLoading}
-            page={page}
-            pageSize={pageSize}
-            totalItems={totalItems}
             onCreate={handleCreate}
             onUpdate={handleUpdate}
             onToggleStatus={handleToggleStatus}
             onSearchByCodeOrLabel={handleSearchByCodeOrLabel}
-            onChangePage={handleChangePage}
-            onChangePageSize={handleChangePageSize}
         />
     );
 };

@@ -36,8 +36,6 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
                               pathname.startsWith('/products') ||
                               pathname.startsWith('/orders') ||
                               pathname.startsWith('/categories');
-      
-      const isAuthRoute = pathname.startsWith('/auth');
 
       if (isAuthenticated && !tokenFromStorage) {
         dispatch(logout());
@@ -55,7 +53,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
           let currentRoles = admin?.roles || undefined;
           if (!currentRoles) {  
             try {
-              const me: any = await adminAuthApi.getAuthenticatedUser(String(hasValidToken));
+              const me = await adminAuthApi.getAuthenticatedUser(String(hasValidToken));
               const roles: string[] | undefined = me?.roles || me?.data?.roles || me?.authorities;
               const permissions = me?.permissions || me?.data?.permissions;
               if (roles) {
@@ -64,7 +62,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
                 sessionStorage.setItem('admin_user', JSON.stringify({ ...stored, roles, permissions }));
                 currentRoles = roles;
               }
-            } catch (e) {
+            } catch {
               // If cannot fetch role, treat as unauthorized
               router.push('/auth/login');
               return;
@@ -92,13 +90,14 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     };
 
     checkAuth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, router, isClient, isAuthenticated, accessToken, dispatch]);
 
   if (!isClient || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto"></div>
           <p className="mt-4 text-gray-600">Checking authentication...</p>
         </div>
       </div>

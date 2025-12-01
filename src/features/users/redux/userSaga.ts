@@ -4,7 +4,7 @@ import { PayloadAction } from '@reduxjs/toolkit';
 import { userApi } from '../../../services/api/userApi';
 import { convertBackendUserToUser } from '../../../types/user.types';
 import type { ApiResponse } from '../../../services/api/baseApi';
-import type { UserListResponse, BackendUser } from '../../../types/user.types';
+import type { UserListResponse } from '../../../types/user.types';
 import {
   // Fetch users
   fetchUsersRequest,
@@ -14,27 +14,19 @@ import {
   
   // Create user
   createUserRequest,
-  createUserSuccess,
   createUserFailure,
-  type CreateUserRequest,
   
   // Update user
   updateUserRequest,
-  updateUserSuccess,
   updateUserFailure,
-  type UpdateUserRequest,
   
   // Update user status
   updateUserStatusRequest,
-  updateUserStatusSuccess,
   updateUserStatusFailure,
-  type UpdateUserStatusRequest,
   
   // Delete user
   deleteUserRequest,
-  deleteUserSuccess,
   deleteUserFailure,
-  type DeleteUserRequest,
 } from './userSlice';
 
 // Fetch users saga
@@ -69,7 +61,7 @@ function* handleFetchUsers(action: PayloadAction<FetchUsersRequest>) {
 }
 
 // Create user saga - simplified
-function* handleCreateUser(action: PayloadAction<CreateUserRequest>) {
+function* handleCreateUser() {
   try {
     // For now, just show success - can be implemented later when backend is ready
     yield put(createUserFailure({
@@ -84,7 +76,7 @@ function* handleCreateUser(action: PayloadAction<CreateUserRequest>) {
 }
 
 // Update user saga - simplified
-function* handleUpdateUser(action: PayloadAction<UpdateUserRequest>) {
+function* handleUpdateUser() {
   try {
     yield put(updateUserFailure({
       error: 'Update user functionality will be available when backend is integrated',
@@ -98,7 +90,7 @@ function* handleUpdateUser(action: PayloadAction<UpdateUserRequest>) {
 }
 
 // Update user status saga - simplified
-function* handleUpdateUserStatus(action: PayloadAction<UpdateUserStatusRequest>) {
+function* handleUpdateUserStatus() {
   try {
     yield put(updateUserStatusFailure({
       error: 'Update user status functionality will be available when backend is integrated',
@@ -112,7 +104,7 @@ function* handleUpdateUserStatus(action: PayloadAction<UpdateUserStatusRequest>)
 }
 
 // Delete user saga - simplified
-function* handleDeleteUser(action: PayloadAction<DeleteUserRequest>) {
+function* handleDeleteUser() {
   try {
     yield put(deleteUserFailure({
       error: 'Delete user functionality will be available when backend is integrated',

@@ -65,7 +65,7 @@ export const EditProductDetailModal: React.FC<EditProductDetailModalProps> = ({
   // New states for color/size management
   const [selectedColor, setSelectedColor] = useState<string>('')
   const [selectedSize, setSelectedSize] = useState<string>('')
-  const [productId, setProductId] = useState<number | null>(null)
+  const [, setProductId] = useState<number | null>(null)
 
   const [isAnimating, setIsAnimating] = useState(false)
   const [shouldRender, setShouldRender] = useState(false)
@@ -146,7 +146,7 @@ export const EditProductDetailModal: React.FC<EditProductDetailModalProps> = ({
 
   // Handle color change - call API with new color
   const handleColorChange = useCallback(async (newColor: string) => {
-    if (!propProductId || !productDetail) return
+    if (!propProductId) return
     
     try {
       setLoading(true)
@@ -186,7 +186,7 @@ export const EditProductDetailModal: React.FC<EditProductDetailModalProps> = ({
 
   // Handle size change - call API with new size
   const handleSizeChange = useCallback(async (newSize: string) => {
-    if (!propProductId || !productDetail) return
+    if (!propProductId) return
     
     try {
       setLoading(true)
@@ -452,6 +452,7 @@ export const EditProductDetailModal: React.FC<EditProductDetailModalProps> = ({
                   </div>
                 )}
 
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={displayImages[selectedImageIndex] || displayImages[0]}
                   alt={productDetail.title || "Product"}
@@ -474,6 +475,7 @@ export const EditProductDetailModal: React.FC<EditProductDetailModalProps> = ({
                         selectedImageIndex === index ? "border-black border-2" : "border-gray-200 hover:border-gray-400"
                       }`}
                     >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={image || "/placeholder.svg"}
                         alt={`Product ${index + 1}`}

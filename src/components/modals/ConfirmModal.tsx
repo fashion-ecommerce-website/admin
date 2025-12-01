@@ -28,7 +28,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   const handleConfirm = async () => {
     try {
       await onConfirm();
-    } catch (error) {
+    } catch {
       // parent handles error/toast
     }
   };

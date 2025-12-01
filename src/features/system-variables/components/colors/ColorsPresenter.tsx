@@ -1,16 +1,13 @@
 "use client";
 
 import React from 'react';
-import { Input, Switch, Pagination } from '@/components/ui';
+import { Input } from '@/components/ui';
 import type { Color } from '@/services/api/colorApi';
-import { CustomDropdown } from '@/components/ui';
-import { ColorRowSkeleton, TableSkeletonWithRows } from '@/components/ui/Skeleton';
+import { TableSkeletonWithRows, ColorRowSkeleton } from '@/components/ui/Skeleton';
 import {
     Plus,
-    Search,
     AlertCircle,
     Loader2,
-    Pencil,
     X,
     Check,
     Palette
@@ -20,30 +17,20 @@ interface ColorsPresenterProps {
     colors: Color[];
     loading: boolean;
     error?: string | null;
-    page: number;
-    pageSize: number;
-    totalItems: number;
     onCreate: (payload: { name: string; hexCode?: string }) => void;
     onUpdate: (id: number, payload: { name: string; hexCode?: string }) => void;
     onToggleStatus: (id: number) => void;
     onSearchByName: (name: string) => void;
-    onChangePage: (page: number) => void;
-    onChangePageSize: (size: number) => void;
 }
 
 export const ColorsPresenter: React.FC<ColorsPresenterProps> = ({
     colors,
     loading,
     error,
-    page,
-    pageSize,
-    totalItems,
     onCreate,
     onUpdate,
     onToggleStatus,
     onSearchByName,
-    onChangePage,
-    onChangePageSize,
 }) => {
     // Create Form State
     const [name, setName] = React.useState('');

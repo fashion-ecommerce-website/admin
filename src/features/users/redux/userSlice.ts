@@ -12,7 +12,7 @@ const initialState: UserState = {
 };
 
 // Action types
-export interface FetchUsersRequest extends GetUsersRequest {}
+export type FetchUsersRequest = GetUsersRequest;
 
 export interface FetchUsersSuccess {
   users: User[];
@@ -57,7 +57,7 @@ const userSlice = createSlice({
   initialState,
   reducers: {
     // Fetch users
-    fetchUsersRequest: (state, action: PayloadAction<FetchUsersRequest>) => {
+    fetchUsersRequest: (state) => {
       state.loading = true;
       state.error = null;
     },
@@ -75,7 +75,7 @@ const userSlice = createSlice({
     },
 
     // Create user
-    createUserRequest: (state, action: PayloadAction<CreateUserRequest>) => {
+    createUserRequest: (state) => {
       state.loading = true;
       state.error = null;
     },
@@ -91,7 +91,7 @@ const userSlice = createSlice({
     },
 
     // Update user
-    updateUserRequest: (state, action: PayloadAction<UpdateUserRequest>) => {
+    updateUserRequest: (state) => {
       state.loading = true;
       state.error = null;
     },
@@ -109,7 +109,7 @@ const userSlice = createSlice({
     },
 
     // Update user status
-    updateUserStatusRequest: (state, action: PayloadAction<UpdateUserStatusRequest>) => {
+    updateUserStatusRequest: (state) => {
       state.loading = true;
       state.error = null;
     },
@@ -127,7 +127,7 @@ const userSlice = createSlice({
     },
 
     // Delete user
-    deleteUserRequest: (state, action: PayloadAction<DeleteUserRequest>) => {
+    deleteUserRequest: (state) => {
       state.loading = true;
       state.error = null;
     },
@@ -148,7 +148,7 @@ const userSlice = createSlice({
     },
 
     // Reset users state
-    resetUsersState: (state) => {
+    resetUsersState: () => {
       return initialState;
     },
   },

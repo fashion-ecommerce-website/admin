@@ -35,7 +35,6 @@ interface ProductsPresenterProps {
   onPageChange: (page: number, pageSize: number) => void;
   onCreateProduct: () => void;
   onEditProduct: (product: Product) => void;
-  onEditVariant?: (product: Product) => void;
   onDeleteProduct: (productId: number) => void;
   onClearError: () => void;
   onEditProductDetail?: (product: Product) => void; // New prop for editing product detail
@@ -53,24 +52,17 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
   onPageChange,
   onCreateProduct,
   onEditProduct,
-  onEditVariant,
   onDeleteProduct,
   onClearError,
   onEditProductDetail, // New prop
   onExportExcel, // New prop
 }) => {
   const [categoryMap, setCategoryMap] = useState<Record<number, string>>({});
-  const [showImportModal, setShowImportModal] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; size: number; file?: File }[]>([]);
   // Preview state
-  const [previewData, setPreviewData] = useState<any[]>([]); // Array of ProductGroupResponse
+  const [previewData, setPreviewData] = useState<Record<string, unknown>[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [activePreviewFile, setActivePreviewFile] = useState<{ name: string; size: number; file?: File } | null>(null);
-
-  // Handle upload file
-  const handleUploadCSV = (file: File) => {
-    setUploadedFiles((prev) => [...prev, { name: file.name, size: file.size, file }]);
-  };
 
   // Handle preview file (calls backend)
   const handlePreviewCSV = async (file: { name: string; size: number; file?: File }) => {
@@ -81,9 +73,9 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
     try {
       const formData = new FormData();
       formData.append('file', file.file);
-      const res = await adminApiClient.post<any[]>('/products/import/preview', formData);
+      const res = await adminApiClient.post<Record<string, unknown>[]>('/products/import/preview', formData);
       setPreviewData(res.data || []);
-    } catch (err) {
+    } catch {
       setPreviewData([]);
     } finally {
       setPreviewLoading(false);
@@ -98,6 +90,13 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
       setPreviewData([]);
     }
   };
+
+  // Suppress unused variable warnings - these are kept for future use
+  void uploadedFiles;
+  void previewData;
+  void previewLoading;
+  void handlePreviewCSV;
+  void handleDeleteCSV;
 
   useEffect(() => {
     let mounted = true;
