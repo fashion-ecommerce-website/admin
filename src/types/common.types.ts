@@ -3,6 +3,25 @@
  */
 
 /**
+ * Common enums response from API
+ */
+export interface CommonEnumsResponse {
+  orderStatuses?: string[];
+  paymentStatuses?: string[];
+  paymentMethods?: string[];
+  [key: string]: string[] | undefined;
+}
+
+/**
+ * Common enums state for Redux
+ */
+export interface CommonEnumsState {
+  data: CommonEnumsResponse | null;
+  isLoading: boolean;
+  error: string | null;
+}
+
+/**
  * Generic paginated response for list endpoints
  * Used by colorApi, sizeApi, and other list APIs
  */

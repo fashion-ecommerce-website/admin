@@ -77,7 +77,8 @@ const orderSlice = createSlice({
   initialState,
   reducers: {
     // Fetch orders
-    fetchOrdersRequest: (state) => {
+    fetchOrdersRequest: (state, _: PayloadAction<FetchOrdersRequest>) => {
+      void _;
       state.loading = true;
       state.error = null;
     },
@@ -95,7 +96,8 @@ const orderSlice = createSlice({
     },
 
     // Fetch order by ID
-    fetchOrderByIdRequest: (state) => {
+    fetchOrderByIdRequest: (state, _: PayloadAction<FetchOrderByIdRequest>) => {
+      void _;
       state.detailLoading = true;
       state.error = null;
     },
@@ -110,7 +112,8 @@ const orderSlice = createSlice({
     },
 
     // Update order
-    updateOrderRequest: (state) => {
+    updateOrderRequest: (state, _: PayloadAction<UpdateOrderRequestPayload>) => {
+      void _;
       state.loading = true;
       state.error = null;
     },
@@ -137,7 +140,8 @@ const orderSlice = createSlice({
     },
 
     // Cancel order
-    cancelOrderRequest: (state) => {
+    cancelOrderRequest: (state, _: PayloadAction<CancelOrderRequest>) => {
+      void _;
       state.loading = true;
       state.error = null;
     },

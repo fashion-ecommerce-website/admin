@@ -16,8 +16,43 @@ import ProductsPresenter from '../components/ProductsPresenter';
 import { ProductModal, DeleteProductModal } from '../../../components/modals/ProductModals';
 import EditProductAdminModal from '../../../components/modals/EditProductAdminModal';
 import EditProductDetailModal from '../../../components/modals/EditProductDetailModal';
-import { Product, ProductDetailQueryResponse } from '../../../types/product.types';
-import { productApi } from '../../../services/api/productApi';
+import { Product, ProductDetailQueryResponse, VariantColor } from '../../../types/product.types';
+import { productApi, ProductDetail } from '../../../services/api/productApi';
+
+// Interface for Excel export row data
+interface ExportRowData {
+  'No.': number;
+  'Product ID': number;
+  'Product Title': string;
+  'Description': string;
+  'Category': string;
+  'Color': string;
+  'Color Hex': string;
+  'Size': string;
+  'Price (VND)': string;
+  'Final Price (VND)': string;
+  'Discount (%)': number;
+  'Quantity': number;
+  'Detail ID': number | string;
+  'Images Count': number;
+  'Image URLs': string;
+  'Promotion': string;
+  'Created At': string;
+  'Updated At': string;
+}
+
+// Interface for product info response with colors
+interface ProductInfoWithColors {
+  colors?: string[];
+  activeSize?: string;
+}
+
+// Interface for color detail response
+interface ColorDetailResponse extends ProductDetail {
+  finalPrice?: number;
+  percentOff?: number;
+  promotionName?: string;
+}
 import { categoryApi, CategoryBackend } from '../../../services/api/categoryApi';
 import { useMinimumLoadingTime } from '../../../hooks/useMinimumLoadingTime';
 import { useToast } from '../../../providers/ToastProvider';
@@ -146,13 +181,14 @@ const ProductsContainer: React.FC = () => {
     setIsEditModalOpen(true);
   }, []);
 
+  // Keep for variant picker modal functionality
   const handleEditVariant = useCallback(async (product: Product) => {
     try {
-  // Use query-by-product/color/size endpoint to fetch available colors/sizes and the active detail
-  // If the product already exposes colors/sizes, pass the first available of each to the query
-  const initialColorId = product.variantColors?.[0]?.id;
-  const initialSizeId = product.variantSizes?.[0]?.id;
-  const res = await productApi.getProductDetailByQuery(product.id, initialColorId, initialSizeId);
+      // Use query-by-product/color/size endpoint to fetch available colors/sizes and the active detail
+      // If the product already exposes colors/sizes, pass the first available of each to the query
+      const initialColorId = product.variantColors?.[0]?.id;
+      const initialSizeId = product.variantSizes?.[0]?.id;
+      const res = await productApi.getProductDetailByQuery(product.id, initialColorId, initialSizeId);
       if (res.success && res.data) {
         const d = res.data;
         setProductDetailQuery(d);
@@ -171,6 +207,8 @@ const ProductsContainer: React.FC = () => {
       alert('Failed to load product details');
     }
   }, []);
+  // Suppress unused warning - kept for variant picker modal
+  void handleEditVariant;
 
   const handleDeleteProduct = useCallback((productId: number) => {
     const product = products.find(p => p.id === productId);
@@ -301,7 +339,7 @@ const ProductsContainer: React.FC = () => {
       }
 
       // Fetch product details for all products
-      const allDetails: any[] = [];
+      const allDetails: ExportRowData[] = [];
       
       for (let i = 0; i < allProducts.length; i++) {
         const product = allProducts[i];
@@ -316,8 +354,8 @@ const ProductsContainer: React.FC = () => {
             continue;
           }
           
-          const productInfo = productDetailRes.data;
-          const colors = (productInfo as any).colors || [];
+          const productInfo = productDetailRes.data as ProductInfoWithColors;
+          const colors = productInfo.colors || [];
           
           // Step 2: For each color, get color-specific details with mapSizeToQuantity
           for (const colorName of colors) {
@@ -333,11 +371,11 @@ const ProductsContainer: React.FC = () => {
                 continue;
               }
               
-              const colorDetail: any = colorDetailRes.data;
+              const colorDetail = colorDetailRes.data as ColorDetailResponse;
               const mapSizeToQuantity = colorDetail.mapSizeToQuantity || {};
               
               // Get color hex from variantColors in the original product
-              const colorObj = product.variantColors?.find((c: any) => c.name === colorName);
+              const colorObj = product.variantColors?.find((c: VariantColor) => c.name === colorName);
               const colorHex = colorObj?.hex || 'N/A';
               
               // Get image URLs
@@ -459,18 +497,18 @@ const ProductsContainer: React.FC = () => {
         XLSX.utils.sheet_add_aoa(ws, [rowData], { origin: `A${8 + index}` });
       });
 
-      // Styling
+      // Styling - using object structure for cell styles
       const titleStyle = {
         font: { bold: true, sz: 16, color: { rgb: 'FFFFFF' } },
         fill: { fgColor: { rgb: '312E81' } },
         alignment: { horizontal: 'center', vertical: 'center' },
-      } as any;
+      };
 
       const headerStyle = {
         font: { bold: true, sz: 14, color: { rgb: 'FFFFFF' } },
         fill: { fgColor: { rgb: '4F46E5' } },
         alignment: { horizontal: 'center', vertical: 'center' },
-      } as any;
+      };
 
       const columnHeaderStyle = {
         font: { bold: true, sz: 12, color: { rgb: 'FFFFFF' } },
@@ -482,7 +520,7 @@ const ProductsContainer: React.FC = () => {
           left: { style: 'thin', color: { rgb: '000000' } },
           right: { style: 'thin', color: { rgb: '000000' } }
         },
-      } as any;
+      };
 
       // Apply styles to title row - updated for 18 columns (A-R)
       const columnLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R'];
@@ -530,7 +568,7 @@ const ProductsContainer: React.FC = () => {
       setIsExporting(false);
       setExportProgress({ current: 0, total: 0 });
     }
-  }, [products, filters, showSuccess, showWarning]);
+  }, [filters, showSuccess, showWarning]);
 
   const handleCloseModals = useCallback(() => {
     setIsCreateModalOpen(false);
@@ -556,7 +594,6 @@ const ProductsContainer: React.FC = () => {
         onPageChange={handlePageChange}
         onCreateProduct={handleCreateProduct}
         onEditProduct={handleEditProduct}
-        onEditVariant={handleEditVariant}
         onDeleteProduct={handleDeleteProduct}
         onExportExcel={handleExportExcel}
         onClearError={handleClearError}

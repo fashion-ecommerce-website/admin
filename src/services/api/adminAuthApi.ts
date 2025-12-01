@@ -38,7 +38,14 @@ export interface AuthenticatedUser {
   id: number;
   username: string;
   email: string;
-  role: string;
+  role?: string;
+  roles?: string[];
+  authorities?: string[];
+  permissions?: string[];
+  data?: {
+    roles?: string[];
+    permissions?: string[];
+  };
 }
 
 class AdminAuthApi {

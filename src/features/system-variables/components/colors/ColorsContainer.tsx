@@ -34,7 +34,7 @@ export const ColorsContainer: React.FC<ColorsContainerProps> = ({ onPaginationCh
 
     const fetchColors = async () => {
         setLoading(true);
-        const res = await colorApi.getAllColors({});
+        const res = await colorApi.getAllColors();
         if (res.success && res.data) {
             const data = res.data as ColorListResponse;
             console.log('🎨 Fetched colors:', data.items);
@@ -97,23 +97,19 @@ export const ColorsContainer: React.FC<ColorsContainerProps> = ({ onPaginationCh
         }
     };
 
-    const handleChangePage = (p: number) => setPage(p);
-    const handleChangePageSize = (s: number) => setPageSize(s);
     const handleSearchByName = (name: string) => setSearchName(name);
+    // Pagination handlers kept for future use
+    void setPage;
+    void setPageSize;
 
     return (
         <ColorsPresenter
             colors={items}
             loading={displayLoading}
-            page={page}
-            pageSize={pageSize}
-            totalItems={totalItems}
             onCreate={handleCreate}
             onUpdate={handleUpdate}
             onToggleStatus={handleToggleStatus}
             onSearchByName={handleSearchByName}
-            onChangePage={handleChangePage}
-            onChangePageSize={handleChangePageSize}
         />
     );
 };

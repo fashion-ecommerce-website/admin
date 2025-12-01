@@ -43,7 +43,8 @@ export const OrdersContainer: React.FC = () => {
 
   // Use minimum loading time hook to ensure skeleton shows for at least 500ms
   const displayLoading = useMinimumLoadingTime(loading, 500);
-  const displayDetailLoading = useMinimumLoadingTime(detailLoading, 500);
+  // Keep for future use when detail modal needs loading state
+  void detailLoading;
 
   // Fetch orders on mount and when filters change
   useEffect(() => {
@@ -51,7 +52,7 @@ export const OrdersContainer: React.FC = () => {
       page: number;
       size: number;
       sortBy: string;
-      direction: string;
+      direction: 'asc' | 'desc';
       status?: OrderStatus;
       paymentStatus?: PaymentStatus;
     } = { 
@@ -96,7 +97,7 @@ export const OrdersContainer: React.FC = () => {
       page: number;
       size: number;
       sortBy: string;
-      direction: string;
+      direction: 'asc' | 'desc';
       status?: OrderStatus;
       paymentStatus?: PaymentStatus;
     } = { 
@@ -241,7 +242,7 @@ export const OrdersContainer: React.FC = () => {
       page: number;
       size: number;
       sortBy: string;
-      direction: string;
+      direction: 'asc' | 'desc';
       status?: OrderStatus;
       paymentStatus?: PaymentStatus;
     } = { 
@@ -290,7 +291,10 @@ export const OrdersContainer: React.FC = () => {
 
       // Import orderApi
       const { orderApi } = await import('../../../services/api/orderApi');
-      const response = await orderApi.getAllOrders(params);
+      const response = await orderApi.getAllOrders({
+        ...params,
+        direction: params.direction as 'asc' | 'desc'
+      });
 
       if (!response.success || !response.data?.content || response.data.content.length === 0) {
         showToast({
@@ -457,7 +461,6 @@ export const OrdersContainer: React.FC = () => {
         }}
         onPageChange={handlePageChange}
         onViewDetail={handleViewDetail}
-        onUpdateStatus={handleUpdateStatus}
         onCancelOrder={handleCancelOrder}
         onRefresh={handleRefresh}
         onSearch={handleSearch}
@@ -469,7 +472,6 @@ export const OrdersContainer: React.FC = () => {
       <OrderDetailPresenter
         order={selectedOrder}
         isOpen={isDetailOpen}
-        loading={displayDetailLoading}
         onClose={handleCloseDetail}
         onUpdateStatus={handleUpdateStatus}
         onUpdatePaymentStatus={handleUpdatePaymentStatus}

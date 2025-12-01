@@ -62,7 +62,7 @@ function* handleLogout(): Generator<Effect, void, unknown> {
     
     if (accessToken) {
       try {
-        yield call(() => adminAuthApi.logout(accessToken));
+        yield call(() => adminAuthApi.logout());
       } catch (apiError) {
         console.warn('Logout API failed:', apiError);
       }

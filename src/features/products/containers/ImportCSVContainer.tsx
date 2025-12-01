@@ -34,7 +34,7 @@ interface ProductDetail {
   imageUrls?: string[];
   isError?: boolean;
   error?: boolean;
-  errorMessage?: string | null;
+  errorMessage?: string;
 }
 
 interface ProductGroup {
@@ -284,7 +284,7 @@ const ImportCSVContainer: React.FC = () => {
           next.imageUrls = editForm.imageUrls;
           next.isError = false;
           next.error = false;
-          next.errorMessage = null;
+          next.errorMessage = undefined;
           touchedThisGroup = true;
           return next;
         });
