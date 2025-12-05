@@ -12,6 +12,12 @@ interface UploadedFile {
   file: File;
 }
 
+interface UploadedZipFile {
+  name: string;
+  size: number;
+  file: File;
+}
+
 interface EditForm {
   title: string;
   category: string;
@@ -57,6 +63,7 @@ const ImportCSVContainer: React.FC = () => {
 
   // State
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
+  const [uploadedZips, setUploadedZips] = useState<UploadedZipFile[]>([]);
   const [previewData, setPreviewData] = useState<ProductGroup[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -121,16 +128,21 @@ const ImportCSVContainer: React.FC = () => {
     };
   }, []);
 
-  const handlePreview = useCallback(async (file: File | Blob) => {
+  const handlePreview = useCallback(async (csvFile: File, zipFiles: File[]) => {
     setPreviewLoading(true);
     setError(null);
     setPreviewData([]);
     try {
       const formData = new FormData();
-      const toSend = file instanceof File ? file : new File([file], uploadedFile?.name || 'import.csv', { type: 'text/csv' });
-      formData.append('file', toSend);
-      const res = await adminApiClient.post<ProductGroup[]>('/products/import/preview', formData as unknown as FormData);
-      if (!res.success) throw new Error(res.message || 'Failed to preview CSV');
+      formData.append('csv', csvFile);
+      
+      // Append all zip files
+      zipFiles.forEach((zip) => {
+        formData.append('zips', zip);
+      });
+
+      const res = await adminApiClient.post<ProductGroup[]>('/products/import/zip-preview', formData as unknown as FormData);
+      if (!res.success) throw new Error(res.message || 'Failed to preview CSV with ZIPs');
       setPreviewData(res.data || []);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Preview failed';
@@ -138,12 +150,33 @@ const ImportCSVContainer: React.FC = () => {
     } finally {
       setPreviewLoading(false);
     }
-  }, [uploadedFile?.name]);
+  }, []);
 
   const handleFileChange = useCallback((file: File) => {
     setUploadedFile({ name: file.name, size: file.size, file });
-    handlePreview(file);
-  }, [handlePreview]);
+    // Don't auto-preview, wait for zips
+  }, []);
+
+  const handleZipFilesChange = useCallback((files: File[]) => {
+    const newZips = files.map(f => ({ name: f.name, size: f.size, file: f }));
+    setUploadedZips(prev => [...prev, ...newZips]);
+  }, []);
+
+  const handleRemoveZip = useCallback((index: number) => {
+    setUploadedZips(prev => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const handleStartPreview = useCallback(() => {
+    if (!uploadedFile) {
+      setError('Please upload a CSV file first');
+      return;
+    }
+    if (uploadedZips.length === 0) {
+      setError('Please upload at least one ZIP file containing images');
+      return;
+    }
+    handlePreview(uploadedFile.file, uploadedZips.map(z => z.file));
+  }, [uploadedFile, uploadedZips, handlePreview]);
 
 
 
@@ -313,12 +346,28 @@ const ImportCSVContainer: React.FC = () => {
     }
 
     try {
-      const res = await adminApiClient.post<{ imported: number; failed?: number }>('/products/import/save', previewData);
+      // Extract leaf category name from path before sending to backend
+      const dataToSave = previewData.map(group => ({
+        ...group,
+        category: group.category?.includes(' > ') 
+          ? group.category.split(' > ').pop()?.trim() || group.category
+          : group.category,
+        productDetails: group.productDetails?.map(detail => ({
+          ...detail,
+          category: detail.category?.includes(' > ')
+            ? detail.category.split(' > ').pop()?.trim() || detail.category
+            : detail.category,
+        })),
+      }));
+
+      const res = await adminApiClient.post<void>('/products/import/zip-save', dataToSave);
       if (!res.success) throw new Error(res.message || 'Failed to save products');
 
       const totalProducts = previewData.reduce((sum, group) => sum + (group.productDetails?.length || 0), 0);
       showSuccess('Import Successful', `Imported ${totalProducts} products successfully.`);
       setPreviewData([]);
+      setUploadedFile(null);
+      setUploadedZips([]);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Save failed';
       showError('Save Failed', message);
@@ -332,6 +381,7 @@ const ImportCSVContainer: React.FC = () => {
   return (
     <ImportCSVPresenter
       uploadedFile={uploadedFile}
+      uploadedZips={uploadedZips}
       previewData={previewData}
       previewLoading={previewLoading}
       error={error}
@@ -342,6 +392,9 @@ const ImportCSVContainer: React.FC = () => {
       allowedSizes={allowedSizes}
       allowedCategories={allowedCategories}
       onFileChange={handleFileChange}
+      onZipFilesChange={handleZipFilesChange}
+      onRemoveZip={handleRemoveZip}
+      onStartPreview={handleStartPreview}
       onDeleteProduct={handleDeleteProduct}
       onEditProduct={handleEditProduct}
       onSave={handleSave}

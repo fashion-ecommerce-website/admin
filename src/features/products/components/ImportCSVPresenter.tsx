@@ -42,8 +42,15 @@ interface ProductGroup {
   productDetails?: ProductDetail[];
 }
 
+interface UploadedZipFile {
+  name: string;
+  size: number;
+  file: File;
+}
+
 interface ImportCSVPresenterProps {
   uploadedFile: UploadedFile | null;
+  uploadedZips: UploadedZipFile[];
   previewData: ProductGroup[];
   previewLoading: boolean;
   error: string | null;
@@ -54,6 +61,9 @@ interface ImportCSVPresenterProps {
   allowedSizes: string[];
   allowedCategories: string[];
   onFileChange: (file: File) => void;
+  onZipFilesChange: (files: File[]) => void;
+  onRemoveZip: (index: number) => void;
+  onStartPreview: () => void;
   onDeleteProduct: (idx: number) => void;
   onEditProduct: (idx: number) => void;
   onSave: () => void;
@@ -69,6 +79,7 @@ interface ImportCSVPresenterProps {
 
 const ImportCSVPresenter: React.FC<ImportCSVPresenterProps> = ({
   uploadedFile,
+  uploadedZips,
   previewData,
   previewLoading,
   error,
@@ -79,6 +90,9 @@ const ImportCSVPresenter: React.FC<ImportCSVPresenterProps> = ({
   allowedSizes,
   allowedCategories,
   onFileChange,
+  onZipFilesChange,
+  onRemoveZip,
+  onStartPreview,
   onDeleteProduct,
   onEditProduct,
   onSave,
@@ -92,6 +106,7 @@ const ImportCSVPresenter: React.FC<ImportCSVPresenterProps> = ({
   onNewImageUrlChange,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const zipInputRef = useRef<HTMLInputElement>(null);
 
   const expectedHeaders = [
     'Product Title', 'Description', 'Category', 'Color', 'IMG', 'Size', 'Quantity', 'Price'
@@ -143,51 +158,107 @@ const ImportCSVPresenter: React.FC<ImportCSVPresenterProps> = ({
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-black">Import Products from CSV</h1>
       </div>
 
-      <div className="flex flex-1 flex-row gap-6 p-6 w-full items-start justify-center">
+      <div className="flex flex-1 flex-row gap-4 p-4 w-full items-start">
         {/* Left: Upload */}
-        <div className="w-[270px] flex-shrink-0 bg-white rounded-3xl shadow-2xl p-5 flex flex-col items-center border-2 border-gray-200 self-start">
-          <label htmlFor="csv-upload" className="flex flex-col items-center justify-center border-2 border-dashed border-gray-400 rounded-2xl p-7 cursor-pointer hover:border-black transition-colors bg-white w-full min-h-[160px] group">
-            <span className="text-4xl text-gray-400 mb-2 group-hover:text-black select-none">+</span>
-            <span className="font-medium text-gray-700 mb-1 text-center text-base">Drag & drop or select a CSV file</span>
-            <span className="text-xs text-gray-400">Accepted: .csv only</span>
-            <input
-              id="csv-upload"
-              ref={fileInputRef}
-              type="file"
-              accept=".csv"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) onFileChange(file);
-                e.target.value = '';
-              }}
-            />
-            <button
-              type="button"
-              className="mt-4 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-900 text-sm border border-gray-800 font-semibold shadow cursor-pointer"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              Browse CSV File
-            </button>
-          </label>
+        <div className="w-[240px] flex-shrink-0 bg-white rounded-2xl shadow-xl p-3 flex flex-col items-center border border-gray-200 self-start">
+          {/* CSV Upload */}
+          <div className="w-full mb-3">
+            <h3 className="text-xs font-semibold text-gray-700 mb-1">1. Upload CSV File</h3>
+            <label htmlFor="csv-upload" className="flex flex-col items-center justify-center border-2 border-dashed border-gray-400 rounded-lg p-2 cursor-pointer hover:border-black transition-colors bg-white w-full min-h-[60px] group">
+              <span className="text-xl text-gray-400 group-hover:text-black select-none">📄</span>
+              <span className="font-medium text-gray-700 text-center text-xs">Select CSV</span>
+              <input
+                id="csv-upload"
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) onFileChange(file);
+                  e.target.value = '';
+                }}
+              />
+            </label>
+            {uploadedFile && (
+              <div className="mt-2 w-full flex items-center justify-between bg-green-50 rounded-lg p-2 border border-green-200">
+                <span className="text-sm font-medium text-green-800 truncate max-w-[180px]">✓ {uploadedFile.name}</span>
+                <span className="text-xs text-green-600">{(uploadedFile.size / 1024).toFixed(0)} KB</span>
+              </div>
+            )}
+          </div>
+
+          {/* ZIP Upload */}
+          <div className="w-full mb-3">
+            <h3 className="text-xs font-semibold text-gray-700 mb-1">2. Upload ZIP Files</h3>
+            <label htmlFor="zip-upload" className="flex flex-col items-center justify-center border-2 border-dashed border-gray-400 rounded-lg p-2 cursor-pointer hover:border-black transition-colors bg-white w-full min-h-[60px] group">
+              <span className="text-xl text-gray-400 group-hover:text-black select-none">📦</span>
+              <span className="font-medium text-gray-700 text-center text-xs">Select ZIPs</span>
+              <input
+                id="zip-upload"
+                ref={zipInputRef}
+                type="file"
+                accept=".zip"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  if (files.length > 0) onZipFilesChange(files);
+                  e.target.value = '';
+                }}
+              />
+            </label>
+            {uploadedZips.length > 0 && (
+              <div className="mt-1 w-full space-y-1 max-h-[100px] overflow-y-auto">
+                {uploadedZips.map((zip, idx) => (
+                  <div key={idx} className="flex items-center justify-between bg-blue-50 rounded p-1.5 border border-blue-200">
+                    <span className="text-xs font-medium text-blue-800 truncate max-w-[120px]">📦 {zip.name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-blue-600">{(zip.size / 1024).toFixed(0)} KB</span>
+                      <button
+                        type="button"
+                        onClick={() => onRemoveZip(idx)}
+                        className="text-red-500 hover:text-red-700 text-sm font-bold cursor-pointer"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Preview Button */}
           <button
             type="button"
-            className="mt-3 w-full px-4 py-2 bg-white text-black rounded-lg hover:bg-gray-50 text-sm border border-gray-300 font-semibold shadow cursor-pointer"
+            className="w-full px-3 py-2 bg-black text-white rounded-lg hover:bg-gray-900 text-xs font-semibold shadow cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={onStartPreview}
+            disabled={!uploadedFile || uploadedZips.length === 0 || previewLoading}
+          >
+            {previewLoading ? (
+              <span className="flex items-center justify-center gap-1">
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                Processing...
+              </span>
+            ) : (
+              'Preview Import'
+            )}
+          </button>
+
+          <button
+            type="button"
+            className="mt-2 w-full px-3 py-1.5 bg-white text-black rounded-lg hover:bg-gray-50 text-xs border border-gray-300 font-medium cursor-pointer"
             onClick={downloadTemplate}
           >
-            Download CSV Template
+            Download Template
           </button>
-          {uploadedFile && (
-            <div className="mt-4 w-full flex items-center justify-between bg-gray-50 rounded-lg p-2 border border-gray-200">
-              <span className="text-sm font-medium text-gray-900 truncate max-w-[120px]">{uploadedFile.name}</span>
-              <span className="text-xs text-gray-500">{(uploadedFile.size / 1024).toFixed(0)} KB</span>
-            </div>
-          )}
-          {error && <div className="mt-4 text-red-600 text-sm w-full text-center">{error}</div>}
+          
+          {error && <div className="mt-2 text-red-600 text-xs w-full text-center">{error}</div>}
         </div>
 
         {/* Right: Preview */}
-        <div className="flex-1 bg-white rounded-3xl shadow-2xl p-7 flex flex-col border-2 border-gray-200 min-w-0 relative">
+        <div className="flex-1 bg-white rounded-2xl shadow-xl p-4 flex flex-col border border-gray-200 min-w-0 relative">
           <div className="flex justify-between items-center mb-3">
             <div className="flex items-center gap-3">
               <h2 className="text-xl font-bold text-black">Preview Products</h2>
@@ -248,11 +319,16 @@ const ImportCSVPresenter: React.FC<ImportCSVPresenterProps> = ({
                       <td className="px-4 py-3">
                         {row.imageUrls && row.imageUrls.length > 0 ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={row.imageUrls[0]} alt="Prd" className="w-10 h-10 object-cover rounded border border-gray-200" />
+                          <img 
+                            src={row.imageUrls[0]} 
+                            alt="Prd" 
+                            className="w-10 h-10 object-cover rounded border border-gray-200" 
+                          />
                         ) : (
                           <div className="w-10 h-10 bg-gray-100 rounded border border-gray-200 flex items-center justify-center text-gray-400 text-xs">No img</div>
                         )}
                       </td>
+     
                       <td className={`px-4 py-3 max-w-[200px] truncate ${row.isError ? 'text-red-500' : 'text-black'}`} title={row.productTitle || row.title}>{row.productTitle || row.title || ''}</td>
                       <td className={`px-4 py-3 ${row.isError ? 'text-red-500' : 'text-black'}`}>{row.category || ''}</td>
                       <td className={`px-4 py-3 ${row.isError ? 'text-red-500' : 'text-black'}`}>{row.color || ''}</td>
