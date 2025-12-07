@@ -80,13 +80,31 @@ function* handleCreatePromotion(action: PayloadAction<CreatePromotionRequest>) {
     if (response.success && response.data) {
       yield put(createPromotionSuccess(normalizePromotion(response.data)));
     } else {
-      yield put(createPromotionFailure(response.message || 'Failed to create promotion'));
+      // Extract and format error message
+      const errorMsg = formatErrorMessage(response.message || 'Failed to create promotion');
+      yield put(createPromotionFailure(errorMsg));
     }
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'An error occurred while creating promotion';
-    yield put(createPromotionFailure(message));
+    yield put(createPromotionFailure(formatErrorMessage(message)));
   }
 }
+
+// Helper to format error messages
+const formatErrorMessage = (message: string): string => {
+  // Check for duplicate name constraint
+  if (message.includes('uk_promotion_name_period') || message.includes('duplicate key')) {
+    return 'A promotion with this name and time period already exists. Please use a different name or time period.';
+  }
+  
+  // Check for SKU conflict
+  if (message.includes('already has a promotion')) {
+    return message; // Keep the detailed SKU conflict message
+  }
+  
+  // Return original message for other errors
+  return message;
+};
 
 // Update promotion saga
 function* handleUpdatePromotion(action: PayloadAction<UpdatePromotionPayload>) {
@@ -99,11 +117,13 @@ function* handleUpdatePromotion(action: PayloadAction<UpdatePromotionPayload>) {
     if (response.success && response.data) {
       yield put(updatePromotionSuccess(normalizePromotion(response.data)));
     } else {
-      yield put(updatePromotionFailure(response.message || 'Failed to update promotion'));
+      // Extract and format error message
+      const errorMsg = formatErrorMessage(response.message || 'Failed to update promotion');
+      yield put(updatePromotionFailure(errorMsg));
     }
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'An error occurred while updating promotion';
-    yield put(updatePromotionFailure(message));
+    yield put(updatePromotionFailure(formatErrorMessage(message)));
   }
 }
 

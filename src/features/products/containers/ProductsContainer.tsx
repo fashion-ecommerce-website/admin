@@ -223,10 +223,10 @@ const ProductsContainer: React.FC = () => {
       console.log('Editing product detail for product:', product);
       
       // Save productId for modal
-      setSelectedProductId(product.id);
+      setSelectedProductId(product.currentDetailId);
       
       // Step 1: Call GET /products/details/{productId} to get all colors and sizes
-      const productDetailRes = await productApi.getProductByIdPublic(product.id.toString());
+      const productDetailRes = await productApi.getProductByIdPublic(product.currentDetailId.toString());
       
       if (!productDetailRes.success || !productDetailRes.data) {
         alert('Failed to load product information');
@@ -245,7 +245,7 @@ const ProductsContainer: React.FC = () => {
       
       // Step 3: Call GET /products/details/{productId}/color?activeColor={firstColor}
       const colorSpecificRes = await productApi.getProductByColorPublic(
-        product.id.toString(),
+        product.currentDetailId.toString(),
         firstColor,
         productInfo.activeSize // Use existing size if available
       );

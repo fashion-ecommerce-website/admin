@@ -8,6 +8,8 @@ import { PromotionRowSkeleton, TableSkeletonWithRows } from "../../../components
 interface PromotionsPresenterProps {
   promotions: Promotion[];
   loading: boolean;
+  createLoading: boolean;
+  updateLoading: boolean;
   pagination: {
     page: number;
     pageSize: number;
@@ -22,11 +24,14 @@ interface PromotionsPresenterProps {
   onTogglePromotionActive: (promotionId: number) => void;
   onCreatePromotion: (promotionData: CreatePromotionRequest) => void;
   onUpdatePromotion: (id: number, promotionData: UpdatePromotionRequest) => void;
+  onTargetsUpdated: () => void;
 }
 
 export const PromotionsPresenter: React.FC<PromotionsPresenterProps> = ({
   promotions,
   loading,
+  createLoading,
+  updateLoading,
   pagination,
   filters,
   onUpdateFilters,
@@ -34,12 +39,32 @@ export const PromotionsPresenter: React.FC<PromotionsPresenterProps> = ({
   onTogglePromotionActive,
   onCreatePromotion,
   onUpdatePromotion,
+  onTargetsUpdated,
 }) => {
   const [searchQuery, setSearchQuery] = useState(filters.name || "");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedPromotion, setSelectedPromotion] = useState<Promotion | null>(null);
+  const [prevCreateLoading, setPrevCreateLoading] = useState(false);
+  const [prevUpdateLoading, setPrevUpdateLoading] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Close create modal when create completes successfully
+  useEffect(() => {
+    if (prevCreateLoading && !createLoading) {
+      setIsCreateModalOpen(false);
+    }
+    setPrevCreateLoading(createLoading);
+  }, [createLoading, prevCreateLoading]);
+
+  // Close edit modal when update completes successfully
+  useEffect(() => {
+    if (prevUpdateLoading && !updateLoading) {
+      setIsEditModalOpen(false);
+      setSelectedPromotion(null);
+    }
+    setPrevUpdateLoading(updateLoading);
+  }, [updateLoading, prevUpdateLoading]);
 
   // Real-time search with 300ms debounce
   useEffect(() => {
@@ -372,6 +397,7 @@ export const PromotionsPresenter: React.FC<PromotionsPresenterProps> = ({
         onSubmit={handleEditPromotion}
         promotion={selectedPromotion}
         title="Edit Promotion"
+        onTargetsUpdated={onTargetsUpdated}
       />
     </div>
   );

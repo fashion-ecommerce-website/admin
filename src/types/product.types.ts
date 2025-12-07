@@ -88,6 +88,7 @@ export interface ProductDetail {
 export interface Product {
   id: number;
   title: string;
+  currentDetailId:number;
   description: string | null;
   thumbnail: string;
   categoryId: number;

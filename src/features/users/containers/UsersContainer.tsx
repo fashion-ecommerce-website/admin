@@ -93,6 +93,9 @@ export const UsersContainer: React.FC = () => {
 
     const filtered = users
       .filter(user => {
+        // Exclude admin users from the list
+        const isNotAdmin = user.role !== 'Admin' && user.role !== 'ADMIN' && !user.email?.toLowerCase().includes('admin');
+        
         const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             user.email.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = statusFilter === '' ||
@@ -103,7 +106,7 @@ export const UsersContainer: React.FC = () => {
                            (roleFilter === 'customer' && user.role === 'Customer') ||
                            (roleFilter === 'vip' && user.role === 'VIP Customer');
 
-        return matchesSearch && matchesStatus && matchesRole;
+        return isNotAdmin && matchesSearch && matchesStatus && matchesRole;
       })
       .sort((a, b) => {
         let comparison = 0;

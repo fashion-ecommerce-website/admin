@@ -137,7 +137,12 @@ const promotionSlice = createSlice({
       state.updateLoading = false;
       const index = state.promotions.findIndex(p => p.id === action.payload.id);
       if (index !== -1) {
-        state.promotions[index] = action.payload;
+        // Preserve existing targets if not returned from toggle response
+        const existingTargets = state.promotions[index].targets;
+        state.promotions[index] = {
+          ...action.payload,
+          targets: action.payload.targets || existingTargets || [],
+        };
       }
       state.error = null;
     },
