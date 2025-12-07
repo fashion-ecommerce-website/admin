@@ -6,6 +6,10 @@ import {
   GetPromotionsRequest,
   CreatePromotionRequest,
   UpdatePromotionRequest,
+  UpsertTargetsRequest,
+  TargetsUpsertResult,
+  PromotionTargetsListResponse,
+  PromotionTargetType,
 } from '../../types/promotion.types';
 
 class PromotionApi {
@@ -82,9 +86,9 @@ class PromotionApi {
       const response = await adminApiClient.post<BackendPromotion>(`/admin${this.endpoint}`, promotionData);
       
       return {
-        success: true,
+        success: response.success,
         data: response.data,
-        message: 'Promotion created successfully'
+        message: response.message || (response.success ? 'Promotion created successfully' : 'Failed to create promotion')
       };
     } catch (error: unknown) {
       console.error('Error creating promotion:', error);
@@ -107,9 +111,9 @@ class PromotionApi {
       const response = await adminApiClient.put<BackendPromotion>(`/admin${this.endpoint}/${id}`, promotionData);
       
       return {
-        success: true,
+        success: response.success,
         data: response.data,
-        message: 'Promotion updated successfully'
+        message: response.message || (response.success ? 'Promotion updated successfully' : 'Failed to update promotion')
       };
     } catch (error: unknown) {
       console.error('Error updating promotion:', error);
@@ -175,6 +179,117 @@ class PromotionApi {
       const errorMessage = error instanceof Error 
         ? error.message 
         : 'Failed to delete promotion';
+      return {
+        success: false,
+        data: null,
+        message: errorMessage
+      };
+    }
+  }
+
+  /**
+   * Upsert promotion targets (add products/categories/SKUs to promotion)
+   */
+  async upsertTargets(promotionId: number, request: UpsertTargetsRequest): Promise<ApiResponse<TargetsUpsertResult>> {
+    try {
+      const response = await adminApiClient.post<TargetsUpsertResult>(
+        `/admin${this.endpoint}/${promotionId}/targets:upsert`,
+        request
+      );
+      
+      return {
+        success: true,
+        data: response.data,
+        message: `Added ${response.data?.added || 0} targets, skipped ${response.data?.skipped || 0}`
+      };
+    } catch (error: unknown) {
+      console.error('Error upserting promotion targets:', error);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Failed to add targets to promotion';
+      return {
+        success: false,
+        data: null,
+        message: errorMessage
+      };
+    }
+  }
+
+  /**
+   * Get promotion targets list
+   */
+  async getTargets(
+    promotionId: number, 
+    type?: PromotionTargetType, 
+    page: number = 0, 
+    pageSize: number = 50
+  ): Promise<ApiResponse<PromotionTargetsListResponse>> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (type) queryParams.append('type', type);
+      queryParams.append('page', page.toString());
+      queryParams.append('pageSize', pageSize.toString());
+
+      const queryString = queryParams.toString();
+      const response = await adminApiClient.get<PromotionTargetsListResponse>(
+        `/admin${this.endpoint}/${promotionId}/targets${queryString ? `?${queryString}` : ''}`
+      );
+      
+      return {
+        success: true,
+        data: response.data,
+        message: 'Targets fetched successfully'
+      };
+    } catch (error: unknown) {
+      console.error('Error fetching promotion targets:', error);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Failed to fetch promotion targets';
+      return {
+        success: false,
+        data: null,
+        message: errorMessage
+      };
+    }
+  }
+
+  /**
+   * Remove promotion targets
+   */
+  async removeTargets(
+    promotionId: number, 
+    items: Array<{ targetType: PromotionTargetType; targetId: number }>
+  ): Promise<ApiResponse<number>> {
+    try {
+      // Use fetch directly since adminApiClient.delete doesn't support body
+      const token = typeof window !== 'undefined' ? sessionStorage.getItem('admin_access_token') : null;
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api';
+      
+      const response = await fetch(`${baseUrl}/admin${this.endpoint}/${promotionId}/targets`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ items }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to remove targets: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      return {
+        success: true,
+        data: data,
+        message: `Removed ${data || 0} targets`
+      };
+    } catch (error: unknown) {
+      console.error('Error removing promotion targets:', error);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Failed to remove targets from promotion';
       return {
         success: false,
         data: null,

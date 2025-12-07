@@ -1,7 +1,18 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Promotion, CreatePromotionRequest } from '../../types/promotion.types';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Promotion, CreatePromotionRequest, PromotionTarget, PromotionTargetType } from '../../types/promotion.types';
+import { categoryApi, CategoryBackend } from '../../services/api/categoryApi';
+import { productApi } from '../../services/api/productApi';
+import { promotionApi } from '../../services/api/promotionApi';
+import { SearchableSelect } from '../ui/SearchableSelect';
+import { CustomDropdown } from '../ui/CustomDropdown';
+import { useToast } from '../../providers/ToastProvider';
+
+interface TargetOption {
+  id: number;
+  name: string;
+}
 
 interface PromotionModalProps {
   isOpen: boolean;
@@ -9,6 +20,7 @@ interface PromotionModalProps {
   onSubmit: (promotionData: CreatePromotionRequest) => void;
   promotion?: Promotion | null;
   title: string;
+  onTargetsUpdated?: () => void;
 }
 
 const PromotionModal: React.FC<PromotionModalProps> = ({
@@ -17,15 +29,112 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
   onSubmit,
   promotion,
   title,
+  onTargetsUpdated,
 }) => {
+  const { showError, showSuccess } = useToast();
+  
   const [formData, setFormData] = useState({
     name: '',
     type: 'PERCENT' as const,
-    value: 0,
+    value: '' as number | '',
     startAt: '',
     endAt: '',
     isActive: true,
   });
+  
+  const [targets, setTargets] = useState<PromotionTarget[]>([]);
+  const [newTarget, setNewTarget] = useState<{ targetType: PromotionTargetType; targetId: number | '' }>({
+    targetType: 'CATEGORY',
+    targetId: '',
+  });
+  const [isTargetLoading, setIsTargetLoading] = useState(false);
+  
+  const isEditMode = !!promotion;
+  
+  // Data for dropdowns
+  const [categories, setCategories] = useState<TargetOption[]>([]);
+  const [products, setProducts] = useState<TargetOption[]>([]);
+  const [skus, setSkus] = useState<TargetOption[]>([]);
+  const [loadingOptions, setLoadingOptions] = useState(false);
+
+  // Flatten categories tree to list - only leaf nodes
+  const flattenCategories = useCallback((cats: CategoryBackend[], prefix = ''): TargetOption[] => {
+    const result: TargetOption[] = [];
+    for (const cat of cats) {
+      const hasChildren = cat.children && cat.children.length > 0;
+      if (hasChildren) {
+        result.push(...flattenCategories(cat.children!, prefix ? `${prefix} > ${cat.name}` : cat.name));
+      } else {
+        result.push({ id: cat.id, name: prefix ? `${prefix} > ${cat.name}` : cat.name });
+      }
+    }
+    return result;
+  }, []);
+
+  // Load categories when CATEGORY target type is selected
+  useEffect(() => {
+    if (newTarget.targetType === 'CATEGORY' && isOpen && categories.length === 0) {
+      const loadCategories = async () => {
+        setLoadingOptions(true);
+        try {
+          const catRes = await categoryApi.getTree();
+          if (catRes.success && catRes.data) {
+            setCategories(flattenCategories(catRes.data));
+          }
+        } catch (error) {
+          console.error('Error loading categories:', error);
+        } finally {
+          setLoadingOptions(false);
+        }
+      };
+      loadCategories();
+    }
+  }, [newTarget.targetType, isOpen, flattenCategories, categories.length]);
+
+  // Load products when PRODUCT target type is selected
+  useEffect(() => {
+    if (newTarget.targetType === 'PRODUCT' && isOpen && products.length === 0) {
+      const loadProducts = async () => {
+        setLoadingOptions(true);
+        try {
+          const prodRes = await productApi.getAllProductsSimplified();
+          if (prodRes.success && prodRes.data) {
+            setProducts(prodRes.data);
+          }
+        } catch (error) {
+          console.error('Error loading products:', error);
+        } finally {
+          setLoadingOptions(false);
+        }
+      };
+      loadProducts();
+    }
+  }, [newTarget.targetType, isOpen, products.length]);
+
+  // Load all SKUs when SKU target type is selected
+  useEffect(() => {
+    if (newTarget.targetType === 'SKU' && isOpen) {
+      const loadAllSkus = async () => {
+        setLoadingOptions(true);
+        try {
+          const res = await productApi.getAllProductDetails();
+          if (res.success && res.data) {
+            setSkus(res.data);
+          } else {
+            setSkus([]);
+          }
+        } catch (error) {
+          console.error('Error loading all SKUs:', error);
+          setSkus([]);
+        } finally {
+          setLoadingOptions(false);
+        }
+      };
+      loadAllSkus();
+    } else if (newTarget.targetType !== 'SKU') {
+      setSkus([]);
+    }
+  }, [newTarget.targetType, isOpen]);
 
   useEffect(() => {
     if (promotion) {
@@ -37,51 +146,168 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
         endAt: promotion.endAt.split('T')[0],
         isActive: promotion.isActive,
       });
+      setTargets(promotion.targets || []);
     } else {
       setFormData({
         name: '',
         type: 'PERCENT',
-        value: 0,
+        value: '',
         startAt: '',
         endAt: '',
         isActive: true,
       });
+      setTargets([]);
     }
+    setNewTarget({ targetType: 'CATEGORY', targetId: '' });
   }, [promotion, isOpen]);
+
+  const handleTargetTypeChange = (type: PromotionTargetType) => {
+    setNewTarget({ targetType: type, targetId: '' });
+  };
+
+  // Add target - for edit mode, call API directly
+  const handleAddTarget = async () => {
+    if (newTarget.targetId === '' || newTarget.targetId <= 0) {
+      showError('Validation Error', 'Please select a target');
+      return;
+    }
+    
+    // Check for duplicate
+    const exists = targets.some(
+      t => t.targetType === newTarget.targetType && t.targetId === newTarget.targetId
+    );
+    if (exists) {
+      showError('Duplicate Target', 'This target already exists');
+      return;
+    }
+
+    if (isEditMode && promotion) {
+      // Edit mode: call API to add target
+      setIsTargetLoading(true);
+      try {
+        const result = await promotionApi.upsertTargets(promotion.id, {
+          items: [{ targetType: newTarget.targetType, targetId: newTarget.targetId }]
+        });
+        
+        if (result.success) {
+          setTargets([...targets, { targetType: newTarget.targetType, targetId: newTarget.targetId }]);
+          setNewTarget({ ...newTarget, targetId: '' });
+          showSuccess('Success', 'Target added successfully');
+          onTargetsUpdated?.();
+        } else {
+          showError('Error', result.message || 'Failed to add target');
+        }
+      } catch (error) {
+        console.error('Error adding target:', error);
+        showError('Error', 'Failed to add target');
+      } finally {
+        setIsTargetLoading(false);
+      }
+    } else {
+      // Create mode: just update local state
+      setTargets([...targets, { targetType: newTarget.targetType, targetId: newTarget.targetId }]);
+      setNewTarget({ ...newTarget, targetId: '' });
+    }
+  };
+
+  // Remove target - for edit mode, call API directly
+  const handleRemoveTarget = async (target: PromotionTarget, index: number) => {
+    if (isEditMode && promotion) {
+      // Edit mode: call API to remove target
+      setIsTargetLoading(true);
+      try {
+        const result = await promotionApi.removeTargets(promotion.id, [
+          { targetType: target.targetType, targetId: target.targetId }
+        ]);
+        
+        if (result.success) {
+          setTargets(targets.filter((_, i) => i !== index));
+          showSuccess('Success', 'Target removed successfully');
+          onTargetsUpdated?.();
+        } else {
+          showError('Error', result.message || 'Failed to remove target');
+        }
+      } catch (error) {
+        console.error('Error removing target:', error);
+        showError('Error', 'Failed to remove target');
+      } finally {
+        setIsTargetLoading(false);
+      }
+    } else {
+      // Create mode: just update local state
+      setTargets(targets.filter((_, i) => i !== index));
+    }
+  };
+
+  // Get display name for target
+  const getTargetDisplayName = (target: PromotionTarget): string => {
+    if (target.targetType === 'CATEGORY') {
+      const cat = categories.find(c => c.id === target.targetId);
+      return cat ? cat.name : `Category ID: ${target.targetId}`;
+    }
+    if (target.targetType === 'PRODUCT') {
+      const prod = products.find(p => p.id === target.targetId);
+      return prod ? prod.name : `Product ID: ${target.targetId}`;
+    }
+    if (target.targetType === 'SKU') {
+      const sku = skus.find(s => s.id === target.targetId);
+      return sku ? sku.name : `SKU ID: ${target.targetId}`;
+    }
+    return `ID: ${target.targetId}`;
+  };
+
+  // Get current options based on target type
+  const getCurrentOptions = (): TargetOption[] => {
+    switch (newTarget.targetType) {
+      case 'CATEGORY':
+        return categories;
+      case 'PRODUCT':
+        return products;
+      case 'SKU':
+        return skus;
+      default:
+        return [];
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
     if (!formData.name.trim()) {
-      alert('Please enter promotion name');
+      showError('Validation Error', 'Please enter promotion name');
       return;
     }
     
-    if (formData.value <= 0) {
-      alert('Promotion value must be greater than 0');
+    const valueNum = typeof formData.value === 'string' ? parseFloat(formData.value) : formData.value;
+    
+    if (!valueNum || valueNum <= 0) {
+      showError('Validation Error', 'Promotion value must be greater than 0');
       return;
     }
     
-    if (formData.value > 100) {
-      alert('Percentage value cannot exceed 100%');
+    if (valueNum > 100) {
+      showError('Validation Error', 'Percentage value cannot exceed 100%');
       return;
     }
     
     if (!formData.startAt || !formData.endAt) {
-      alert('Please select start and end dates');
+      showError('Validation Error', 'Please select start and end dates');
       return;
     }
     
     if (new Date(formData.startAt) >= new Date(formData.endAt)) {
-      alert('Start date must be before end date');
+      showError('Validation Error', 'Start date must be before end date');
       return;
     }
     
-    const submitData = {
+    const submitData: CreatePromotionRequest = {
       ...formData,
-      startAt: `${formData.startAt}T00:00:00Z`,
-      endAt: `${formData.endAt}T23:59:59Z`,
+      value: valueNum,
+      startAt: `${formData.startAt}T00:00:00`,
+      endAt: `${formData.endAt}T23:59:59`,
+      // For edit mode, don't send targets (managed via API)
+      // For create mode, send targets
+      targets: isEditMode ? undefined : (targets.length > 0 ? targets : undefined),
     };
     
     onSubmit(submitData);
@@ -90,8 +316,8 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-black">{title}</h2>
           <button
@@ -137,7 +363,7 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
             <input
               type="number"
               value={formData.value}
-              onChange={(e) => setFormData({ ...formData, value: Number(e.target.value) })}
+              onChange={(e) => setFormData({ ...formData, value: e.target.value === '' ? '' : Number(e.target.value) })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
               min="0"
               max="100"
@@ -184,6 +410,74 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
             <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
               Active promotion
             </label>
+          </div>
+
+          {/* Targets Section */}
+          <div className="border-t pt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Promotion Targets {isEditMode ? '' : '(Optional)'}
+            </label>
+            
+            {/* Add new target */}
+            <div className="flex gap-2 mb-3">
+              <CustomDropdown
+                value={newTarget.targetType}
+                onChange={(value) => handleTargetTypeChange(value as PromotionTargetType)}
+                options={[
+                  { value: 'CATEGORY', label: 'Category' },
+                  { value: 'PRODUCT', label: 'Product' },
+                  { value: 'SKU', label: 'SKU' },
+                ]}
+                disabled={loadingOptions || isTargetLoading}
+                className="w-40"
+              />
+              
+              <SearchableSelect
+                options={getCurrentOptions()}
+                value={newTarget.targetId}
+                onChange={(value) => setNewTarget({ ...newTarget, targetId: value })}
+                placeholder={loadingOptions ? 'Loading...' : `Select ${newTarget.targetType}`}
+                disabled={loadingOptions || isTargetLoading}
+                className="flex-1"
+              />
+              
+              <button
+                type="button"
+                onClick={handleAddTarget}
+                disabled={newTarget.targetId === '' || loadingOptions || isTargetLoading}
+                className="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isTargetLoading ? 'Adding...' : 'Add'}
+              </button>
+            </div>
+
+            {/* Targets list */}
+            {targets.length > 0 ? (
+              <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-200 rounded-md p-2">
+                {targets.map((target, index) => (
+                  <div key={index} className="flex items-center justify-between bg-gray-100 px-3 py-2 rounded-md">
+                    <span className="text-sm text-black">
+                      <span className="inline-block px-2 py-0.5 bg-gray-200 rounded text-xs font-medium mr-2">
+                        {target.targetType}
+                      </span>
+                      {getTargetDisplayName(target)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTarget(target, index)}
+                      disabled={isTargetLoading}
+                      className="text-red-600 hover:text-red-800 cursor-pointer disabled:opacity-50"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-500">
+                {isEditMode ? 'No targets. Add targets above.' : 'No targets added. You can add targets after creating the promotion.'}
+              </p>
+            )}
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">

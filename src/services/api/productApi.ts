@@ -323,6 +323,52 @@ class ProductApi {
   }
 
   /**
+   * Get all products (simplified) via admin endpoint
+   * GET /products/admin/all
+   * Returns simplified list with id and name
+   */
+  async getAllProductsSimplified(): Promise<ApiResponse<Array<{ id: number; name: string }>>> {
+    try {
+      const response = await adminApiClient.get<Array<{ id: number; name: string }>>(`${this.endpoint}/admin/all`);
+      return {
+        success: response.success,
+        data: response.data,
+        message: response.message,
+      };
+    } catch (error) {
+      console.error('Error fetching all products (simplified):', error);
+      return {
+        success: false,
+        data: null,
+        message: error instanceof Error ? error.message : 'Failed to fetch all products'
+      };
+    }
+  }
+
+  /**
+   * Get all product details (SKUs) via admin endpoint
+   * GET /products/admin/details/all
+   * Returns simplified list with id and name
+   */
+  async getAllProductDetails(): Promise<ApiResponse<Array<{ id: number; name: string }>>> {
+    try {
+      const response = await adminApiClient.get<Array<{ id: number; name: string }>>(`${this.endpoint}/admin/details/all`);
+      return {
+        success: response.success,
+        data: response.data,
+        message: response.message,
+      };
+    } catch (error) {
+      console.error('Error fetching all product details:', error);
+      return {
+        success: false,
+        data: null,
+        message: error instanceof Error ? error.message : 'Failed to fetch all product details'
+      };
+    }
+  }
+
+  /**
    * Upload product image
    */
   async uploadImage(file: File): Promise<ApiResponse<{ url: string }>> {
