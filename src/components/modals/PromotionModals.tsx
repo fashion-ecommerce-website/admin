@@ -300,6 +300,12 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
       return;
     }
     
+    // Validate targets required for create mode
+    if (!isEditMode && targets.length === 0) {
+      showError('Validation Error', 'Please add at least one promotion target');
+      return;
+    }
+    
     const submitData: CreatePromotionRequest = {
       ...formData,
       value: valueNum,
@@ -307,7 +313,7 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
       endAt: `${formData.endAt}T23:59:59`,
       // For edit mode, don't send targets (managed via API)
       // For create mode, send targets
-      targets: isEditMode ? undefined : (targets.length > 0 ? targets : undefined),
+      targets: isEditMode ? undefined : targets,
     };
     
     onSubmit(submitData);
@@ -332,7 +338,7 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Promotion Name *
+                Promotion Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -345,7 +351,7 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Type *
+                Type <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -358,7 +364,7 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Discount Value (%) *
+              Discount Value (%) <span className="text-red-500">*</span>
             </label>
             <input
               type="number"
@@ -376,7 +382,7 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Start Date *
+                Start Date <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
@@ -388,7 +394,7 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                End Date *
+                End Date <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
@@ -415,7 +421,7 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
           {/* Targets Section */}
           <div className="border-t pt-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Promotion Targets {isEditMode ? '' : '(Optional)'}
+              Promotion Targets <span className="text-red-500">*</span>
             </label>
             
             {/* Add new target */}
@@ -426,7 +432,7 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
                 options={[
                   { value: 'CATEGORY', label: 'Category' },
                   { value: 'PRODUCT', label: 'Product' },
-                  { value: 'SKU', label: 'SKU' },
+                  { value: 'SKU', label: 'Product Detail' },
                 ]}
                 disabled={loadingOptions || isTargetLoading}
                 className="w-40"
@@ -436,7 +442,7 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
                 options={getCurrentOptions()}
                 value={newTarget.targetId}
                 onChange={(value) => setNewTarget({ ...newTarget, targetId: value })}
-                placeholder={loadingOptions ? 'Loading...' : `Select ${newTarget.targetType}`}
+                placeholder={loadingOptions ? 'Loading...' : `Select ${newTarget.targetType === 'SKU' ? 'Product Detail' : newTarget.targetType}`}
                 disabled={loadingOptions || isTargetLoading}
                 className="flex-1"
               />
@@ -458,7 +464,7 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
                   <div key={index} className="flex items-center justify-between bg-gray-100 px-3 py-2 rounded-md">
                     <span className="text-sm text-black">
                       <span className="inline-block px-2 py-0.5 bg-gray-200 rounded text-xs font-medium mr-2">
-                        {target.targetType}
+                        {target.targetType === 'SKU' ? 'Product Detail' : target.targetType}
                       </span>
                       {getTargetDisplayName(target)}
                     </span>
@@ -475,7 +481,7 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
               </div>
             ) : (
               <p className="text-xs text-gray-500">
-                {isEditMode ? 'No targets. Add targets above.' : 'No targets added. You can add targets after creating the promotion.'}
+                {isEditMode ? 'No targets. Add targets above.' : 'No targets added. At least one target is required.'}
               </p>
             )}
           </div>

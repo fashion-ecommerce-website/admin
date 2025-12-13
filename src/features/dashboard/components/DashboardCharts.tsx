@@ -17,16 +17,12 @@ interface ChartData {
   name: string;
   orders: number;
   revenue: number;
-  users: number;
-  products: number;
-  cancelledOrders?: number;
-  refundedRevenue?: number;
-  completedOrders?: number;
-  pendingOrders?: number;
-  paidRevenue?: number;
-  unpaidRevenue?: number;
-  totalOrders?: number;
-  totalRevenue?: number;
+  completedOrders: number;
+  pendingOrders: number;
+  cancelledOrders: number;
+  paidRevenue: number;
+  unpaidRevenue: number;
+  refundedRevenue: number;
 }
 
 interface DashboardChartsProps {
@@ -36,8 +32,8 @@ interface DashboardChartsProps {
 export const DashboardCharts: React.FC<DashboardChartsProps> = ({ chartData = [] }) => {
   if (!chartData || chartData.length === 0) {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {[1, 2, 3, 4, 5, 6].map((i) => (
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {[1, 2].map((i) => (
           <div key={i} className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
             <div className="flex items-center justify-center h-64 text-gray-500">
               <div className="text-center">
@@ -55,39 +51,26 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ chartData = []
 
   return (
     <div className="space-y-6">
-      {/* Charts Row - Side by Side */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Revenue Area Chart */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-bold text-gray-900">Revenue chart</h3>
-                <p className="text-gray-600 text-sm mt-1">Daily revenue breakdown</p>
+                <h3 className="text-lg font-bold text-gray-900">Revenue Chart</h3>
+                <p className="text-gray-600 text-sm mt-1">Revenue breakdown by period</p>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">Total</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">Paid</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">Unpaid</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">Refunded</span>
-                </div>
+              <div className="flex items-center gap-4 flex-wrap">
+                <Legend color="bg-blue-500" label="Total" />
+                <Legend color="bg-green-500" label="Paid" />
+                <Legend color="bg-orange-500" label="Unpaid" />
+                <Legend color="bg-red-500" label="Refunded" />
               </div>
             </div>
           </div>
           <div className="p-4 sm:p-6">
             <ResponsiveContainer width="100%" height={450}>
-            <AreaChart data={chartData}>
+              <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
@@ -107,13 +90,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ chartData = []
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis
-                  dataKey="name"
-                  stroke="#6b7280"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
+                <XAxis dataKey="name" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis
                   stroke="#6b7280"
                   fontSize={12}
@@ -131,46 +108,10 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ chartData = []
                   formatter={(value: number) => [`${value.toLocaleString('en-US')} VND`]}
                   labelStyle={{ color: '#374151', fontWeight: '600' }}
                 />
-                <Area
-                  type="monotone"
-                  dataKey="revenue"
-                  stroke="#3b82f6"
-                  strokeWidth={3}
-                  fill="url(#revenueGradient)"
-                  dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, stroke: '#3b82f6', strokeWidth: 2 }}
-                  name="Total Revenue"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="paidRevenue"
-                  stroke="#10b981"
-                  strokeWidth={2}
-                  fill="url(#paidGradient)"
-                  dot={{ fill: '#10b981', strokeWidth: 2, r: 3 }}
-                  activeDot={{ r: 5, stroke: '#10b981', strokeWidth: 2 }}
-                  name="Paid"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="unpaidRevenue"
-                  stroke="#f59e0b"
-                  strokeWidth={2}
-                  fill="url(#unpaidGradient)"
-                  dot={{ fill: '#f59e0b', strokeWidth: 2, r: 3 }}
-                  activeDot={{ r: 5, stroke: '#f59e0b', strokeWidth: 2 }}
-                  name="Unpaid"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="refundedRevenue"
-                  stroke="#ef4444"
-                  strokeWidth={2}
-                  fill="url(#refundGradient)"
-                  dot={{ fill: '#ef4444', strokeWidth: 2, r: 3 }}
-                  activeDot={{ r: 5, stroke: '#ef4444', strokeWidth: 2 }}
-                  name="Refunded"
-                />
+                <Area type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={3} fill="url(#revenueGradient)" name="Total Revenue" />
+                <Area type="monotone" dataKey="paidRevenue" stroke="#10b981" strokeWidth={2} fill="url(#paidGradient)" name="Paid" />
+                <Area type="monotone" dataKey="unpaidRevenue" stroke="#f59e0b" strokeWidth={2} fill="url(#unpaidGradient)" name="Unpaid" />
+                <Area type="monotone" dataKey="refundedRevenue" stroke="#ef4444" strokeWidth={2} fill="url(#refundGradient)" name="Refunded" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -181,22 +122,13 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ chartData = []
           <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-6 py-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-bold text-gray-900">Orders chart</h3>
-                <p className="text-gray-600 text-sm mt-1">Daily orders breakdown</p>
+                <h3 className="text-lg font-bold text-gray-900">Orders Chart</h3>
+                <p className="text-gray-600 text-sm mt-1">Orders breakdown by period</p>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">Completed</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">Pending</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">Cancelled</span>
-                </div>
+              <div className="flex items-center gap-4 flex-wrap">
+                <Legend color="bg-green-500" label="Completed" />
+                <Legend color="bg-yellow-500" label="Pending" />
+                <Legend color="bg-red-500" label="Cancelled" />
               </div>
             </div>
           </div>
@@ -204,19 +136,8 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ chartData = []
             <ResponsiveContainer width="100%" height={450}>
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis
-                  dataKey="name"
-                  stroke="#6b7280"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  stroke="#6b7280"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
+                <XAxis dataKey="name" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: 'white',
@@ -226,27 +147,9 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ chartData = []
                   }}
                   labelStyle={{ color: '#374151', fontWeight: '600' }}
                 />
-                <Bar
-                  dataKey="completedOrders"
-                  stackId="orders"
-                  fill="#10b981"
-                  radius={[0, 0, 0, 0]}
-                  name="Completed"
-                />
-                <Bar
-                  dataKey="pendingOrders"
-                  stackId="orders"
-                  fill="#f59e0b"
-                  radius={[0, 0, 0, 0]}
-                  name="Pending"
-                />
-                <Bar
-                  dataKey="cancelledOrders"
-                  stackId="orders"
-                  fill="#ef4444"
-                  radius={[8, 8, 0, 0]}
-                  name="Cancelled"
-                />
+                <Bar dataKey="completedOrders" stackId="orders" fill="#10b981" name="Completed" />
+                <Bar dataKey="pendingOrders" stackId="orders" fill="#f59e0b" name="Pending" />
+                <Bar dataKey="cancelledOrders" stackId="orders" fill="#ef4444" radius={[8, 8, 0, 0]} name="Cancelled" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -255,3 +158,10 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ chartData = []
     </div>
   );
 };
+
+const Legend: React.FC<{ color: string; label: string }> = ({ color, label }) => (
+  <div className="flex items-center space-x-2">
+    <div className={`w-3 h-3 ${color} rounded-full`}></div>
+    <span className="text-sm text-gray-600">{label}</span>
+  </div>
+);

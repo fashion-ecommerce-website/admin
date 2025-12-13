@@ -5,6 +5,7 @@ export type PromotionTargetType = 'PRODUCT' | 'CATEGORY' | 'SKU';
 export interface PromotionTarget {
   targetType: PromotionTargetType;
   targetId: number;
+  targetName?: string;
 }
 
 // Promotion interface for Admin panel

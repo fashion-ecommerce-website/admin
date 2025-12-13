@@ -136,7 +136,7 @@ const PromotionTargetsModal: React.FC<PromotionTargetsModalProps> = ({
                   onChange={(e) => setTargetType(e.target.value as PromotionTargetType)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-black"
                 >
-                  <option value="SKU">SKU (Product Detail)</option>
+                  <option value="SKU">Product Detail</option>
                   <option value="PRODUCT">Product</option>
                   <option value="CATEGORY">Category</option>
                 </select>
@@ -197,7 +197,7 @@ const PromotionTargetsModal: React.FC<PromotionTargetsModalProps> = ({
                           target.targetType === 'PRODUCT' ? 'bg-green-100 text-green-800' :
                           'bg-purple-100 text-purple-800'
                         }`}>
-                          {target.targetType}
+                          {target.targetType === 'SKU' ? 'Product Detail' : target.targetType}
                         </span>
                       </td>
                       <td className="py-3 text-sm text-black">{target.targetId}</td>
