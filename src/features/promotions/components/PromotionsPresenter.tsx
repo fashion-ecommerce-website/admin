@@ -213,6 +213,9 @@ export const PromotionsPresenter: React.FC<PromotionsPresenterProps> = ({
                       Value
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Targets
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                       Valid Period
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-black uppercase tracking-wider">
@@ -244,6 +247,9 @@ export const PromotionsPresenter: React.FC<PromotionsPresenterProps> = ({
                       Value
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Targets
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                       Valid Period
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-black uppercase tracking-wider">
@@ -272,6 +278,32 @@ export const PromotionsPresenter: React.FC<PromotionsPresenterProps> = ({
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-semibold text-black">
                             {promotion.value}%
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="max-w-xs">
+                            {promotion.targets && promotion.targets.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {promotion.targets.slice(0, 3).map((target, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-black"
+                                    title={target.targetName || `${target.targetType} ID: ${target.targetId}`}
+                                  >
+                                    {target.targetName 
+                                      ? (target.targetName.length > 20 
+                                          ? target.targetName.substring(0, 20) + '...' 
+                                          : target.targetName)
+                                      : `${target.targetType === 'SKU' ? 'Detail' : target.targetType} #${target.targetId}`}
+                                  </span>
+                                ))}
+                                {promotion.targets.length > 3 && (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-black">
+                                    +{promotion.targets.length - 3} more
+                                  </span>
+                                )}
+                              </div>
+                            ) : null}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
