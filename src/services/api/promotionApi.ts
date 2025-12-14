@@ -163,11 +163,12 @@ class PromotionApi {
   }
 
   /**
-   * Delete a promotion
+   * Delete a promotion (soft delete - toggle to inactive)
    */
   async deletePromotion(id: number): Promise<ApiResponse<void>> {
     try {
-      await adminApiClient.delete(`/admin${this.endpoint}/${id}`);
+      // Thay vì DELETE, gọi toggle API để set isActive = false
+      const response = await adminApiClient.post<BackendPromotion>(`/admin${this.endpoint}/${id}:toggle`, {});
       
       return {
         success: true,

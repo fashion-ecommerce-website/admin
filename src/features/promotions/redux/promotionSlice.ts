@@ -161,10 +161,13 @@ const promotionSlice = createSlice({
     },
     deletePromotionSuccess: (state, action: PayloadAction<number>) => {
       state.deleteLoading = false;
-      const beforeCount = state.promotions.length;
-      state.promotions = state.promotions.filter(p => p.id !== action.payload);
-      if (state.promotions.length < beforeCount) {
-        state.total = Math.max(0, state.total - 1);
+      // Thay vì xóa, chỉ cập nhật isActive = false (soft delete)
+      const index = state.promotions.findIndex(p => p.id === action.payload);
+      if (index !== -1) {
+        state.promotions[index] = {
+          ...state.promotions[index],
+          isActive: false,
+        };
       }
       state.error = null;
     },
