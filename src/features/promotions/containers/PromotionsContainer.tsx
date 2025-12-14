@@ -35,15 +35,20 @@ const PromotionsContainer: React.FC = () => {
   const [prevCreateLoading, setPrevCreateLoading] = useState(false);
   const [prevUpdateLoading, setPrevUpdateLoading] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
+  const [prevError, setPrevError] = useState<string | null>(null);
   const pageSize = 12;
   const totalPages = Math.ceil(total / pageSize);
 
   // Show error toast when error occurs
   useEffect(() => {
-    if (error) {
-      showError('Error', error);
+    if (error && error !== prevError) {
+      showError(error);
+      setPrevError(error);
     }
-  }, [error, showError]);
+    if (!error && prevError) {
+      setPrevError(null);
+    }
+  }, [error, showError, prevError]);
 
   // Refetch promotions helper
   const refetchPromotions = useCallback(() => {
@@ -61,7 +66,7 @@ const PromotionsContainer: React.FC = () => {
   // Show success toast when create completes successfully and refetch
   useEffect(() => {
     if (prevCreateLoading && !createLoading && !error) {
-      showSuccess('Success', 'Promotion created successfully');
+      showSuccess('Promotion created successfully');
       // Refetch to get complete data with targets
       refetchPromotions();
     }
@@ -71,7 +76,7 @@ const PromotionsContainer: React.FC = () => {
   // Show success toast when update completes successfully (from edit modal) and refetch
   useEffect(() => {
     if (prevUpdateLoading && !updateLoading && !error && !isToggling) {
-      showSuccess('Success', 'Promotion updated successfully');
+      showSuccess('Promotion updated successfully');
       // Refetch to get complete data with targets
       refetchPromotions();
     }
@@ -81,7 +86,7 @@ const PromotionsContainer: React.FC = () => {
   // Show success toast when toggle completes successfully
   useEffect(() => {
     if (prevUpdateLoading && !updateLoading && !error && isToggling) {
-      showSuccess('Success', 'Promotion status updated successfully');
+      showSuccess('Promotion status updated successfully');
       setIsToggling(false);
     }
   }, [updateLoading, error, showSuccess, prevUpdateLoading, isToggling]);

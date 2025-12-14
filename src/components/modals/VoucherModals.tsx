@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Voucher, CreateVoucherRequest } from '../../types/voucher.types';
-import { CustomDropdown } from '../ui';
+import { CustomDropdown, CurrencyInput } from '../ui';
 import { useToast } from '@/providers/ToastProvider';
 
 interface VoucherModalProps {
@@ -23,10 +23,10 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
   const { showError } = useToast();
   const [formData, setFormData] = useState({
     name: '',
-    type: 'PERCENT' as 'PERCENT' | 'FIXED_AMOUNT',
-    value: '',
-    maxDiscount: '',
-    minOrderAmount: '',
+    type: 'PERCENT' as 'PERCENT' | 'FIXED',
+    value: 0,
+    maxDiscount: 0,
+    minOrderAmount: 0,
     usageLimitTotal: '',
     usageLimitPerUser: '1',
     startAt: '',
@@ -47,9 +47,9 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
       setFormData({
         name: voucher.name,
         type: voucher.type,
-        value: voucher.value.toString(),
-        maxDiscount: (voucher.maxDiscount || 0).toString(),
-        minOrderAmount: voucher.minOrderAmount.toString(),
+        value: voucher.value,
+        maxDiscount: voucher.maxDiscount || 0,
+        minOrderAmount: voucher.minOrderAmount,
         usageLimitTotal: voucher.usageLimitTotal.toString(),
         usageLimitPerUser: voucher.usageLimitPerUser.toString(),
         startAt: voucher.startAt.split('T')[0],
@@ -64,9 +64,9 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
       setFormData({
         name: '',
         type: 'PERCENT',
-        value: '',
-        maxDiscount: '',
-        minOrderAmount: '',
+        value: 0,
+        maxDiscount: 0,
+        minOrderAmount: 0,
         usageLimitTotal: '',
         usageLimitPerUser: '1',
         startAt: '',
@@ -89,9 +89,9 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
       return;
     }
     
-    const value = parseFloat(formData.value.toString());
-    const maxDiscount = parseFloat(formData.maxDiscount.toString());
-    const minOrderAmount = parseFloat(formData.minOrderAmount.toString());
+    const value = formData.value;
+    const maxDiscount = formData.maxDiscount;
+    const minOrderAmount = formData.minOrderAmount;
     const usageLimitTotal = parseInt(formData.usageLimitTotal.toString());
     const usageLimitPerUser = parseInt(formData.usageLimitPerUser.toString());
 
@@ -110,8 +110,8 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
       return;
     }
     
-    if (minOrderAmount < 0) {
-      showError('Minimum order amount cannot be negative');
+    if (!minOrderAmount || minOrderAmount < 0) {
+      showError('Minimum order amount is required and cannot be negative');
       return;
     }
     
@@ -192,10 +192,10 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
               </label>
               <CustomDropdown
                 value={formData.type}
-                onChange={(value) => setFormData({ ...formData, type: value as 'PERCENT' | 'FIXED_AMOUNT' })}
+                onChange={(value) => setFormData({ ...formData, type: value as 'PERCENT' | 'FIXED' })}
                 options={[
                   { value: 'PERCENT', label: 'Percentage (%)' },
-                  { value: 'FIXED_AMOUNT', label: 'Fixed Amount (VND)' }
+                  { value: 'FIXED', label: 'Fixed Amount (VND)' }
                 ]}
                 bgColor="bg-gray-100"
                 borderRadius="rounded-md"
@@ -207,15 +207,24 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Value *
               </label>
+              {formData.type === 'PERCENT' ? (
                 <input
                   type="number"
                   value={formData.value}
-                  onChange={(e) => setFormData({ ...formData, value: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, value: parseFloat(e.target.value) || 0 })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
                   min="0"
+                  max="100"
                   step="0.01"
                   required
                 />
+              ) : (
+                <CurrencyInput
+                  value={formData.value}
+                  onChange={(value) => setFormData({ ...formData, value })}
+                  placeholder="Enter amount"
+                />
+              )}
             </div>
           </div>
 
@@ -224,14 +233,11 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Maximum Discount (VND) *
               </label>
-                <input
-                  type="number"
-                  value={formData.maxDiscount}
-                  onChange={(e) => setFormData({ ...formData, maxDiscount: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
-                  min="0"
-                  required
-                />
+              <CurrencyInput
+                value={formData.maxDiscount}
+                onChange={(value) => setFormData({ ...formData, maxDiscount: value })}
+                placeholder="Enter maximum discount"
+              />
             </div>
           )}
 
@@ -239,13 +245,10 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Minimum Order Amount (VND) *
             </label>
-            <input
-              type="number"
+            <CurrencyInput
               value={formData.minOrderAmount}
-              onChange={(e) => setFormData({ ...formData, minOrderAmount: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
-              min="0"
-              required
+              onChange={(value) => setFormData({ ...formData, minOrderAmount: value })}
+              placeholder="Enter minimum order amount"
             />
           </div>
 

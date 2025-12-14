@@ -8,7 +8,7 @@ import {
   ProductFormData,
   VariantColor,
   VariantSize,
-  ProductDetail,
+  ProductDetailForm,
 } from "@/types/product.types";
 import { categoryApi, CategoryBackend } from "@/services/api/categoryApi";
 import {
@@ -17,9 +17,10 @@ import {
   // uploadImageRequest,
   createProductSuccess,
 } from "@/features/products/redux/productSlice";
-import { fetchProductsSilentRequest } from '@/features/products/redux/productSlice';
-import { RootState } from '@/store';
+import { fetchProductsSilentRequest } from "@/features/products/redux/productSlice";
+import { RootState } from "@/store";
 import { productApi } from "@/services/api/productApi";
+import { CurrencyInput } from "../ui";
 
 interface BaseModalProps {
   isOpen: boolean;
@@ -37,12 +38,15 @@ const AVAILABLE_COLORS: VariantColor[] = [
   { id: 1, name: "black", hex: "#2c2d31" },
   { id: 2, name: "white", hex: "#d6d8d3" },
   { id: 3, name: "dark blue", hex: "#14202e" },
-  { id: 4, name: "red", hex: "#dc2626" },
+  { id: 4, name: "red", hex: "#cf2525" },
   { id: 5, name: "pink", hex: "#d4a2bb" },
-  { id: 6, name: "green", hex: "#16a34a" },
+  { id: 6, name: "orange", hex: "#c69338" },
   { id: 7, name: "mint", hex: "#60a1a7" },
   { id: 8, name: "brown", hex: "#624e4f" },
   { id: 9, name: "yellow", hex: "#dac7a7" },
+  { id: 10, name: "blue", hex: "#8ba6c1" },
+  { id: 11, name: "gray", hex: "#c6c6c4" },
+  { id: 12, name: "green", hex: "#76715d" },
 ];
 
 const AVAILABLE_SIZES: VariantSize[] = [
@@ -106,7 +110,10 @@ const Modal: React.FC<
 };
 
 // Create/Edit Product Modal
-export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) => {
+export const ProductModal: React.FC<ProductModalProps> = ({
+  isOpen,
+  onClose,
+}) => {
   const dispatch = useDispatch();
   const { pagination, filters } = useSelector((s: RootState) => s.product);
   const { showSuccess, showError } = useToast();
@@ -114,7 +121,9 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
   const [imageUploading] = useState(false);
   const [categories, setCategories] = useState<CategoryBackend[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
-  const [categoryLabels, setCategoryLabels] = useState<Record<number, string>>({});
+  const [categoryLabels, setCategoryLabels] = useState<Record<number, string>>(
+    {}
+  );
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
@@ -139,13 +148,24 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
       if (res.success && res.data && Array.isArray(res.data)) {
         const items: CategoryBackend[] = res.data as CategoryBackend[];
 
-        const leafItemsWithLabels: Array<{ node: CategoryBackend; label: string }> = [];
-        const traverse = (nodes: CategoryBackend[] = [], parents: string[] = []) => {
+        const leafItemsWithLabels: Array<{
+          node: CategoryBackend;
+          label: string;
+        }> = [];
+        const traverse = (
+          nodes: CategoryBackend[] = [],
+          parents: string[] = []
+        ) => {
           for (const n of nodes) {
             const currentPath = [...parents, n.name];
-            const isLeaf = n.children === null || (Array.isArray(n.children) && n.children.length === 0);
+            const isLeaf =
+              n.children === null ||
+              (Array.isArray(n.children) && n.children.length === 0);
             if (isLeaf) {
-              leafItemsWithLabels.push({ node: n, label: currentPath.join(' > ') });
+              leafItemsWithLabels.push({
+                node: n,
+                label: currentPath.join(" > "),
+              });
             } else if (Array.isArray(n.children) && n.children.length > 0) {
               traverse(n.children, currentPath);
             }
@@ -163,7 +183,9 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
         // if no category selected yet, choose first leaf
         setFormData((prev) => ({
           ...prev,
-          categoryId: prev.categoryId || (leafItems.length > 0 ? leafItems[0].id : prev.categoryId),
+          categoryId:
+            prev.categoryId ||
+            (leafItems.length > 0 ? leafItems[0].id : prev.categoryId),
         }));
       } else {
         showError("Failed to load categories");
@@ -198,18 +220,25 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
   }, [dropdownOpen]);
 
   // Helper function to ensure productDetail has images array
-  const normalizeProductDetail = (productDetail: Partial<ProductDetail>): ProductDetail => {
+  const normalizeProductDetail = (
+    productDetail: Partial<ProductDetailForm>
+  ): ProductDetailForm => {
     return {
       ...productDetail,
       color: productDetail.color as VariantColor,
-      sizes: Array.isArray(productDetail.sizes) ? (productDetail.sizes as number[]) : [],
+      sizes: Array.isArray(productDetail.sizes)
+        ? (productDetail.sizes as number[])
+        : [],
       images: Array.isArray(productDetail.images)
         ? (productDetail.images as string[])
         : [],
-      price: typeof productDetail.price === 'number' ? productDetail.price : 0,
-      quantity: typeof productDetail.quantity === 'number' ? productDetail.quantity : 0,
-      sizeVariants: Array.isArray(productDetail.sizeVariants) ? (productDetail.sizeVariants as ProductDetail['sizeVariants']) : undefined,
-    } as ProductDetail;
+      price: typeof productDetail.price === "number" ? productDetail.price : 0,
+      quantity:
+        typeof productDetail.quantity === "number" ? productDetail.quantity : 0,
+      sizeVariants: Array.isArray(productDetail.sizeVariants)
+        ? (productDetail.sizeVariants as ProductDetailForm["sizeVariants"])
+        : undefined,
+    } as ProductDetailForm;
   };
 
   useEffect(() => {
@@ -265,7 +294,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
         if (Array.isArray(pd.sizeVariants) && pd.sizeVariants.length > 0) {
           // Ensure each variant has a positive price and a non-negative integer quantity
           const invalidVariant = pd.sizeVariants.some((v) => {
-            const badPrice = typeof v.price !== "number" || isNaN(v.price) || v.price <= 0;
+            const badPrice =
+              typeof v.price !== "number" || isNaN(v.price) || v.price <= 0;
             const badQty = !Number.isInteger(v.quantity) || v.quantity < 0;
             return badPrice || badQty;
           });
@@ -275,7 +305,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
           }
         } else {
           // price must be a positive number (can be decimal)
-          if (typeof pd.price !== "number" || isNaN(pd.price) || pd.price <= 0) {
+          if (
+            typeof pd.price !== "number" ||
+            isNaN(pd.price) ||
+            pd.price <= 0
+          ) {
             newErrors.productDetails =
               "Each color productDetail must have a valid price";
           }
@@ -337,7 +371,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
         title: string;
         description?: string;
         categoryIds: number[];
-        productDetails: Array<{ colorId: number; sizeVariants: Array<{ sizeId: number; price: number; quantity: number }> }>;
+        productDetails: Array<{
+          colorId: number;
+          sizeVariants: Array<{
+            sizeId: number;
+            price: number;
+            quantity: number;
+          }>;
+        }>;
       } = {
         title: formData.title.trim(),
         description: formData.description?.trim() || undefined,
@@ -409,11 +450,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
 
       // Use centralized productApi which will forward FormData to adminApiClient (which supports FormData)
       // Create product only
-      const resp = await (await import("@/services/api/productApi")).productApi.createProduct(fd);
-      if (!resp.success) throw new Error(resp.message || "Failed to create product");
+      const resp = await (
+        await import("@/services/api/productApi")
+      ).productApi.createProduct(fd);
+      if (!resp.success)
+        throw new Error(resp.message || "Failed to create product");
 
       // If API returned created product, try to fetch full product from server
-      if (resp.data && 'id' in resp.data && typeof resp.data.id === 'number') {
+      if (resp.data && "id" in resp.data && typeof resp.data.id === "number") {
         const createdId = resp.data.id;
         try {
           const full = await productApi.getProductById(createdId);
@@ -423,23 +467,25 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
             dispatch(createProductSuccess({ product: resp.data as Product }));
           }
         } catch {
-    dispatch(createProductSuccess({ product: resp.data as Product }));
+          dispatch(createProductSuccess({ product: resp.data as Product }));
         }
       } else if (resp.data) {
-  dispatch(createProductSuccess({ product: resp.data as Product }));
+        dispatch(createProductSuccess({ product: resp.data as Product }));
       }
 
       // Silent re-fetch to refresh list/page counts without showing global loading
       try {
-        dispatch(fetchProductsSilentRequest({
-          page: pagination.page,
-          pageSize: pagination.pageSize,
-          title: filters.title || undefined,
-          categorySlug: filters.categorySlug || undefined,
-          isActive: filters.isActive ?? undefined,
-          sortBy: filters.sortBy,
-          sortDirection: filters.sortDirection,
-        }));
+        dispatch(
+          fetchProductsSilentRequest({
+            page: pagination.page,
+            pageSize: pagination.pageSize,
+            title: filters.title || undefined,
+            categorySlug: filters.categorySlug || undefined,
+            isActive: filters.isActive ?? undefined,
+            sortBy: filters.sortBy,
+            sortDirection: filters.sortDirection,
+          })
+        );
       } catch {
         // ignore
       }
@@ -494,7 +540,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
     );
     if (existingProductDetail) return; // Color already exists
 
-    const newProductDetail: ProductDetail = {
+    const newProductDetail: ProductDetailForm = {
       color,
       sizes: [],
       images: [],
@@ -712,29 +758,107 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={"Create New Product"}>
       <form onSubmit={handleSubmit} className="p-6 space-y-6">
-        {/* Product Title */}
-        <div>
-          <label
-            htmlFor="title"
-            className="block text-sm font-medium text-black mb-2"
-          >
-            Product Title <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            id="title"
-            value={formData.title}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, title: e.target.value }))
-            }
-            className={`w-full px-3 py-2 border rounded-lg text-black ${
-              errors.title ? "border-red-300" : "border-gray-300"
-            }`}
-            placeholder="Enter product title..."
-          />
-          {errors.title && (
-            <p className="text-sm text-red-600 mt-1">{errors.title}</p>
-          )}
+        <div className="flex gap-4">
+          {/* Product Title */}
+          <div className="flex-[2]">
+            <label
+              htmlFor="title"
+              className="block text-sm font-medium text-black mb-2"
+            >
+              Product Title <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="title"
+              value={formData.title}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, title: e.target.value }))
+              }
+              className={`w-full px-3 py-2 border rounded-lg text-black ${
+                errors.title ? "border-red-300" : "border-gray-300"
+              }`}
+              placeholder="Enter product title..."
+            />
+            {errors.title && (
+              <p className="text-sm text-red-600 mt-1">{errors.title}</p>
+            )}
+          </div>
+
+          {/* Category */}
+          <div className="relative category-dropdown flex-1">
+            <label
+              htmlFor="category"
+              className="block text-sm font-medium text-black mb-2"
+            >
+              Category
+            </label>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black text-left bg-white focus:ring-1 focus:ring-black focus:border-black flex items-center justify-between"
+                disabled={categoriesLoading}
+              >
+                <span>
+                  {categoriesLoading
+                    ? "Loading categories..."
+                    : categories.find((c) => c.id === formData.categoryId)
+                        ?.name || "Select category"}
+                </span>
+                <svg
+                  className={`w-4 h-4 transition-transform ${
+                    dropdownOpen ? "rotate-180" : ""
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+
+              {dropdownOpen && !categoriesLoading && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto scrollbar-hide">
+                  {categories.length > 0 ? (
+                    categories.map((category) => (
+                      <button
+                        key={category.id}
+                        type="button"
+                        onClick={() => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            categoryId: category.id,
+                          }));
+                          setDropdownOpen(false);
+                        }}
+                        className={`w-full px-3 py-2 text-black text-left hover:bg-gray-200 hover:text-black first:rounded-t-lg last:rounded-b-lg ${
+                          formData.categoryId === category.id
+                            ? "bg-black text-white font-medium"
+                            : ""
+                        }`}
+                      >
+                        {categoryLabels[category.id] ?? category.name}
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-3 py-2 text-gray-500">
+                      No categories available
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            {categoriesLoading && (
+              <p className="text-sm text-gray-500 mt-1">
+                Loading categories...
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Product Description */}
@@ -755,80 +879,6 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
             className="w-full px-3 py-2 border text-black border-gray-300 rounded-lg "
             placeholder="Enter product description..."
           />
-        </div>
-
-        {/* Category */}
-        <div className="relative category-dropdown">
-          <label
-            htmlFor="category"
-            className="block text-sm font-medium text-black mb-2"
-          >
-            Category
-          </label>
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black text-left bg-white focus:ring-1 focus:ring-black focus:border-black flex items-center justify-between"
-              disabled={categoriesLoading}
-            >
-              <span>
-                {categoriesLoading
-                  ? "Loading categories..."
-                  : categories.find((c) => c.id === formData.categoryId)
-                      ?.name || "Select category"}
-              </span>
-              <svg
-                className={`w-4 h-4 transition-transform ${
-                  dropdownOpen ? "rotate-180" : ""
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </button>
-
-            {dropdownOpen && !categoriesLoading && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto scrollbar-hide">
-                {categories.length > 0 ? (
-                  categories.map((category) => (
-                    <button
-                      key={category.id}
-                      type="button"
-                      onClick={() => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          categoryId: category.id,
-                        }));
-                        setDropdownOpen(false);
-                      }}
-                      className={`w-full px-3 py-2 text-black text-left hover:bg-gray-200 hover:text-black first:rounded-t-lg last:rounded-b-lg ${
-                        formData.categoryId === category.id
-                          ? "bg-black text-white font-medium"
-                          : ""
-                      }`}
-                    >
-                      {categoryLabels[category.id] ?? category.name}
-                    </button>
-                  ))
-                ) : (
-                  <div className="px-3 py-2 text-gray-500">
-                    No categories available
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          {categoriesLoading && (
-            <p className="text-sm text-gray-500 mt-1">Loading categories...</p>
-          )}
         </div>
 
         {/* Product Details */}
@@ -928,7 +978,9 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={image}
-                            alt={`${productDetail.color.name} productDetail ${index + 1}`}
+                            alt={`${productDetail.color.name} productDetail ${
+                              index + 1
+                            }`}
                             className="w-20 h-20 object-cover rounded-lg border"
                           />
                           <button
@@ -1038,26 +1090,20 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
                               <div className="w-12 text-sm">
                                 {sizeInfo?.code || sizeId}
                               </div>
-                              <input
-                                type="number"
-                                min="0"
-                                step={1000}
+                              <CurrencyInput
                                 value={variant.price}
-                                onChange={(e) =>
+                                onChange={(value) =>
                                   handleSizeVariantChange(
                                     productDetail.color.id,
                                     sizeId,
                                     "price",
-                                    parseFloat(e.target.value) || 0
+                                    value
                                   )
                                 }
-                                onFocus={(e) => {
-                                  if (e.target.value === "0") {
-                                    e.target.value = "";
-                                  }
-                                }}
-                                className="w-32 px-2 py-1 border border-gray-300 rounded-lg text-black"
                                 placeholder="Price"
+                                min={0}
+                                step={1000}
+                                className="w-32 px-2 py-1"
                               />
                               <input
                                 type="number"
@@ -1077,8 +1123,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose }) =
                                     e.target.value = "";
                                   }
                                 }}
-                                className="w-24 px-2 py-1 border border-gray-300 rounded-lg text-black"
-                                placeholder="Qty"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md"
                               />
                             </div>
                           );
@@ -1170,15 +1215,17 @@ export const DeleteProductModal: React.FC<DeleteProductModalProps> = ({
         dispatch(deleteProductSuccess({ id: product.id }));
         // Silent re-fetch to refresh list/page counts without global loading
         try {
-          dispatch(fetchProductsSilentRequest({
-            page: pagination.page,
-            pageSize: pagination.pageSize,
-            title: filters.title || undefined,
-            categorySlug: filters.categorySlug || undefined,
-            isActive: filters.isActive ?? undefined,
-            sortBy: filters.sortBy,
-            sortDirection: filters.sortDirection,
-          }));
+          dispatch(
+            fetchProductsSilentRequest({
+              page: pagination.page,
+              pageSize: pagination.pageSize,
+              title: filters.title || undefined,
+              categorySlug: filters.categorySlug || undefined,
+              isActive: filters.isActive ?? undefined,
+              sortBy: filters.sortBy,
+              sortDirection: filters.sortDirection,
+            })
+          );
         } catch {
           // ignore
         }
@@ -1218,8 +1265,8 @@ export const DeleteProductModal: React.FC<DeleteProductModalProps> = ({
             Delete Product
           </h3>
           <p className="text-sm text-gray-500">
-            Are you sure you want to delete &quot;{product?.title}&quot;? This action
-            cannot be undone.
+            Are you sure you want to delete &quot;{product?.title}&quot;? This
+            action cannot be undone.
           </p>
         </div>
 
