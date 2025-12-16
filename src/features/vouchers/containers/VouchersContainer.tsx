@@ -8,6 +8,7 @@ import {
   toggleVoucherActiveRequest,
   createVoucherRequest,
   updateVoucherRequest,
+  clearError,
 } from '../redux/voucherSlice';
 import { VouchersPresenter } from '../components/VouchersPresenter';
 import { VoucherFilters, GetVouchersRequest, CreateVoucherRequest, UpdateVoucherRequest } from '../../../types/voucher.types';
@@ -37,8 +38,9 @@ const VouchersContainer: React.FC = () => {
   useEffect(() => {
     if (error) {
       showError('Error', error);
+      dispatch(clearError());
     }
-  }, [error, showError]);
+  }, [error, showError, dispatch]);
 
   // Fetch vouchers on mount and when filters change
   useEffect(() => {

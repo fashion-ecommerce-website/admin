@@ -8,6 +8,7 @@ import {
   togglePromotionActiveRequest,
   createPromotionRequest,
   updatePromotionRequest,
+  clearError,
 } from '../redux/promotionSlice';
 import { PromotionsPresenter } from '../components/PromotionsPresenter';
 import { PromotionFilters, GetPromotionsRequest, CreatePromotionRequest, UpdatePromotionRequest } from '../../../types/promotion.types';
@@ -35,20 +36,16 @@ const PromotionsContainer: React.FC = () => {
   const [prevCreateLoading, setPrevCreateLoading] = useState(false);
   const [prevUpdateLoading, setPrevUpdateLoading] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
-  const [prevError, setPrevError] = useState<string | null>(null);
   const pageSize = 12;
   const totalPages = Math.ceil(total / pageSize);
 
   // Show error toast when error occurs
   useEffect(() => {
-    if (error && error !== prevError) {
-      showError(error);
-      setPrevError(error);
+    if (error) {
+      showError('Error', error);
+      dispatch(clearError());
     }
-    if (!error && prevError) {
-      setPrevError(null);
-    }
-  }, [error, showError, prevError]);
+  }, [error, showError, dispatch]);
 
   // Refetch promotions helper
   const refetchPromotions = useCallback(() => {

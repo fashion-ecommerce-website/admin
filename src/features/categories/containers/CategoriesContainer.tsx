@@ -7,6 +7,7 @@ import {
   createCategoryRequest,
   updateCategoryRequest,
   toggleCategoryStatusRequest,
+  clearError,
 } from '../redux/categorySlice';
 import { CategoriesPresenter } from '../components/CategoriesPresenter';
 import { CreateCategoryRequest, UpdateCategoryRequest } from '../../../types/category.types';
@@ -29,8 +30,9 @@ const CategoriesContainer: React.FC = () => {
   useEffect(() => {
     if (error) {
       showError('Error', error);
+      dispatch(clearError());
     }
-  }, [error, showError]);
+  }, [error, showError, dispatch]);
 
   // Fetch categories on mount
   useEffect(() => {

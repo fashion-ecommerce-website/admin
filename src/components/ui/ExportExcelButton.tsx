@@ -11,9 +11,8 @@ const ExportExcelButton: React.FC<ExportExcelButtonProps> = ({
     <button
       onClick={onClick}
       disabled={loading}
-      className="cursor-pointer bg-black text-white px-6 py-3 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+      className="cursor-pointer bg-black text-white px-6 py-3 rounded-lg font-medium flex items-center space-x-2 hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      <div className="flex items-center space-x-2">
         <svg
           className="w-5 h-5"
           fill="none"
@@ -27,8 +26,7 @@ const ExportExcelButton: React.FC<ExportExcelButtonProps> = ({
             d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z"
           />
         </svg>
-        <span>{loading ? 'Exporting...' : 'Export Excel'}</span>
-      </div>
+      <span>{loading ? 'Exporting...' : 'Export Excel'}</span>
     </button>
   );
 };
