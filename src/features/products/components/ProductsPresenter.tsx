@@ -234,7 +234,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
           </Link>
           <button
             onClick={onCreateProduct}
-            className="bg-black text-white px-6 py-3 rounded-lg font-medium flex items-center space-x-2 hover:bg-gray-800 transition-colors"
+            className="cursor-pointer bg-black text-white px-6 py-3 rounded-lg font-medium flex items-center space-x-2 hover:bg-gray-800 transition-colors"
           >
             <svg
               className="w-5 h-5"
@@ -315,8 +315,8 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
                 });
               }}
               options={[
-                { value: "createdAt:desc", label: "Newest First" },
-                { value: "createdAt:asc", label: "Oldest First" },
+                { value: "createdAt:asc", label: "Newest First" },
+                { value: "createdAt:desc", label: "Oldest First" },
                 { value: "title:asc", label: "Name A-Z" },
                 { value: "title:desc", label: "Name Z-A" },
               ]}

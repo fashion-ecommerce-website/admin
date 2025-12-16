@@ -55,6 +55,7 @@ export const AdminLoginContainer: React.FC = () => {
         'Login failed',
         error
       );
+      dispatch(clearError());
       hasAttemptedLoginRef.current = false;
     }
     }
