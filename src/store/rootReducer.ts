@@ -8,6 +8,7 @@ import voucherReducer from '../features/vouchers/redux/voucherSlice';
 import promotionReducer from '../features/promotions/redux/promotionSlice';
 import categoryReducer from '../features/categories/redux/categorySlice';
 import orderReducer from '../features/orders/redux/orderSlice';
+import refundReducer from '../features/refunds/redux/refundSlice';
 
 export const rootReducer = combineReducers({
   adminAuth: adminAuthReducer,
@@ -19,6 +20,7 @@ export const rootReducer = combineReducers({
   promotion: promotionReducer,
   category: categoryReducer,
   orders: orderReducer,
+  refunds: refundReducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;

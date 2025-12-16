@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import Papa from 'papaparse';
 import { CustomDropdown } from '../../../components/ui/CustomDropdown';
+import { Spinner, LoadingOverlay } from '../../../components/ui/Spinner';
+import { AddColorModal, AddSizeModal, AddCategoryModal } from '../../../components/modals/QuickAddModals';
 
 interface UploadedFile {
   name: string;
@@ -39,6 +41,7 @@ interface ProductGroup {
   productTitle?: string;
   description?: string;
   category?: string;
+  imageUrls?: string[];
   productDetails?: ProductDetail[];
 }
 
@@ -53,6 +56,7 @@ interface ImportCSVPresenterProps {
   uploadedZips: UploadedZipFile[];
   previewData: ProductGroup[];
   previewLoading: boolean;
+  saveLoading: boolean;
   error: string | null;
   isEditOpen: boolean;
   editForm: EditForm;
@@ -60,6 +64,7 @@ interface ImportCSVPresenterProps {
   allowedColors: string[];
   allowedSizes: string[];
   allowedCategories: string[];
+  parentCategories: { id: number; name: string; path: string }[];
   onFileChange: (file: File) => void;
   onZipFilesChange: (files: File[]) => void;
   onRemoveZip: (index: number) => void;
@@ -75,6 +80,9 @@ interface ImportCSVPresenterProps {
   onSaveEdit: () => void;
   onEditFormChange: (form: EditForm) => void;
   onNewImageUrlChange: (url: string) => void;
+  onCreateColor: (data: { name: string; hex?: string }) => Promise<boolean>;
+  onCreateSize: (data: { code: string; label: string }) => Promise<boolean>;
+  onCreateCategory: (data: { name: string; slug: string; isActive: boolean; parentId?: number }) => Promise<boolean>;
 }
 
 const ImportCSVPresenter: React.FC<ImportCSVPresenterProps> = ({
@@ -82,6 +90,7 @@ const ImportCSVPresenter: React.FC<ImportCSVPresenterProps> = ({
   uploadedZips,
   previewData,
   previewLoading,
+  saveLoading,
   error,
   isEditOpen,
   editForm,
@@ -89,6 +98,7 @@ const ImportCSVPresenter: React.FC<ImportCSVPresenterProps> = ({
   allowedColors,
   allowedSizes,
   allowedCategories,
+  parentCategories,
   onFileChange,
   onZipFilesChange,
   onRemoveZip,
@@ -104,9 +114,17 @@ const ImportCSVPresenter: React.FC<ImportCSVPresenterProps> = ({
   onSaveEdit,
   onEditFormChange,
   onNewImageUrlChange,
+  onCreateColor,
+  onCreateSize,
+  onCreateCategory,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const zipInputRef = useRef<HTMLInputElement>(null);
+  
+  // Modal states for quick add
+  const [showAddColorModal, setShowAddColorModal] = useState(false);
+  const [showAddSizeModal, setShowAddSizeModal] = useState(false);
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
 
   const expectedHeaders = [
     'Product Title', 'Description', 'Category', 'Color', 'IMG', 'Size', 'Quantity', 'Price'
@@ -141,6 +159,10 @@ const ImportCSVPresenter: React.FC<ImportCSVPresenterProps> = ({
       productTitle: detail.productTitle ?? group.productTitle ?? detail.title ?? '',
       description: detail.description ?? group.description ?? '',
       category: detail.category ?? group.category ?? '',
+      // Ensure imageUrls is properly inherited from detail or group
+      imageUrls: detail.imageUrls && detail.imageUrls.length > 0 
+        ? detail.imageUrls 
+        : group.imageUrls || [],
     }));
   });
 
@@ -148,10 +170,17 @@ const ImportCSVPresenter: React.FC<ImportCSVPresenterProps> = ({
   const errorProducts = allDetails.filter((detail) => detail.isError).length;
 
   return (
-    <div className="flex flex-col h-full min-h-screen bg-gradient-to-br from-white to-gray-100">
+    <div className="flex flex-col h-full min-h-screen bg-gradient-to-br from-white to-gray-100 relative">
+      {/* Save Loading Overlay */}
+      <LoadingOverlay 
+        isLoading={saveLoading} 
+        title="Saving Products..." 
+        message="Uploading images to cloud storage. This may take a while."
+      />
+      
       {/* Header */}
       <div className="flex items-center gap-4 p-4 border-b bg-white/90 shadow-sm">
-        <button onClick={onBack} className="text-black px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition font-medium flex items-center gap-2 shadow-sm cursor-pointer">
+        <button onClick={onBack} disabled={saveLoading} className="text-black px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition font-medium flex items-center gap-2 shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           Back
         </button>
@@ -238,7 +267,7 @@ const ImportCSVPresenter: React.FC<ImportCSVPresenterProps> = ({
           >
             {previewLoading ? (
               <span className="flex items-center justify-center gap-1">
-                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                <Spinner size="xs" color="white" />
                 Processing...
               </span>
             ) : (
@@ -278,17 +307,26 @@ const ImportCSVPresenter: React.FC<ImportCSVPresenterProps> = ({
             <button
               className="px-6 py-2 rounded-xl bg-black hover:bg-gray-900 text-white font-bold shadow-lg transition text-base cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ position: 'relative', zIndex: 2 }}
-              disabled={allDetails.length === 0 || previewLoading}
+              disabled={allDetails.length === 0 || previewLoading || saveLoading}
               onClick={onSave}
             >
-              <svg className="w-5 h-5 inline-block mr-2 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-              Save All
+              {saveLoading ? (
+                <>
+                  <Spinner size="sm" color="white" className="inline-block mr-2 -mt-1" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5 inline-block mr-2 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  Save All
+                </>
+              )}
             </button>
           </div>
 
           {previewLoading ? (
             <div className="flex-1 flex flex-col items-center justify-center min-h-[180px]">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mb-2"></div>
+              <Spinner size="lg" color="black" className="mb-2" />
               <span className="text-gray-600 mt-2">Loading preview...</span>
             </div>
           ) : allDetails.length === 0 ? (
@@ -461,40 +499,76 @@ const ImportCSVPresenter: React.FC<ImportCSVPresenterProps> = ({
               </div>
               <div>
                 <label className="block text-sm text-gray-600 mb-1">Category</label>
-                <CustomDropdown
-                  value={editForm.category}
-                  onChange={(value) => onEditFormChange({ ...editForm, category: value })}
-                  options={allowedCategories.map(c => ({ value: c, label: c }))}
-                  placeholder="Select category"
-                  borderRadius="rounded-lg"
-                  padding="px-3 py-2"
-                  className="text-sm"
-                />
+                <div className="flex items-stretch gap-2">
+                  <div className="flex-1">
+                    <CustomDropdown
+                      value={editForm.category}
+                      onChange={(value) => onEditFormChange({ ...editForm, category: value })}
+                      options={allowedCategories.map(c => ({ value: c, label: c }))}
+                      placeholder="Select category"
+                      borderRadius="rounded-lg"
+                      padding="px-3 py-2"
+                      className="text-sm"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddCategoryModal(true)}
+                    className="w-9 h-9 flex items-center justify-center bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg text-black text-lg font-bold cursor-pointer transition-colors flex-shrink-0"
+                    title="Add new category"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm text-gray-600 mb-1">Color</label>
-                  <CustomDropdown
-                    value={editForm.color}
-                    onChange={(value) => onEditFormChange({ ...editForm, color: value })}
-                    options={allowedColors.map(c => ({ value: c, label: c }))}
-                    placeholder="Select color"
-                    borderRadius="rounded-lg"
-                    padding="px-3 py-2"
-                    className="text-sm"
-                  />
+                  <div className="flex items-stretch gap-2">
+                    <div className="flex-1 min-w-0">
+                      <CustomDropdown
+                        value={editForm.color}
+                        onChange={(value) => onEditFormChange({ ...editForm, color: value })}
+                        options={allowedColors.map(c => ({ value: c, label: c }))}
+                        placeholder="Select color"
+                        borderRadius="rounded-lg"
+                        padding="px-3 py-2"
+                        className="text-sm"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddColorModal(true)}
+                      className="w-9 h-9 flex items-center justify-center bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg text-black text-lg font-bold cursor-pointer transition-colors flex-shrink-0"
+                      title="Add new color"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm text-gray-600 mb-1">Size</label>
-                  <CustomDropdown
-                    value={editForm.size}
-                    onChange={(value) => onEditFormChange({ ...editForm, size: value })}
-                    options={allowedSizes.map(s => ({ value: s, label: s }))}
-                    placeholder="Select size"
-                    borderRadius="rounded-lg"
-                    padding="px-3 py-2"
-                    className="text-sm"
-                  />
+                  <div className="flex items-stretch gap-2">
+                    <div className="flex-1 min-w-0">
+                      <CustomDropdown
+                        value={editForm.size}
+                        onChange={(value) => onEditFormChange({ ...editForm, size: value })}
+                        options={allowedSizes.map(s => ({ value: s, label: s }))}
+                        placeholder="Select size"
+                        borderRadius="rounded-lg"
+                        padding="px-3 py-2"
+                        className="text-sm"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddSizeModal(true)}
+                      className="w-9 h-9 flex items-center justify-center bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg text-black text-lg font-bold cursor-pointer transition-colors flex-shrink-0"
+                      title="Add new size"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -525,6 +599,24 @@ const ImportCSVPresenter: React.FC<ImportCSVPresenterProps> = ({
           </div>
         </div>
       )}
+
+      {/* Quick Add Modals */}
+      <AddColorModal
+        isOpen={showAddColorModal}
+        onClose={() => setShowAddColorModal(false)}
+        onSubmit={onCreateColor}
+      />
+      <AddSizeModal
+        isOpen={showAddSizeModal}
+        onClose={() => setShowAddSizeModal(false)}
+        onSubmit={onCreateSize}
+      />
+      <AddCategoryModal
+        isOpen={showAddCategoryModal}
+        onClose={() => setShowAddCategoryModal(false)}
+        onSubmit={onCreateCategory}
+        parentCategories={parentCategories}
+      />
     </div>
   );
 };

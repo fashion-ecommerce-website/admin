@@ -7,26 +7,9 @@ import {
   CreateProductRequest,
   UpdateProductRequest,
   VariantOptions,
-  ProductDetailAdmin,
+  ProductDetail,
   ProductDetailQueryResponse,
 } from '../../types/product.types';
-
-// Import types from the public API that you provided earlier
-export interface ProductDetail {
-  detailId: number;
-  title: string;
-  price: number;
-  activeColor: string;
-  activeSize?: string;
-  images: string[];
-  colors: string[];
-  mapSizeToQuantity: { [size: string]: number };
-  description: string[];
-  categorySlug: string;   // Category slug for navigation
-  colorId?: number;
-  sizeId?: number;
-  quantity?: number;
-}
 
 class ProductApi {
   private readonly endpoint = '/products';
@@ -220,6 +203,28 @@ class ProductApi {
   }
 
   /**
+   * Toggle product active status via admin endpoint
+   * POST /products/admin/{id}/toggle
+   */
+  async toggleProductAdmin(id: number): Promise<ApiResponse<null>> {
+    try {
+      const response = await adminApiClient.post<null>(`${this.endpoint}/admin/${id}/toggle`, {});
+      return {
+        success: response.success,
+        data: response.data,
+        message: response.message || 'Product status toggled successfully',
+      };
+    } catch (error) {
+      console.error('Error toggling product status (admin):', error);
+      return {
+        success: false,
+        data: null,
+        message: error instanceof Error ? error.message : 'Failed to toggle product status (admin)'
+      };
+    }
+  }
+
+  /**
    * Get available variant options (colors and sizes)
    */
   async getVariantOptions(): Promise<ApiResponse<VariantOptions>> {
@@ -245,9 +250,9 @@ class ProductApi {
    * Get a single product detail (color+size) by productDetail id via admin endpoint
    * GET /products/details/{detailId}
    */
-  async getProductDetailAdmin(detailId: number): Promise<ApiResponse<ProductDetailAdmin>> {
+  async getProductDetailAdmin(detailId: number): Promise<ApiResponse<ProductDetail>> {
     try {
-      const response = await adminApiClient.get<ProductDetailAdmin>(`${this.endpoint}/details/${detailId}`);
+      const response = await adminApiClient.get<ProductDetail>(`${this.endpoint}/details/${detailId}`);
       return {
         success: response.success,
         data: response.data,
@@ -304,9 +309,9 @@ class ProductApi {
   async updateProductDetailAdmin(
     detailId: number,
     body: Partial<{ colorId: number; sizeId: number; price: number; quantity: number }>
-  ): Promise<ApiResponse<ProductDetailAdmin>> {
+  ): Promise<ApiResponse<ProductDetail>> {
     try {
-      const response = await adminApiClient.put<ProductDetailAdmin>(`${this.endpoint}/admin/details/${detailId}`, body);
+      const response = await adminApiClient.put<ProductDetail>(`${this.endpoint}/admin/details/${detailId}`, body);
       return {
         success: response.success,
         data: response.data,
@@ -318,6 +323,48 @@ class ProductApi {
         success: false,
         data: null,
         message: error instanceof Error ? error.message : 'Failed to update product detail (admin)'
+      };
+    }
+  }
+  async createProductDetailAdmin(
+    productId: number,
+    formData: FormData
+  ): Promise<ApiResponse<ProductDetail>> {
+    try {
+      const response = await adminApiClient.post<ProductDetail>(`${this.endpoint}/admin/${productId}/details`, formData);
+      return {
+        success: response.success,
+        data: response.data,
+        message: response.message || 'Product detail created successfully',
+      };
+    } catch (error) {
+      console.error('Error creating product detail (admin):', error);
+      return {
+        success: false,
+        data: null,
+        message: error instanceof Error ? error.message : 'Failed to create product detail (admin)'
+      };
+    }
+  }
+
+  /**
+   * Toggle product detail status via admin endpoint
+   * POST /products/admin/details/{productDetailId}/toggle
+   */
+  async toggleProductDetailStatusAdmin(productDetailId: number): Promise<ApiResponse<null>> {
+    try {
+      const response = await adminApiClient.post<null>(`${this.endpoint}/admin/details/${productDetailId}/toggle`, {});
+      return {
+        success: response.success,
+        data: response.data,
+        message: response.message || 'Product detail status toggled successfully',
+      };
+    } catch (error) {
+      console.error('Error toggling product detail status (admin):', error);
+      return {
+        success: false,
+        data: null,
+        message: error instanceof Error ? error.message : 'Failed to toggle product detail status (admin)'
       };
     }
   }
@@ -438,6 +485,29 @@ class ProductApi {
         success: false,
         data: null,
         message: error instanceof Error ? error.message : 'Failed to fetch product by color',
+      };
+    }
+  }
+
+  /**
+   * Get available sizes for a specific color
+   * URL example: /products/details/123/color?activeColor=white
+   */
+  async getSizesByColor(productDetailId: number, activeColor: string): Promise<ApiResponse<ProductDetail>> {
+    try {
+      const url = `/products/details/${productDetailId}/color?activeColor=${encodeURIComponent(activeColor)}`;
+      const response = await adminApiClient.get<ProductDetail>(url);
+      return {
+        success: response.success,
+        data: response.data,
+        message: response.message,
+      };
+    } catch (error) {
+      console.error('Error fetching sizes by color:', error);
+      return {
+        success: false,
+        data: null,
+        message: error instanceof Error ? error.message : 'Failed to fetch sizes by color',
       };
     }
   }

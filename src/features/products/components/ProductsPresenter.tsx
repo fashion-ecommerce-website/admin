@@ -1,20 +1,30 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { adminApiClient } from '../../../services/api/baseApi';
-import { categoryApi, CategoryBackend } from '../../../services/api/categoryApi';
-import { Product, VariantColor, VariantSize } from '../../../types/product.types';
-import { ProductRowSkeleton, TableSkeletonWithRows } from '../../../components/ui/Skeleton';
-import { CustomDropdown } from '../../../components/ui';
-import ExportExcelButton from '@/components/ui/ExportExcelButton';
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { adminApiClient } from "../../../services/api/baseApi";
+import {
+  categoryApi,
+  CategoryBackend,
+} from "../../../services/api/categoryApi";
+import {
+  Product,
+  VariantColor,
+  VariantSize,
+} from "../../../types/product.types";
+import {
+  ProductRowSkeleton,
+  TableSkeletonWithRows,
+} from "../../../components/ui/Skeleton";
+import { CustomDropdown, Pagination } from "../../../components/ui";
+import ExportExcelButton from "@/components/ui/ExportExcelButton";
 
 interface ProductFilters {
   title?: string;
   categorySlug?: string;
   isActive?: boolean | null;
-  sortBy?: 'createdAt' | 'updatedAt' | 'title';
-  sortDirection?: 'asc' | 'desc';
+  sortBy?: "createdAt" | "updatedAt" | "title";
+  sortDirection?: "asc" | "desc";
 }
 
 interface ProductsPresenterProps {
@@ -36,9 +46,12 @@ interface ProductsPresenterProps {
   onCreateProduct: () => void;
   onEditProduct: (product: Product) => void;
   onDeleteProduct: (productId: number) => void;
+  onToggleProductActive?: (productId: number) => void;
   onClearError: () => void;
   onEditProductDetail?: (product: Product) => void; // New prop for editing product detail
   onExportExcel?: () => void; // New prop for exporting to Excel
+  onCreateProductDetail?: (product: Product) => void; // New prop for creating product detail
+  onToggleProductDetailStatus?: (productDetailId: number) => void; // New prop for toggling product detail status
 }
 
 export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
@@ -53,27 +66,43 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
   onCreateProduct,
   onEditProduct,
   onDeleteProduct,
+  onToggleProductActive,
   onClearError,
   onEditProductDetail, // New prop
   onExportExcel, // New prop
+  onCreateProductDetail, // New prop
+  onToggleProductDetailStatus, // New prop
 }) => {
   const [categoryMap, setCategoryMap] = useState<Record<number, string>>({});
-  const [uploadedFiles, setUploadedFiles] = useState<{ name: string; size: number; file?: File }[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<
+    { name: string; size: number; file?: File }[]
+  >([]);
   // Preview state
   const [previewData, setPreviewData] = useState<Record<string, unknown>[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
-  const [activePreviewFile, setActivePreviewFile] = useState<{ name: string; size: number; file?: File } | null>(null);
+  const [activePreviewFile, setActivePreviewFile] = useState<{
+    name: string;
+    size: number;
+    file?: File;
+  } | null>(null);
 
   // Handle preview file (calls backend)
-  const handlePreviewCSV = async (file: { name: string; size: number; file?: File }) => {
+  const handlePreviewCSV = async (file: {
+    name: string;
+    size: number;
+    file?: File;
+  }) => {
     if (!file.file) return;
     setActivePreviewFile(file);
     setPreviewLoading(true);
     setPreviewData([]);
     try {
       const formData = new FormData();
-      formData.append('file', file.file);
-      const res = await adminApiClient.post<Record<string, unknown>[]>('/products/import/preview', formData);
+      formData.append("file", file.file);
+      const res = await adminApiClient.post<Record<string, unknown>[]>(
+        "/products/import/preview",
+        formData
+      );
       setPreviewData(res.data || []);
     } catch {
       setPreviewData([]);
@@ -134,59 +163,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
     onSearch?.(e.target.value);
   };
 
-  const renderPagination = () => {
-    if (pagination.totalPages <= 1) return null;
-
-    const pages = [];
-    const currentPage = pagination.page + 1; // Convert from 0-based to 1-based
-    const totalPages = pagination.totalPages;
-
-    // Previous button
-    pages.push(
-      <button
-        key="prev"
-        className="px-4 py-2 mx-1 text-sm text-black bg-white border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-        onClick={() => onPageChange(pagination.page - 1, pagination.pageSize)}
-        disabled={!pagination.hasPrevious}
-      >
-        Previous
-      </button>
-    );
-
-    // Page numbers
-    const startPage = Math.max(1, currentPage - 2);
-    const endPage = Math.min(totalPages, currentPage + 2);
-
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(
-        <button
-          key={i}
-          className={`px-4 py-2 mx-1 text-sm border rounded-lg font-medium ${
-            i === currentPage
-              ? 'bg-black text-white border-black'
-              : 'border-gray-300 bg-white text-black'
-          }`}
-          onClick={() => onPageChange(i - 1, pagination.pageSize)} // Convert to 0-based
-        >
-          {i}
-        </button>
-      );
-    }
-
-    // Next button
-    pages.push(
-      <button
-        key="next"
-        className="px-4 py-2 mx-1 text-sm text-black bg-white border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-        onClick={() => onPageChange(pagination.page + 1, pagination.pageSize)}
-        disabled={!pagination.hasNext}
-      >
-        Next
-      </button>
-    );
-
-    return <div className="flex justify-center mt-6">{pages}</div>;
-  };
+  // Use shared Pagination component for consistent UI
 
   return (
     <div className="space-y-6">
@@ -194,11 +171,23 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
       {error && (
         <div className="bg-white border border-gray-300 rounded-lg p-8 text-center">
           <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full">
-            <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="w-8 h-8 text-gray-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-black mb-2">An error occurred</h3>
+          <h3 className="text-lg font-semibold text-black mb-2">
+            An error occurred
+          </h3>
           <p className="text-gray-700 mb-4">{error}</p>
           <button
             onClick={onClearError}
@@ -212,9 +201,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-4xl font-bold text-black">
-            Product Management
-          </h1>
+          <h1 className="text-4xl font-bold text-black">Product Management</h1>
         </div>
         <div className="flex gap-3">
           {onExportExcel && <ExportExcelButton onClick={onExportExcel} />}
@@ -224,18 +211,43 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
             className="bg-black text-white px-6 py-3 rounded-lg font-medium flex items-center space-x-2 hover:bg-gray-800 transition-colors"
             prefetch
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 9l5-5 5 5M12 4v12" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M7 9l5-5 5 5M12 4v12"
+              />
             </svg>
             <span>Import CSV</span>
           </Link>
           <button
             onClick={onCreateProduct}
-            className="bg-black text-white px-6 py-3 rounded-lg font-medium flex items-center space-x-2 hover:bg-gray-800 transition-colors"
+            className="cursor-pointer bg-black text-white px-6 py-3 rounded-lg font-medium flex items-center space-x-2 hover:bg-gray-800 transition-colors"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
             </svg>
             <span>Add Product</span>
           </button>
@@ -253,7 +265,10 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
         <div className="grid grid-cols-[3fr_1fr_1fr] gap-6">
           {/* Search */}
           <div>
-            <label htmlFor="search" className="block text-sm font-semibold text-black mb-2">
+            <label
+              htmlFor="search"
+              className="block text-sm font-semibold text-black mb-2"
+            >
               Search Products
             </label>
             <div className="relative">
@@ -265,29 +280,45 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
                 placeholder="Enter product name..."
                 className="w-full h-[10%] pl-10 text-black pr-4 py-3 border border-gray-300 rounded-lg focus:border-black"
               />
-              <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              <svg
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
               </svg>
             </div>
           </div>
 
           {/* Sort */}
           <div>
-            <label htmlFor="sort" className="block text-sm font-semibold text-black mb-2">
+            <label
+              htmlFor="sort"
+              className="block text-sm font-semibold text-black mb-2"
+            >
               Sort By
             </label>
             <CustomDropdown
               value={`${filters.sortBy}:${filters.sortDirection}`}
               onChange={(value) => {
-                const [sortBy, sortDirection] = value.split(':');
-                onFilterChange({ ...filters, sortBy: sortBy as 'createdAt' | 'updatedAt' | 'title', sortDirection: sortDirection as 'asc' | 'desc' });
+                const [sortBy, sortDirection] = value.split(":");
+                onFilterChange({
+                  ...filters,
+                  sortBy: sortBy as "createdAt" | "title",
+                  sortDirection: sortDirection as "asc" | "desc",
+                });
               }}
               options={[
-                { value: 'createdAt:desc', label: 'Newest First' },
-                { value: 'createdAt:asc', label: 'Oldest First' },
-                { value: 'title:asc', label: 'Name A-Z' },
-                { value: 'title:desc', label: 'Name Z-A' },
-                { value: 'updatedAt:desc', label: 'Recently Updated' }
+                { value: "createdAt:asc", label: "Newest First" },
+                { value: "createdAt:desc", label: "Oldest First" },
+                { value: "title:asc", label: "Name A-Z" },
+                { value: "title:desc", label: "Name Z-A" },
               ]}
               padding="px-4 py-3"
               borderRadius="rounded-lg"
@@ -297,21 +328,30 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
 
           {/* Status */}
           <div>
-            <label htmlFor="status" className="block text-sm font-semibold text-black mb-2">
+            <label
+              htmlFor="status"
+              className="block text-sm font-semibold text-black mb-2"
+            >
               Status
             </label>
             <CustomDropdown
-              value={filters.isActive === null ? 'ALL' : filters.isActive ? 'ACTIVE' : 'INACTIVE'}
+              value={
+                filters.isActive === null
+                  ? "ALL"
+                  : filters.isActive
+                  ? "ACTIVE"
+                  : "INACTIVE"
+              }
               onChange={(value) => {
                 let isActive: boolean | null = null;
-                if (value === 'ACTIVE') isActive = true;
-                else if (value === 'INACTIVE') isActive = false;
+                if (value === "ACTIVE") isActive = true;
+                else if (value === "INACTIVE") isActive = false;
                 onFilterChange({ ...filters, isActive });
               }}
               options={[
-                { value: 'ALL', label: 'All Products' },
-                { value: 'ACTIVE', label: 'Active' },
-                { value: 'INACTIVE', label: 'Inactive' }
+                { value: "ALL", label: "All Products" },
+                { value: "ACTIVE", label: "Active" },
+                { value: "INACTIVE", label: "Inactive" },
               ]}
               padding="px-4 py-3"
               borderRadius="rounded-lg"
@@ -331,16 +371,31 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-black text-white">
                 <tr>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Image</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Product Name</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Category</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Colors</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Sizes</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Actions</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold">
+                    Image
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold">
+                    Product Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold">
+                    Category
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold">
+                    Colors
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold">
+                    Sizes
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-100">
-                <TableSkeletonWithRows rows={5} rowComponent={ProductRowSkeleton} />
+                <TableSkeletonWithRows
+                  rows={5}
+                  rowComponent={ProductRowSkeleton}
+                />
               </tbody>
             </table>
           </div>
@@ -348,7 +403,12 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
       ) : products.length === 0 ? (
         <div className="bg-white rounded-lg p-12 text-center border border-gray-200">
           <div className="mx-auto h-24 w-24 text-gray-400 mb-6">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 48 48" aria-hidden="true">
+            <svg
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 48 48"
+              aria-hidden="true"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -357,18 +417,24 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
               />
             </svg>
           </div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-2">No products found</h3>
-          <p className="text-gray-600 mb-6">{filters.title || filters.categorySlug || filters.isActive === false 
-              ? 'Try adjusting your search or filter criteria'
-              : 'Get started by creating your first product'}</p>
-          {(!filters.title && !filters.categorySlug && filters.isActive === true) && (
-            <button
-              onClick={onCreateProduct}
-              className="bg-black text-white px-6 py-3 rounded-lg font-medium"
-            >
-              Add Product
-            </button>
-          )}
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">
+            No products found
+          </h3>
+          <p className="text-gray-600 mb-6">
+            {filters.title || filters.categorySlug || filters.isActive === false
+              ? "Try adjusting your search or filter criteria"
+              : "Get started by creating your first product"}
+          </p>
+          {!filters.title &&
+            !filters.categorySlug &&
+            filters.isActive === true && (
+              <button
+                onClick={onCreateProduct}
+                className="bg-black text-white px-6 py-3 rounded-lg font-medium"
+              >
+                Add Product
+              </button>
+            )}
         </div>
       ) : (
         <>
@@ -380,32 +446,50 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-black text-white">
                   <tr>
-                    <th className="px-6 py-3 text-left text-sm font-semibold">Image</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold">Product Name</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold">Category</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold">Colors</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold">Sizes</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold">Actions</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold">
+                      Image
+                    </th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold">
+                      Product Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold">
+                      Category
+                    </th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold">
+                      Colors
+                    </th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold">
+                      Sizes
+                    </th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
                   {products.map((product) => (
-                    <tr 
-                      key={product.id} 
+                    <tr
+                      key={product.id}
                       className="hover:bg-gray-50 cursor-pointer"
-                      onClick={() => onEditProductDetail && onEditProductDetail(product)}
+                      onClick={() =>
+                        onEditProductDetail && onEditProductDetail(product)
+                      }
                       title="Click to edit product details"
                     >
                       <td className="px-6 py-4">
                         {/* Use an inline SVG data URL as a reliable placeholder to avoid missing static asset 404s */}
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={product.thumbnail || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-family="Arial, Helvetica, sans-serif" font-size="14">No image</text></svg>'}
-                          alt={product.title || 'Product image'}
+                          src={
+                            product.thumbnail ||
+                            'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-family="Arial, Helvetica, sans-serif" font-size="14">No image</text></svg>'
+                          }
+                          alt={product.title || "Product image"}
                           className="w-12 h-12 object-cover rounded-lg"
                           onError={(e) => {
                             // Only fallback once to avoid infinite loop trying to load a missing static file
-                            const fallback = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-family="Arial, Helvetica, sans-serif" font-size="14">No image</text></svg>';
+                            const fallback =
+                              'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-family="Arial, Helvetica, sans-serif" font-size="14">No image</text></svg>';
                             if (e.currentTarget.src !== fallback) {
                               e.currentTarget.src = fallback;
                             }
@@ -413,54 +497,64 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
                         />
                       </td>
                       <td className="px-6 py-4">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{product.title || 'No name'}</div>
-                          <div className="text-sm text-gray-500">ID: {product.id}</div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {product.title || "No name"}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">
-                        {product.categoryId ? (categoryMap[product.categoryId] ?? product.categoryId) : 'N/A'}
+                        {product.categoryId
+                          ? categoryMap[product.categoryId] ??
+                            product.categoryId
+                          : "N/A"}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-1">
-                          {product.variantColors && product.variantColors.length > 0 ? (
-                            product.variantColors.slice(0, 3).map((color: VariantColor) => (
-                              <div
-                                key={color.id}
-                                className="w-6 h-6 rounded-full border border-gray-300"
-                                style={{ backgroundColor: color.hex }}
-                                title={color.name}
-                              />
-                            ))
+                          {product.variantColors &&
+                          product.variantColors.length > 0 ? (
+                            product.variantColors
+                              .slice(0, 3)
+                              .map((color: VariantColor) => (
+                                <div
+                                  key={color.id}
+                                  className="w-6 h-6 rounded-full border border-gray-300"
+                                  style={{ backgroundColor: color.hex }}
+                                  title={color.name}
+                                />
+                              ))
                           ) : (
                             <span className="text-sm text-gray-400">None</span>
                           )}
-                          {product.variantColors && product.variantColors.length > 3 && (
-                            <span className="text-xs text-gray-500 ml-1 self-center">
-                              +{product.variantColors.length - 3}
-                            </span>
-                          )}
+                          {product.variantColors &&
+                            product.variantColors.length > 3 && (
+                              <span className="text-xs text-gray-500 ml-1 self-center">
+                                +{product.variantColors.length - 3}
+                              </span>
+                            )}
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-1">
-                          {product.variantSizes && product.variantSizes.length > 0 ? (
-                            product.variantSizes.slice(0, 4).map((size: VariantSize) => (
-                              <span
-                                key={size.id}
-                                className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800 border border-gray-300"
-                              >
-                                {size.code}
-                              </span>
-                            ))
+                          {product.variantSizes &&
+                          product.variantSizes.length > 0 ? (
+                            product.variantSizes
+                              .slice(0, 4)
+                              .map((size: VariantSize) => (
+                                <span
+                                  key={size.id}
+                                  className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800 border border-gray-300"
+                                >
+                                  {size.code}
+                                </span>
+                              ))
                           ) : (
                             <span className="text-sm text-gray-400">None</span>
                           )}
-                          {product.variantSizes && product.variantSizes.length > 4 && (
-                            <span className="text-xs text-gray-500 ml-1 self-center">
-                              +{product.variantSizes.length - 4}
-                            </span>
-                          )}
+                          {product.variantSizes &&
+                            product.variantSizes.length > 4 && (
+                              <span className="text-xs text-gray-500 ml-1 self-center">
+                                +{product.variantSizes.length - 4}
+                              </span>
+                            )}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm">
@@ -470,24 +564,65 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
                               e.stopPropagation();
                               onEditProduct(product);
                             }}
-                            className="text-sm px-3 py-1 border border-black rounded text-black bg-white"
+                            className="text-black hover:text-gray-700 cursor-pointer"
+                            title="Edit product information (title, description, category, colors, sizes)"
                           >
-                            Edit
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                              />
+                            </svg>
                           </button>
-                          {/* <button
-                            onClick={() => onEditVariant && onEditVariant(product)}
-                            className="text-sm px-3 py-1 border border-indigo-600 rounded text-indigo-600 bg-white"
-                          >
-                            Edit Variant
-                          </button> */}
+                          {onCreateProductDetail && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onCreateProductDetail(product);
+                              }}
+                              className="text-green-600 hover:text-green-800 cursor-pointer"
+                              title="Add new product detail (create a specific color & size variant with price and quantity)"
+                            >
+                              <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                                />
+                              </svg>
+                            </button>
+                          )}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              onDeleteProduct(product.id);
+                              if (onToggleProductActive) {
+                                onToggleProductActive(product.id);
+                              }
                             }}
-                            className="text-sm px-3 py-1 border border-gray-400 text-gray-600 rounded bg-white"
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                              product.isActive ? "bg-black" : "bg-gray-300"
+                            }`}
+                            aria-label={`Toggle status - currently ${product.isActive ? "active" : "inactive"}`}
+                            title={`Click to ${product.isActive ? "deactivate" : "activate"} product`}
                           >
-                            Delete
+                            <span
+                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                product.isActive ? "translate-x-6" : "translate-x-1"
+                              }`}
+                            />
                           </button>
                         </div>
                       </td>
@@ -497,7 +632,14 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
               </table>
             </div>
           </div>
-          {renderPagination()}
+          {pagination.totalPages > 1 && (
+            <Pagination
+              currentPage={pagination.page + 1}
+              totalItems={pagination.totalItems}
+              pageSize={pagination.pageSize}
+              onPageChange={(page) => onPageChange(page - 1, pagination.pageSize)}
+            />
+          )}
         </>
       )}
     </div>

@@ -89,8 +89,6 @@ export const UsersContainer: React.FC = () => {
   const [isFilteringData, setIsFilteringData] = useState(false);
 
   const filteredAndSortedUsers = useMemo(() => {
-    setIsFilteringData(true);
-
     const filtered = users
       .filter(user => {
         // Exclude admin users from the list
@@ -134,10 +132,15 @@ export const UsersContainer: React.FC = () => {
         return sortOrder === 'asc' ? comparison : -comparison;
       });
 
-    setTimeout(() => setIsFilteringData(false), 150);
-
     return filtered;
   }, [users, searchTerm, statusFilter, roleFilter, sortBy, sortOrder]);
+
+  // Handle filtering state in useEffect instead of useMemo
+  useEffect(() => {
+    setIsFilteringData(true);
+    const timer = setTimeout(() => setIsFilteringData(false), 150);
+    return () => clearTimeout(timer);
+  }, [searchTerm, statusFilter, roleFilter, sortBy, sortOrder]);
 
   const totalItems = filteredAndSortedUsers.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);

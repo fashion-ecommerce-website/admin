@@ -2,6 +2,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { 
   ProductState, 
   Product, 
+  ProductDetail,
   GetProductsRequest, 
   CreateProductRequest as CreateProductRequestData, 
   UpdateProductRequest as UpdateProductRequestData 
@@ -111,6 +112,34 @@ export interface UploadImageSuccess {
 }
 
 export interface UploadImageFailure {
+  error: string;
+}
+
+export interface CreateProductDetailRequest {
+  productId: number;
+  colorId: number;
+  sizeId: number;
+  price: number;
+  quantity: number;
+}
+
+export interface CreateProductDetailSuccess {
+  productDetail: ProductDetail;
+}
+
+export interface CreateProductDetailFailure {
+  error: string;
+}
+
+export interface ToggleProductDetailStatusRequest {
+  productDetailId: number;
+}
+
+export interface ToggleProductDetailStatusSuccess {
+  productDetailId: number;
+}
+
+export interface ToggleProductDetailStatusFailure {
   error: string;
 }
 
@@ -247,6 +276,36 @@ const productSlice = createSlice({
     clearCurrentProduct: (state) => {
       state.currentProduct = null;
     },
+
+    // Create product detail
+    createProductDetailRequest: (state, _action: PayloadAction<CreateProductDetailRequest>) => {
+      state.loading = true;
+      state.error = null;
+    },
+    createProductDetailSuccess: (state, _action: PayloadAction<CreateProductDetailSuccess>) => {
+      state.loading = false;
+      state.error = null;
+      // Product detail created successfully, list will be refreshed by saga
+    },
+    createProductDetailFailure: (state, action: PayloadAction<CreateProductDetailFailure>) => {
+      state.loading = false;
+      state.error = action.payload.error;
+    },
+
+    // Toggle product detail status
+    toggleProductDetailStatusRequest: (state, _action: PayloadAction<ToggleProductDetailStatusRequest>) => {
+      state.loading = true;
+      state.error = null;
+    },
+    toggleProductDetailStatusSuccess: (state, _action: PayloadAction<ToggleProductDetailStatusSuccess>) => {
+      state.loading = false;
+      state.error = null;
+      // Status toggled successfully, list will be refreshed by saga
+    },
+    toggleProductDetailStatusFailure: (state, action: PayloadAction<ToggleProductDetailStatusFailure>) => {
+      state.loading = false;
+      state.error = action.payload.error;
+    },
   },
 });
 
@@ -275,6 +334,12 @@ export const {
   uploadImageFailure,
   clearError,
   clearCurrentProduct,
+  createProductDetailRequest,
+  createProductDetailSuccess,
+  createProductDetailFailure,
+  toggleProductDetailStatusRequest,
+  toggleProductDetailStatusSuccess,
+  toggleProductDetailStatusFailure,
 } = productSlice.actions;
 
 // Export reducer

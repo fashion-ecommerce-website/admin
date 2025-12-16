@@ -5,3 +5,4 @@ export * from './Switch';
 export * from './CustomDropdown';
 export * from './ExportExcelButton';
 export * from './Pagination';
+export * from './CurrencyInput';

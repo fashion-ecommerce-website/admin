@@ -1,6 +1,9 @@
-import { adminApiClient, ApiResponse } from './baseApi';
+import { adminApiClient } from './baseApi';
 
-// Dashboard Response Types matching backend
+// Period type matching backend PeriodType enum
+export type PeriodType = 'MONTH' | 'YEAR';
+
+// Dashboard Response Types matching backend exactly
 export interface DashboardResponse {
   period: string;
   summary: SummaryDto;
@@ -14,9 +17,9 @@ export interface SummaryDto {
   totalRevenue: number;
 }
 
+// Matches backend DashboardResponse.ChartDataDto exactly
 export interface ChartDataDto {
-  date: string;
-  label: string;
+  target: string;  // month (1-12) or year (2025, 2024, ...)
   totalOrders: number;
   completedOrders: number;
   cancelledOrders: number;
@@ -27,58 +30,14 @@ export interface ChartDataDto {
   refundedRevenue: number;
 }
 
-// Legacy types for backward compatibility
-export interface DashboardApiResponse {
-  totalUsers: number;
-  totalProducts: number;
-  todayOrders: number;
-  todayRevenue: number;
-  userGrowth?: number;
-  productGrowth?: number;
-  orderGrowth?: number;
-  revenueGrowth?: number;
-  chartData?: Array<{
-    name: string;
-    orders: number;
-    revenue: number;
-  }>;
-  recentActivities?: Array<{
-    id: string;
-    type: 'USER_REGISTERED' | 'ORDER_PLACED' | 'PRODUCT_ADDED' | 'PRODUCT_UPDATED';
-    description: string;
-    timestamp: string;
-  }>;
-}
-
 class DashboardApi {
   /**
    * Get dashboard data with period filter
-   * @param period - 'day' | 'week' | 'month' | 'year'
+   * @param period - 'MONTH' | 'YEAR' (matches backend PeriodType enum)
    */
-  async getDashboard(period: 'day' | 'week' | 'month' | 'year' = 'week'): Promise<DashboardResponse> {
+  async getDashboard(period: PeriodType = 'MONTH'): Promise<DashboardResponse> {
     const response = await adminApiClient.get<DashboardResponse>(`/reports/dashboard?period=${period}`);
     return response.data as DashboardResponse;
-  }
-
-  /**
-   * Get recent activities
-   */
-  async getRecentActivities(limit: number = 10): Promise<ApiResponse<DashboardApiResponse>> {
-    return adminApiClient.get<DashboardApiResponse>(`/admin/dashboard/activities?limit=${limit}`);
-  }
-
-  /**
-   * Get revenue statistics for a specific date range
-   */
-  async getRevenueStats(startDate: string, endDate: string): Promise<ApiResponse<DashboardApiResponse>> {
-    return adminApiClient.get<DashboardApiResponse>(`/admin/dashboard/revenue?startDate=${startDate}&endDate=${endDate}`);
-  }
-
-  /**
-   * Get order statistics for a specific date range
-   */
-  async getOrderStats(startDate: string, endDate: string): Promise<ApiResponse<DashboardApiResponse>> {
-    return adminApiClient.get<DashboardApiResponse>(`/admin/dashboard/orders?startDate=${startDate}&endDate=${endDate}`);
   }
 }
 

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Order, OrderStatus, PaymentStatus } from '../../../types/order.types';
 import { Skeleton } from '../../../components/ui/Skeleton';
+import { SearchInput } from '../../../components/ui/SearchInput';
 import ExportExcelButton from '@/components/ui/ExportExcelButton';
 
 interface OrdersPresenterProps {
@@ -154,28 +155,13 @@ export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
         {onExportExcel && <ExportExcelButton onClick={onExportExcel} />}
       </div>
 
-      {/* Search & Filters */}
-      <div className="w-full">
-        <label className="block text-sm font-medium text-black mb-2">
-          Search
-        </label>
-        <div className="flex justify-between">
-          <div className="w-[40%] relative">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by Order ID, Customer name or email..."
-              className="w-full px-4 py-2 rounded-md border border-gray-600 text-black focus:outline-none focus:ring-2 focus:ring-black"
-            />
-            {loading && (
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      {/* Search */}
+      <SearchInput
+        value={searchQuery}
+        onChange={setSearchQuery}
+        placeholder="Search by Order ID, Customer name or email..."
+        loading={loading}
+      />
 
       {/* Combined Status Filter Buttons */}
       <div>
