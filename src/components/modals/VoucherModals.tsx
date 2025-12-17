@@ -2,7 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Voucher, CreateVoucherRequest } from '../../types/voucher.types';
+import { UserRank } from '../../types/user.types';
+import { userApi } from '../../services/api/userApi';
 import { CustomDropdown } from '../ui';
+import { CustomDropdown, CurrencyInput } from '../ui';
 import { useToast } from '@/providers/ToastProvider';
 
 interface VoucherModalProps {
@@ -23,10 +26,10 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
   const { showError } = useToast();
   const [formData, setFormData] = useState({
     name: '',
-    type: 'PERCENT' as 'PERCENT' | 'FIXED_AMOUNT',
-    value: '',
-    maxDiscount: '',
-    minOrderAmount: '',
+    type: 'PERCENT' as 'PERCENT' | 'FIXED',
+    value: 0,
+    maxDiscount: 0,
+    minOrderAmount: 0,
     usageLimitTotal: '',
     usageLimitPerUser: '1',
     startAt: '',
@@ -38,6 +41,30 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
     rankIds: [] as number[],
   });
 
+  // State for user ranks
+  const [userRanks, setUserRanks] = useState<UserRank[]>([]);
+  const [ranksLoading, setRanksLoading] = useState(false);
+
+  // Fetch user ranks when modal opens
+  useEffect(() => {
+    const fetchRanks = async () => {
+      setRanksLoading(true);
+      try {
+        const response = await userApi.getUserRanks();
+        if (response.success && response.data) {
+          setUserRanks(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user ranks:', error);
+      } finally {
+        setRanksLoading(false);
+      }
+    };
+
+    if (isOpen) {
+      fetchRanks();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (voucher) {
@@ -47,9 +74,9 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
       setFormData({
         name: voucher.name,
         type: voucher.type,
-        value: voucher.value.toString(),
-        maxDiscount: (voucher.maxDiscount || 0).toString(),
-        minOrderAmount: voucher.minOrderAmount.toString(),
+        value: voucher.value,
+        maxDiscount: voucher.maxDiscount || 0,
+        minOrderAmount: voucher.minOrderAmount,
         usageLimitTotal: voucher.usageLimitTotal.toString(),
         usageLimitPerUser: voucher.usageLimitPerUser.toString(),
         startAt: voucher.startAt.split('T')[0],
@@ -64,9 +91,9 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
       setFormData({
         name: '',
         type: 'PERCENT',
-        value: '',
-        maxDiscount: '',
-        minOrderAmount: '',
+        value: 0,
+        maxDiscount: 0,
+        minOrderAmount: 0,
         usageLimitTotal: '',
         usageLimitPerUser: '1',
         startAt: '',
@@ -80,20 +107,61 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
     }
   }, [voucher, isOpen]);
 
+  // Handle rank checkbox toggle
+  const handleRankToggle = (rankId: number) => {
+    setFormData(prev => ({
+      ...prev,
+      rankIds: prev.rankIds.includes(rankId)
+        ? prev.rankIds.filter(id => id !== rankId)
+        : [...prev.rankIds, rankId]
+    }));
+  };
+
+  // Format number with thousand separators (e.g., 1,000,000)
+  const formatCurrency = (value: string): string => {
+    // Remove all non-digit characters
+    const numericValue = value.replace(/[^\d]/g, '');
+    if (!numericValue) return '';
+    // Add thousand separators
+    return Number(numericValue).toLocaleString('en-US');
+  };
+
+  // Parse formatted currency back to number string
+  const parseCurrency = (value: string): string => {
+    return value.replace(/[^\d]/g, '');
+  };
+
+  // Handle currency input change
+  const handleCurrencyChange = (field: 'maxDiscount' | 'minOrderAmount' | 'value', value: string) => {
+    const numericValue = parseCurrency(value);
+    setFormData(prev => ({ ...prev, [field]: numericValue }));
+  };
+
+  // Get formatted display value for currency fields
+  const getFormattedValue = (value: string): string => {
+    if (!value) return '';
+    return formatCurrency(value);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
+    // Validation - Check all required fields
     if (!formData.name.trim()) {
       showError('Please enter voucher name');
       return;
     }
+
+    if (!formData.value || formData.value.trim() === '') {
+      showError('Please enter voucher value');
+      return;
+    }
     
     const value = parseFloat(formData.value.toString());
-    const maxDiscount = parseFloat(formData.maxDiscount.toString());
-    const minOrderAmount = parseFloat(formData.minOrderAmount.toString());
-    const usageLimitTotal = parseInt(formData.usageLimitTotal.toString());
-    const usageLimitPerUser = parseInt(formData.usageLimitPerUser.toString());
+    const maxDiscount = parseFloat(formData.maxDiscount.toString()) || 0;
+    const minOrderAmount = parseFloat(formData.minOrderAmount.toString()) || 0;
+    const usageLimitTotal = parseInt(formData.usageLimitTotal.toString()) || 0;
+    const usageLimitPerUser = parseInt(formData.usageLimitPerUser.toString()) || 0;
 
     if (!value || value <= 0) {
       showError('Voucher value must be greater than 0');
@@ -105,13 +173,44 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
       return;
     }
     
-    if (formData.type === 'PERCENT' && (!maxDiscount || maxDiscount <= 0)) {
-      showError('Maximum discount is required for percentage vouchers');
+    if (formData.type === 'PERCENT') {
+      if (!formData.maxDiscount || formData.maxDiscount.trim() === '') {
+        showError('Please enter maximum discount');
+        return;
+      }
+      if (maxDiscount <= 0) {
+        showError('Maximum discount must be greater than 0');
+        return;
+      }
+    }
+
+    if (!formData.minOrderAmount || formData.minOrderAmount.trim() === '') {
+      showError('Please enter minimum order amount');
       return;
     }
     
-    if (minOrderAmount < 0) {
-      showError('Minimum order amount cannot be negative');
+    if (!minOrderAmount || minOrderAmount < 0) {
+      showError('Minimum order amount is required and cannot be negative');
+      return;
+    }
+
+    if (!formData.usageLimitTotal || formData.usageLimitTotal.trim() === '') {
+      showError('Please enter total usage limit');
+      return;
+    }
+
+    if (usageLimitTotal <= 0) {
+      showError('Total usage limit must be greater than 0');
+      return;
+    }
+
+    if (!formData.usageLimitPerUser || formData.usageLimitPerUser.trim() === '') {
+      showError('Please enter usage limit per user');
+      return;
+    }
+
+    if (usageLimitPerUser <= 0) {
+      showError('Usage limit per user must be greater than 0');
       return;
     }
     
@@ -119,9 +218,24 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
       showError('Total usage limit must be greater than or equal to usage limit per user');
       return;
     }
+
+    if (!formData.startAt) {
+      showError('Please select start date');
+      return;
+    }
+
+    if (!formData.endAt) {
+      showError('Please select end date');
+      return;
+    }
     
     if (new Date(formData.startAt) >= new Date(formData.endAt)) {
       showError('Start date must be before end date');
+      return;
+    }
+
+    if (formData.audienceType === 'RANK' && formData.rankIds.length === 0) {
+      showError('Please select at least one membership rank');
       return;
     }
     
@@ -169,33 +283,30 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Voucher Name *
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
-                required
-              />
-            </div>
-
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Voucher Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
+              required
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Voucher Type *
+                Voucher Type <span className="text-red-500">*</span>
               </label>
               <CustomDropdown
                 value={formData.type}
-                onChange={(value) => setFormData({ ...formData, type: value as 'PERCENT' | 'FIXED_AMOUNT' })}
+                onChange={(value) => setFormData({ ...formData, type: value as 'PERCENT' | 'FIXED' })}
                 options={[
                   { value: 'PERCENT', label: 'Percentage (%)' },
-                  { value: 'FIXED_AMOUNT', label: 'Fixed Amount (VND)' }
+                  { value: 'FIXED', label: 'Fixed Amount (VND)' }
                 ]}
                 bgColor="bg-gray-100"
                 borderRadius="rounded-md"
@@ -205,54 +316,69 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Value *
+                Value {formData.type === 'PERCENT' ? '(%)' : '(VND)'} <span className="text-red-500">*</span>
               </label>
+              {formData.type === 'PERCENT' ? (
                 <input
                   type="number"
                   value={formData.value}
-                  onChange={(e) => setFormData({ ...formData, value: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, value: parseFloat(e.target.value) || 0 })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
                   min="0"
+                  max="100"
                   step="0.01"
+                  placeholder="0"
                   required
                 />
+              ) : (
+                <input
+                  type="text"
+                  value={getFormattedValue(formData.value)}
+                  onChange={(e) => handleCurrencyChange('value', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
+                  placeholder="0"
+                  required
+                />
+              )}
             </div>
           </div>
 
-          {formData.type === 'PERCENT' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Maximum Discount (VND) *
-              </label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {formData.type === 'PERCENT' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Maximum Discount (VND) <span className="text-red-500">*</span>
+                </label>
                 <input
-                  type="number"
-                  value={formData.maxDiscount}
-                  onChange={(e) => setFormData({ ...formData, maxDiscount: e.target.value })}
+                  type="text"
+                  value={getFormattedValue(formData.maxDiscount)}
+                  onChange={(e) => handleCurrencyChange('maxDiscount', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
-                  min="0"
+                  placeholder="0"
                   required
                 />
-            </div>
-          )}
+              </div>
+            )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Minimum Order Amount (VND) *
-            </label>
-            <input
-              type="number"
-              value={formData.minOrderAmount}
-              onChange={(e) => setFormData({ ...formData, minOrderAmount: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
-              min="0"
-              required
-            />
+            <div className={formData.type === 'PERCENT' ? '' : 'md:col-span-2'}>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Minimum Order Amount (VND) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={getFormattedValue(formData.minOrderAmount)}
+                onChange={(e) => handleCurrencyChange('minOrderAmount', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
+                placeholder="0"
+                required
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Total Usage Limit *
+                Total Usage Limit <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -266,7 +392,7 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Usage Limit Per User *
+                Usage Limit Per User <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -282,7 +408,7 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Start Date *
+                Start Date <span className="text-red-500">*</span>
               </label>
               <div className="flex space-x-2">
                 <input
@@ -303,7 +429,7 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                End Date *
+                End Date <span className="text-red-500">*</span>
               </label>
               <div className="flex space-x-2">
                 <input
@@ -325,7 +451,7 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Target Audience *
+              Target Audience <span className="text-red-500">*</span>
             </label>
             <CustomDropdown
               value={formData.audienceType}
@@ -341,19 +467,46 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
 
           {formData.audienceType === 'RANK' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Membership Rank IDs (comma-separated)
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Membership Ranks <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                value={formData.rankIds.join(', ')}
-                onChange={(e) => {
-                  const ranks = e.target.value.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
-                  setFormData({ ...formData, rankIds: ranks });
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
-                placeholder="1, 2, 3"
-              />
+              {ranksLoading ? (
+                <div className="flex items-center space-x-2 text-gray-500">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
+                  <span className="text-sm">Loading ranks...</span>
+                </div>
+              ) : userRanks.length === 0 ? (
+                <p className="text-sm text-gray-500">No ranks available</p>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {userRanks.map((rank) => (
+                    <label
+                      key={rank.id}
+                      className={`flex items-center space-x-2 p-3 border rounded-md cursor-pointer transition-colors ${
+                        formData.rankIds.includes(rank.id)
+                          ? 'border-black bg-gray-100'
+                          : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.rankIds.includes(rank.id)}
+                        onChange={() => handleRankToggle(rank.id)}
+                        className="h-4 w-4 text-black focus:ring-black border-gray-300 rounded accent-black"
+                      />
+                      <span className="text-sm font-medium text-black">{rank.name}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+              {formData.rankIds.length > 0 && (
+                <p className="mt-2 text-xs text-gray-500">
+                  Selected: {userRanks
+                    .filter(r => formData.rankIds.includes(r.id))
+                    .map(r => r.name)
+                    .join(', ')}
+                </p>
+              )}
             </div>
           )}
 

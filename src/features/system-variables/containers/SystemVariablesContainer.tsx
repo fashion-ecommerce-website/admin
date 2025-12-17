@@ -25,6 +25,7 @@ export const SystemVariablesContainer: React.FC = () => {
 
   const handleTabChange = (tab: TabKey) => {
     setActiveTab(tab);
+    setCurrentPage(1); // Reset to page 1 when switching tabs
     const params = new URLSearchParams(searchParams);
     params.set('tab', tab);
     router.replace(`${pathname}?${params.toString()}`);

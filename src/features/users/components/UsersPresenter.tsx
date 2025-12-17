@@ -252,7 +252,6 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Role</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Activity</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Statistics</th>
                   <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -282,12 +281,6 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="space-y-2">
-                          <Skeleton className="h-4 w-20" />
-                          <Skeleton className="h-3 w-24" />
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
                         <div className="flex justify-center space-x-2">
                           <Skeleton className="h-8 w-8 rounded" />
                           <Skeleton className="h-8 w-8 rounded" />
@@ -298,7 +291,7 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
                   ))
                 ) : apiError ? (
                   <tr>
-                    <td colSpan={6} className="px-8 py-16 text-center">
+                    <td colSpan={5} className="px-8 py-16 text-center">
                       <div className="flex flex-col items-center justify-center space-y-4">
                         <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center"><svg className="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
                         <div className="text-center">
@@ -311,7 +304,7 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
                   </tr>
                 ) : currentUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-8 py-16 text-center">
+                    <td colSpan={5} className="px-8 py-16 text-center">
                       <div className="flex flex-col items-center justify-center space-y-4">
                         <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center">
                           <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -368,18 +361,6 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
                             <span className="text-xs text-gray-500">{new Date(user.lastLogin).toLocaleDateString('en-US')}</span>
                           </div>
                           <div className="text-xs text-gray-400">Joined: {new Date(user.joinDate).toLocaleDateString('en-US')}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-6">
-                        <div className="text-sm">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
-                            <span className="text-gray-900 font-medium">{user.totalOrders} orders</span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" /></svg>
-                            <span className="text-xs text-gray-500">{user.totalSpent.toLocaleString('en-US')} VND</span>
-                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-6">

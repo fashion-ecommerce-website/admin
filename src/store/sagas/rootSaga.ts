@@ -8,6 +8,7 @@ import { voucherSaga } from '../../features/vouchers/redux/voucherSaga';
 import { promotionSaga } from '../../features/promotions/redux/promotionSaga';
 import { categorySaga } from '../../features/categories/redux/categorySaga';
 import { orderSaga } from '../../features/orders/redux/orderSaga';
+import { refundSaga } from '../../features/refunds/redux/refundSaga';
 
 export function* rootSaga() {
   yield all([
@@ -20,5 +21,6 @@ export function* rootSaga() {
     promotionSaga(),
     categorySaga(),
     orderSaga(),
+    refundSaga(),
   ]);
 }

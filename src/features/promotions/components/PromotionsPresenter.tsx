@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Promotion, PromotionFilters, CreatePromotionRequest, UpdatePromotionRequest } from "../../../types/promotion.types";
 import PromotionModal from "../../../components/modals/PromotionModals";
 import { PromotionRowSkeleton, TableSkeletonWithRows } from "../../../components/ui/Skeleton";
+import { Pagination } from "../../../components/ui";
 
 interface PromotionsPresenterProps {
   promotions: Promotion[];
@@ -213,6 +214,9 @@ export const PromotionsPresenter: React.FC<PromotionsPresenterProps> = ({
                       Value
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Targets
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                       Valid Period
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-black uppercase tracking-wider">
@@ -244,6 +248,9 @@ export const PromotionsPresenter: React.FC<PromotionsPresenterProps> = ({
                       Value
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Targets
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                       Valid Period
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-black uppercase tracking-wider">
@@ -272,6 +279,32 @@ export const PromotionsPresenter: React.FC<PromotionsPresenterProps> = ({
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-semibold text-black">
                             {promotion.value}%
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="max-w-xs">
+                            {promotion.targets && promotion.targets.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {promotion.targets.slice(0, 3).map((target, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-black"
+                                    title={target.targetName || `${target.targetType} ID: ${target.targetId}`}
+                                  >
+                                    {target.targetName 
+                                      ? (target.targetName.length > 20 
+                                          ? target.targetName.substring(0, 20) + '...' 
+                                          : target.targetName)
+                                      : `${target.targetType === 'SKU' ? 'Detail' : target.targetType} #${target.targetId}`}
+                                  </span>
+                                ))}
+                                {promotion.targets.length > 3 && (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-black">
+                                    +{promotion.targets.length - 3} more
+                                  </span>
+                                )}
+                              </div>
+                            ) : null}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
@@ -352,32 +385,12 @@ export const PromotionsPresenter: React.FC<PromotionsPresenterProps> = ({
 
       {/* Pagination */}
       {!loading && promotions.length > 0 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-black">
-            Showing {pagination.page * pagination.pageSize + 1} to{" "}
-            {Math.min(
-              (pagination.page + 1) * pagination.pageSize,
-              pagination.totalItems
-            )}{" "}
-            of {pagination.totalItems} results
-          </div>
-          <div className="flex space-x-1">
-            <button
-              onClick={() => onPageChange(pagination.page - 1)}
-              disabled={!pagination.hasPrevious}
-              className="px-3 py-2 text-sm font-medium text-black bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            >
-              Previous
-            </button>
-            <button
-              onClick={() => onPageChange(pagination.page + 1)}
-              disabled={!pagination.hasNext}
-              className="px-3 py-2 text-sm font-medium text-black bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+        <Pagination
+          currentPage={pagination.page + 1}
+          totalItems={pagination.totalItems}
+          pageSize={pagination.pageSize}
+          onPageChange={(page) => onPageChange(page - 1)}
+        />
       )}
 
       {/* Modals */}

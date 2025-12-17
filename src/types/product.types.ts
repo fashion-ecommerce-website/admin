@@ -25,32 +25,35 @@ export interface SizeVariantAdmin {
   quantity: number;
 }
 
-// Admin-side product-detail which may represent a color-level detail or a size-level detail
-export interface ProductDetailAdmin {
-  // Unique identifier for this detail on the server (used by admin endpoints)
+// Product detail interface - unified type for all product detail responses
+export interface ProductDetail {
   detailId: number;
-  // Color metadata for the detail
-  color: VariantColor;
-  // Color-level default price/quantity (may be used when size-level variants are not present)
+  title: string;
   price: number;
-  quantity: number;
-  // Optional per-size variants
+  activeColor: string;
+  activeSize?: string;
+  images: string[];
+  colors: string[];
+  mapSizeToQuantity: { [size: string]: number };
+  description: string[];
+  categorySlug: string;
+  colorId?: number;
+  sizeId?: number;
+  quantity?: number;
+  // Admin-specific fields (optional for compatibility)
+  color?: VariantColor;
   sizeVariants?: SizeVariantAdmin[];
-  // Optional images for this detail
-  images?: string[];
-  // Optional fields that some admin endpoints may return for convenience
-  // Keep them optional so the type stays strict while allowing API variations
   productTitle?: string;
-  title?: string;
   colorName?: string;
   sizeName?: string;
-  // When a detail represents a single-size variant, backend may include a `size` field
   size?: VariantSize | string;
+  // Legacy form fields (optional for backward compatibility)
+  sizes?: number[]; // Array of size IDs
 }
 
 // Admin view of a Product returned by admin GET endpoints
 export interface ProductAdmin extends Product {
-  productDetails?: ProductDetailAdmin[];
+  productDetails?: ProductDetail[];
 }
 
 // Response shape for querying a single product detail by productId + optional colorId/sizeId
@@ -68,22 +71,6 @@ export interface ProductDetailQueryResponse {
   price?: number;
 }
 
-// Product detail interface for form handling
-export interface ProductDetail {
-  color: VariantColor;
-  sizes: number[]; // Array of size IDs (legacy)
-  images: string[]; // Array of image URLs for this color variant (up to 5)
-  // New: per-size variants with individual price and quantity
-  sizeVariants?: Array<{
-    sizeId: number;
-    price: number;
-    quantity: number;
-  }>;
-  // Deprecated/legacy fields (kept for compatibility)
-  price: number; // Price for this variant (color-level default)
-  quantity: number; // Available quantity for this variant (color-level default)
-}
-
 // Main product interface (from API response)
 export interface Product {
   id: number;
@@ -96,6 +83,7 @@ export interface Product {
   variantSizes: VariantSize[];
   createdAt: string | null;
   updatedAt: string | null;
+  isActive: boolean;
 }
 
 // Product list response from API
@@ -166,13 +154,27 @@ export interface ProductModalState {
   selectedProductId: number | null;
 }
 
+// Product detail for form (create/edit product)
+export interface ProductDetailForm {
+  color: VariantColor;
+  sizes: number[];
+  images: string[];
+  price: number; 
+  quantity: number;
+  sizeVariants?: Array<{
+    sizeId: number;
+    price: number;
+    quantity: number;
+  }>;
+}
+
 // Product form data
 export interface ProductFormData {
   title: string;
   description: string;
   thumbnail: string;
   categoryId: number;
-  productDetails: ProductDetail[]; // Changed from separate color/size arrays
+  productDetails: ProductDetailForm[];
 }
 
 // Available colors and sizes for selection

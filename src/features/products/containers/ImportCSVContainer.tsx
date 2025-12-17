@@ -53,8 +53,17 @@ interface ProductGroup {
 }
 
 interface CategoryNode {
+  id: number;
   name: string;
-  children?: CategoryNode[];
+  slug: string;
+  isActive: boolean;
+  children: CategoryNode[] | null;
+}
+
+interface ParentCategoryOption {
+  id: number;
+  name: string;
+  path: string;
 }
 
 const ImportCSVContainer: React.FC = () => {
@@ -66,10 +75,12 @@ const ImportCSVContainer: React.FC = () => {
   const [uploadedZips, setUploadedZips] = useState<UploadedZipFile[]>([]);
   const [previewData, setPreviewData] = useState<ProductGroup[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [allowedCategories, setAllowedCategories] = useState<string[]>([]);
+  const [parentCategories, setParentCategories] = useState<ParentCategoryOption[]>([]);
   const [editForm, setEditForm] = useState<EditForm>({
     title: '',
     category: '',
@@ -81,30 +92,49 @@ const ImportCSVContainer: React.FC = () => {
   });
   const [newImageUrl, setNewImageUrl] = useState('');
 
-  // Constants
-  const allowedColors = ['black', 'white', 'dark blue', 'red', 'pink', 'orange', 'mint', 'brown', 'yellow'];
-  const allowedSizes = ['S', 'M', 'L', 'XL', 'F'];
+  // State for colors and sizes
+  const [allowedColors, setAllowedColors] = useState<string[]>([]);
+  const [allowedSizes, setAllowedSizes] = useState<string[]>([]);
 
-  // Fetch categories on mount
+  // Fetch categories, colors, sizes on mount
   useEffect(() => {
     let mounted = true;
+    
     const fetchCategories = async () => {
       try {
         const res = await adminApiClient.get<CategoryNode[]>('/categories/active-tree');
         if (!res.success || !res.data || !mounted) return;
 
         const leafCategoriesWithLabels: { name: string; label: string }[] = [];
-        const traverse = (nodes: CategoryNode[] = [], parents: string[] = []) => {
-          for (const n of nodes || []) {
+        const allCategoriesForParent: ParentCategoryOption[] = [];
+        
+        const traverse = (nodes: CategoryNode[] | null, parents: string[] = []) => {
+          if (!nodes) return;
+          for (const n of nodes) {
             if (!n || typeof n.name !== 'string') continue;
             const currentPath = [...parents, n.name];
-            const isLeaf = !n.children || (Array.isArray(n.children) && n.children.length === 0);
-            if (isLeaf) {
+            const pathString = currentPath.join(' > ');
+            const hasChildren = n.children && n.children.length > 0;
+            
+            // Add all categories as potential parents (need valid id)
+            if (n.id != null) {
+              allCategoriesForParent.push({
+                id: n.id,
+                name: n.name,
+                path: pathString,
+              });
+            }
+            
+            // Only leaf categories can be selected for products
+            if (!hasChildren) {
               leafCategoriesWithLabels.push({
                 name: n.name,
-                label: currentPath.join(' > '),
+                label: pathString,
               });
-            } else if (Array.isArray(n.children) && n.children.length > 0) {
+            }
+            
+            // Traverse children if they exist
+            if (hasChildren) {
               traverse(n.children, currentPath);
             }
           }
@@ -114,19 +144,120 @@ const ImportCSVContainer: React.FC = () => {
         leafCategoriesWithLabels.sort((a, b) =>
           a.label.localeCompare(b.label, 'vi', { sensitivity: 'base' })
         );
+        
+        allCategoriesForParent.sort((a, b) =>
+          a.path.localeCompare(b.path, 'vi', { sensitivity: 'base' })
+        );
 
         if (mounted) {
           setAllowedCategories(leafCategoriesWithLabels.map(c => c.label));
+          setParentCategories(allCategoriesForParent);
         }
-      } catch {
-        // Silently ignore
+      } catch (err) {
+        console.error('Failed to fetch categories:', err);
       }
     };
+
+    const fetchColors = async () => {
+      try {
+        const res = await adminApiClient.get<{ id: number; name: string }[]>('/colors/active');
+        if (res.success && res.data && mounted) {
+          setAllowedColors(res.data.map(c => c.name));
+        }
+      } catch {
+        // Fallback to default colors
+        if (mounted) {
+          setAllowedColors(['black', 'white', 'dark blue', 'red', 'pink', 'orange', 'mint', 'brown', 'yellow']);
+        }
+      }
+    };
+
+    const fetchSizes = async () => {
+      try {
+        const res = await adminApiClient.get<{ id: number; code: string }[]>('/sizes/active');
+        if (res.success && res.data && mounted) {
+          setAllowedSizes(res.data.map(s => s.code));
+        }
+      } catch {
+        // Fallback to default sizes
+        if (mounted) {
+          setAllowedSizes(['S', 'M', 'L', 'XL', 'F']);
+        }
+      }
+    };
+
     fetchCategories();
+    fetchColors();
+    fetchSizes();
+    
     return () => {
       mounted = false;
     };
   }, []);
+
+  // Handlers to create new color, size, category
+  const handleCreateColor = useCallback(async (data: { name: string; hex?: string }): Promise<boolean> => {
+    try {
+      const res = await adminApiClient.post<{ id: number; name: string }>('/colors', data);
+      if (res.success && res.data) {
+        setAllowedColors(prev => [...prev, res.data!.name]);
+        showSuccess('Color Created', `Color "${data.name}" has been added.`);
+        return true;
+      }
+      showError('Failed', res.message || 'Failed to create color');
+      return false;
+    } catch {
+      showError('Failed', 'Failed to create color');
+      return false;
+    }
+  }, [showSuccess, showError]);
+
+  const handleCreateSize = useCallback(async (data: { code: string; label: string }): Promise<boolean> => {
+    try {
+      const res = await adminApiClient.post<{ id: number; code: string }>('/sizes', data);
+      if (res.success && res.data) {
+        setAllowedSizes(prev => [...prev, res.data!.code]);
+        showSuccess('Size Created', `Size "${data.code}" has been added.`);
+        return true;
+      }
+      showError('Failed', res.message || 'Failed to create size');
+      return false;
+    } catch {
+      showError('Failed', 'Failed to create size');
+      return false;
+    }
+  }, [showSuccess, showError]);
+
+  const handleCreateCategory = useCallback(async (data: { name: string; slug: string; isActive: boolean; parentId?: number }): Promise<boolean> => {
+    try {
+      const res = await adminApiClient.post<{ id: number; name: string }>('/categories', data);
+      if (res.success && res.data) {
+        // Find parent path if parentId exists
+        const parent = data.parentId ? parentCategories.find(c => c.id === data.parentId) : null;
+        const newPath = parent ? `${parent.path} > ${data.name}` : data.name;
+        
+        // Add to allowed categories (leaf categories for dropdown)
+        setAllowedCategories(prev => [...prev, newPath].sort((a, b) => 
+          a.localeCompare(b, 'vi', { sensitivity: 'base' })
+        ));
+        
+        // Add to parent categories list
+        setParentCategories(prev => [...prev, {
+          id: res.data!.id,
+          name: data.name,
+          path: newPath,
+        }].sort((a, b) => a.path.localeCompare(b.path, 'vi', { sensitivity: 'base' })));
+        
+        showSuccess('Category Created', `Category "${data.name}" has been added.`);
+        return true;
+      }
+      showError('Failed', res.message || 'Failed to create category');
+      return false;
+    } catch {
+      showError('Failed', 'Failed to create category');
+      return false;
+    }
+  }, [showSuccess, showError, parentCategories]);
 
   const handlePreview = useCallback(async (csvFile: File, zipFiles: File[]) => {
     setPreviewLoading(true);
@@ -214,6 +345,16 @@ const ImportCSVContainer: React.FC = () => {
     }
     if (!found) return;
     setEditingIndex(idx);
+    
+    // Get imageUrls - prioritize detail level, fallback to group level
+    const detailImageUrls = found.imageUrls && found.imageUrls.length > 0 
+      ? found.imageUrls 
+      : (foundGroup?.imageUrls ?? []);
+    
+    console.log('Edit - found.imageUrls:', found.imageUrls);
+    console.log('Edit - foundGroup.imageUrls:', foundGroup?.imageUrls);
+    console.log('Edit - using imageUrls:', detailImageUrls);
+    
     setEditForm({
       title: found.productTitle ?? found.title ?? foundGroup?.productTitle ?? foundGroup?.title ?? '',
       category: found.category ?? foundGroup?.category ?? '',
@@ -221,7 +362,7 @@ const ImportCSVContainer: React.FC = () => {
       size: found.size ?? '',
       price: Number(found.price ?? 0),
       quantity: Number(found.quantity ?? 0),
-      imageUrls: found.imageUrls ?? foundGroup?.imageUrls ?? [],
+      imageUrls: detailImageUrls,
     });
     setIsEditOpen(true);
   }, [previewData]);
@@ -275,14 +416,36 @@ const ImportCSVContainer: React.FC = () => {
       return;
     }
 
-    const newUrls = files.map(file => URL.createObjectURL(file));
-    setEditForm(prev => ({
-      ...prev,
-      imageUrls: [...prev.imageUrls, ...newUrls]
-    }));
+    // Convert files to base64 data URLs (will be uploaded to Cloudinary when saving)
+    const base64Urls: string[] = [];
+    for (const file of files) {
+      try {
+        const base64 = await fileToBase64(file);
+        base64Urls.push(base64);
+      } catch {
+        showError('Read Failed', `Failed to read ${file.name}`);
+      }
+    }
+
+    if (base64Urls.length > 0) {
+      setEditForm(prev => ({
+        ...prev,
+        imageUrls: [...prev.imageUrls, ...base64Urls]
+      }));
+    }
   }, [editForm.imageUrls, showError]);
 
-  const saveEdit = useCallback(() => {
+  // Helper function to convert File to base64 data URL
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const saveEdit = useCallback(async () => {
     if (editingIndex === null) return;
 
     if (!editForm.title || !editForm.color || !editForm.size) {
@@ -294,39 +457,91 @@ const ImportCSVContainer: React.FC = () => {
       return;
     }
     setError(null);
-    setPreviewData((prev) => {
-      let currentIndex = 0;
-      return prev.map((group) => {
-        const details = group.productDetails || [];
-        let touchedThisGroup = false;
-        const updatedDetails = details.map((row) => {
-          const isTarget = currentIndex === editingIndex;
-          currentIndex += 1;
-          if (!isTarget) return row;
-          const next: ProductDetail = { ...row };
-          if ('productTitle' in next) {
-            next.productTitle = editForm.title;
-          } else {
-            next.title = editForm.title;
-          }
-          next.category = editForm.category;
-          next.color = editForm.color;
-          next.size = editForm.size;
-          next.price = editForm.price;
-          next.quantity = editForm.quantity;
-          next.imageUrls = editForm.imageUrls;
-          next.isError = false;
-          next.error = false;
-          next.errorMessage = undefined;
-          touchedThisGroup = true;
-          return next;
+
+    // Build fileProductDetails for check-detail API (exclude current editing row)
+    const fileProductDetails: { productTitle: string; color: string; size: string }[] = [];
+    let currentIdx = 0;
+    for (const group of previewData) {
+      for (const detail of group.productDetails || []) {
+        if (currentIdx !== editingIndex) {
+          fileProductDetails.push({
+            productTitle: detail.productTitle ?? detail.title ?? group.productTitle ?? group.title ?? '',
+            color: detail.color ?? '',
+            size: detail.size ?? '',
+          });
+        }
+        currentIdx++;
+      }
+    }
+
+    // Extract leaf category name from path for API check
+    const categoryForApi = editForm.category?.includes(' > ')
+      ? editForm.category.split(' > ').pop()?.trim() || editForm.category
+      : editForm.category;
+
+    // Call check-detail API
+    try {
+      const checkPayload = {
+        productTitle: editForm.title,
+        detail: {
+          productTitle: editForm.title,
+          color: editForm.color,
+          size: editForm.size,
+          category: categoryForApi,
+        },
+        fileProductDetails,
+      };
+
+      const res = await adminApiClient.post<{ error: boolean; errorMessage?: string }>(
+        '/products/import/check-detail',
+        checkPayload
+      );
+
+      if (res.success && res.data) {
+        // Update preview data with check result
+        setPreviewData((prev) => {
+          let currentIndex = 0;
+          return prev.map((group) => {
+            const details = group.productDetails || [];
+            let touchedThisGroup = false;
+            const updatedDetails = details.map((row) => {
+              const isTarget = currentIndex === editingIndex;
+              currentIndex += 1;
+              if (!isTarget) return row;
+              const next: ProductDetail = { ...row };
+              if ('productTitle' in next) {
+                next.productTitle = editForm.title;
+              } else {
+                next.title = editForm.title;
+              }
+              next.category = editForm.category;
+              next.color = editForm.color;
+              next.size = editForm.size;
+              next.price = editForm.price;
+              next.quantity = editForm.quantity;
+              next.imageUrls = editForm.imageUrls;
+              // Set error status from API response
+              next.isError = res.data?.error ?? false;
+              next.error = res.data?.error ?? false;
+              next.errorMessage = res.data?.errorMessage || undefined;
+              touchedThisGroup = true;
+              return next;
+            });
+            const updatedGroup = touchedThisGroup 
+              ? { ...group, productTitle: editForm.title, category: editForm.category, imageUrls: editForm.imageUrls } 
+              : group;
+            return { ...updatedGroup, productDetails: updatedDetails };
+          });
         });
-        const updatedGroup = touchedThisGroup ? { ...group, productTitle: editForm.title, category: editForm.category, imageUrls: editForm.imageUrls } : group;
-        return { ...updatedGroup, productDetails: updatedDetails };
-      });
-    });
-    closeEditModal();
-  }, [editingIndex, editForm, closeEditModal]);
+        closeEditModal();
+      } else {
+        showError('Check Failed', res.message || 'Failed to validate product detail');
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Validation failed';
+      showError('Check Failed', message);
+    }
+  }, [editingIndex, editForm, previewData, closeEditModal, showError]);
 
   const handleSave = useCallback(async () => {
     setError(null);
@@ -345,6 +560,8 @@ const ImportCSVContainer: React.FC = () => {
       return;
     }
 
+    setSaveLoading(true);
+    
     try {
       // Extract leaf category name from path before sending to backend
       const dataToSave = previewData.map(group => ({
@@ -357,6 +574,8 @@ const ImportCSVContainer: React.FC = () => {
           category: detail.category?.includes(' > ')
             ? detail.category.split(' > ').pop()?.trim() || detail.category
             : detail.category,
+          // Ensure imageUrls is included
+          imageUrls: detail.imageUrls || [],
         })),
       }));
 
@@ -371,6 +590,8 @@ const ImportCSVContainer: React.FC = () => {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Save failed';
       showError('Save Failed', message);
+    } finally {
+      setSaveLoading(false);
     }
   }, [previewData, showSuccess, showError]);
 
@@ -384,6 +605,7 @@ const ImportCSVContainer: React.FC = () => {
       uploadedZips={uploadedZips}
       previewData={previewData}
       previewLoading={previewLoading}
+      saveLoading={saveLoading}
       error={error}
       isEditOpen={isEditOpen}
       editForm={editForm}
@@ -391,6 +613,7 @@ const ImportCSVContainer: React.FC = () => {
       allowedColors={allowedColors}
       allowedSizes={allowedSizes}
       allowedCategories={allowedCategories}
+      parentCategories={parentCategories}
       onFileChange={handleFileChange}
       onZipFilesChange={handleZipFilesChange}
       onRemoveZip={handleRemoveZip}
@@ -406,6 +629,9 @@ const ImportCSVContainer: React.FC = () => {
       onSaveEdit={saveEdit}
       onEditFormChange={setEditForm}
       onNewImageUrlChange={setNewImageUrl}
+      onCreateColor={handleCreateColor}
+      onCreateSize={handleCreateSize}
+      onCreateCategory={handleCreateCategory}
     />
   );
 };
