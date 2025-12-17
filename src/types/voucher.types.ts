@@ -17,6 +17,7 @@ export interface Voucher {
   createdAt: string;
   updatedAt: string;
   usedCount?: number;
+  usageCount?: number;
 }
 
 // Backend Voucher interface (from API response)
@@ -38,6 +39,7 @@ export interface BackendVoucher {
   createdAt: string;
   updatedAt: string;
   usedCount?: number;
+  usageCount?: number;
 }
 
 // Voucher list response from API

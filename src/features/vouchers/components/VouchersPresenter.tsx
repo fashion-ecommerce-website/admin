@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Voucher, VoucherFilters, CreateVoucherRequest, UpdateVoucherRequest } from "../../../types/voucher.types";
+import { UserRank } from "../../../types/user.types";
 import { VoucherModal } from "../../../components/modals/VoucherModals";
 import { VoucherRowSkeleton, TableSkeletonWithRows } from "../../../components/ui/Skeleton";
 
@@ -17,6 +18,7 @@ interface VouchersPresenterProps {
     hasPrevious: boolean;
   };
   filters: VoucherFilters;
+  userRanks: UserRank[];
   onUpdateFilters: (filters: Partial<VoucherFilters>) => void;
   onPageChange: (page: number) => void;
   onToggleVoucherActive: (voucherId: number) => void;
@@ -29,6 +31,7 @@ export const VouchersPresenter: React.FC<VouchersPresenterProps> = ({
   loading,
   pagination,
   filters,
+  userRanks,
   onUpdateFilters,
   onPageChange,
   onToggleVoucherActive,
@@ -60,6 +63,10 @@ export const VouchersPresenter: React.FC<VouchersPresenterProps> = ({
       }
     };
   }, [searchQuery, onUpdateFilters]);
+
+  const handleStatusFilter = (isActive: boolean | null) => {
+    onUpdateFilters({ isActive });
+  };
 
   const handleCreateVoucher = (voucherData: CreateVoucherRequest) => {
     onCreateVoucher(voucherData);
@@ -137,6 +144,40 @@ export const VouchersPresenter: React.FC<VouchersPresenterProps> = ({
         </div>
       </div>
 
+      {/* Status Filter Buttons */}
+      <div className="flex space-x-2">
+        <button
+          onClick={() => handleStatusFilter(null)}
+          className={`px-4 py-2 rounded-md text-sm font-medium cursor-pointer ${
+            filters.isActive === null
+              ? "bg-black text-white"
+              : "bg-gray-200 text-black hover:bg-gray-300"
+          }`}
+        >
+          All
+        </button>
+        <button
+          onClick={() => handleStatusFilter(true)}
+          className={`px-4 py-2 rounded-md text-sm font-medium cursor-pointer ${
+            filters.isActive === true
+              ? "bg-black text-white"
+              : "bg-gray-200 text-black hover:bg-gray-300"
+          }`}
+        >
+          Active
+        </button>
+        <button
+          onClick={() => handleStatusFilter(false)}
+          className={`px-4 py-2 rounded-md text-sm font-medium cursor-pointer ${
+            filters.isActive === false
+              ? "bg-black text-white"
+              : "bg-gray-200 text-black hover:bg-gray-300"
+          }`}
+        >
+          Inactive
+        </button>
+      </div>
+
       {/* Vouchers Table */}
       <div className="bg-white shadow overflow-hidden sm:rounded-md">
         <div className="px-4 py-5 sm:p-6">
@@ -209,8 +250,34 @@ export const VouchersPresenter: React.FC<VouchersPresenterProps> = ({
                             </div>
                             <div className="text-xs text-gray-600">
                               Min order:{" "}
-                              {voucher.minOrderAmount.toLocaleString()}đ
+                              {(voucher.minOrderAmount ?? 0).toLocaleString()}đ
                             </div>
+                            {voucher.audienceType === "RANK" && voucher.rankIds && voucher.rankIds.length > 0 && (
+                              <div className="text-xs text-gray-600 mt-1">
+                                <span className="font-medium">Target:</span>{" "}
+                                <span className="inline-flex flex-wrap gap-1">
+                                  {voucher.rankIds.map((rankId) => {
+                                    const rank = userRanks.find((r) => r.id === rankId);
+                                    return rank ? (
+                                      <span
+                                        key={rankId}
+                                        className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-gray-100 text-gray-700"
+                                      >
+                                        {rank.name}
+                                      </span>
+                                    ) : null;
+                                  })}
+                                </span>
+                              </div>
+                            )}
+                            {voucher.audienceType === "ALL" && (
+                              <div className="text-xs text-gray-600 mt-1">
+                                <span className="font-medium">Target:</span>{" "}
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-green-100 text-green-700">
+                                  All Customers
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -235,18 +302,18 @@ export const VouchersPresenter: React.FC<VouchersPresenterProps> = ({
                           <div>
                             <div className="text-sm text-black">
                               {voucher.type === "PERCENT"
-                                ? `${voucher.value}%`
-                                : `${voucher.value.toLocaleString()}đ`}
+                                ? `${voucher.value ?? 0}%`
+                                : `${(voucher.value ?? 0).toLocaleString()}đ`}
                             </div>
-                            {voucher.maxDiscount !== undefined &&
+                            {voucher.maxDiscount != null &&
                               voucher.type === "PERCENT" && (
                                 <div className="text-xs text-gray-600">
                                   Max: {voucher.maxDiscount.toLocaleString()}đ
                                 </div>
                               )}
                             <div className="text-xs text-gray-600">
-                              Used: {voucher.usedCount ?? 0}/
-                              {voucher.usageLimitTotal}
+                              Used: {voucher.usageCount ?? 0}/
+                              {voucher.usageLimitTotal ?? 0}
                             </div>
                           </div>
                         </td>
