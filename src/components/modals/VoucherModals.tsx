@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { Voucher, CreateVoucherRequest } from '../../types/voucher.types';
 import { UserRank } from '../../types/user.types';
 import { userApi } from '../../services/api/userApi';
-import { CustomDropdown } from '../ui';
 import { CustomDropdown, CurrencyInput } from '../ui';
 import { useToast } from '@/providers/ToastProvider';
 
@@ -24,12 +23,27 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
   title,
 }) => {
   const { showError } = useToast();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    type: 'PERCENT' | 'FIXED';
+    value: string;
+    maxDiscount: string;
+    minOrderAmount: string;
+    usageLimitTotal: string;
+    usageLimitPerUser: string;
+    startAt: string;
+    endAt: string;
+    startTime: string;
+    endTime: string;
+    isActive: boolean;
+    audienceType: 'ALL' | 'RANK';
+    rankIds: number[];
+  }>({
     name: '',
-    type: 'PERCENT' as 'PERCENT' | 'FIXED',
-    value: 0,
-    maxDiscount: 0,
-    minOrderAmount: 0,
+    type: 'PERCENT',
+    value: '',
+    maxDiscount: '',
+    minOrderAmount: '',
     usageLimitTotal: '',
     usageLimitPerUser: '1',
     startAt: '',
@@ -37,8 +51,8 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
     startTime: '00:00',
     endTime: '23:59',
     isActive: true,
-    audienceType: 'ALL' as 'ALL' | 'RANK',
-    rankIds: [] as number[],
+    audienceType: 'ALL',
+    rankIds: [],
   });
 
   // State for user ranks
@@ -74,9 +88,9 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
       setFormData({
         name: voucher.name,
         type: voucher.type,
-        value: voucher.value,
-        maxDiscount: voucher.maxDiscount || 0,
-        minOrderAmount: voucher.minOrderAmount,
+        value: voucher.value.toString(),
+        maxDiscount: (voucher.maxDiscount || 0).toString(),
+        minOrderAmount: voucher.minOrderAmount.toString(),
         usageLimitTotal: voucher.usageLimitTotal.toString(),
         usageLimitPerUser: voucher.usageLimitPerUser.toString(),
         startAt: voucher.startAt.split('T')[0],
@@ -91,9 +105,9 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
       setFormData({
         name: '',
         type: 'PERCENT',
-        value: 0,
-        maxDiscount: 0,
-        minOrderAmount: 0,
+        value: '',
+        maxDiscount: '',
+        minOrderAmount: '',
         usageLimitTotal: '',
         usageLimitPerUser: '1',
         startAt: '',
@@ -322,7 +336,7 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
                 <input
                   type="number"
                   value={formData.value}
-                  onChange={(e) => setFormData({ ...formData, value: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) => setFormData({ ...formData, value: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
                   min="0"
                   max="100"

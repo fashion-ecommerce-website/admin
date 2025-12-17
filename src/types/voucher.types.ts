@@ -3,7 +3,7 @@ export interface Voucher {
   id: number;
   name: string;
   code: string;
-  type: 'PERCENT' | 'FIXED_AMOUNT';
+  type: 'PERCENT' | 'FIXED';
   value: number;
   maxDiscount?: number;
   minOrderAmount: number;
@@ -25,7 +25,7 @@ export interface BackendVoucher {
   id: number;
   name: string;
   code: string;
-  type: 'PERCENT' | 'FIXED_AMOUNT';
+  type: 'PERCENT' | 'FIXED';
   value: number;
   maxDiscount?: number;
   minOrderAmount: number;
@@ -58,7 +58,7 @@ export interface GetVouchersRequest {
   page?: number;
   pageSize?: number;
   name?: string;
-  type?: 'PERCENT' | 'FIXED_AMOUNT';
+  type?: 'PERCENT' | 'FIXED';
   isActive?: boolean;
   audienceType?: 'ALL' | 'RANK';
   sortBy?: 'createdAt' | 'updatedAt' | 'name' | 'value';
@@ -67,7 +67,7 @@ export interface GetVouchersRequest {
 
 export interface CreateVoucherRequest {
   name: string;
-  type: 'PERCENT' | 'FIXED_AMOUNT';
+  type: 'PERCENT' | 'FIXED';
   value: number;
   maxDiscount?: number;
   minOrderAmount: number;
@@ -83,7 +83,7 @@ export interface CreateVoucherRequest {
 export interface UpdateVoucherRequest {
   name: string;
   code: string;
-  type: 'PERCENT' | 'FIXED_AMOUNT';
+  type: 'PERCENT' | 'FIXED';
   value: number;
   maxDiscount?: number;
   minOrderAmount: number;
@@ -98,7 +98,7 @@ export interface UpdateVoucherRequest {
 
 export interface VoucherFilters {
   name?: string;
-  type?: 'PERCENT' | 'FIXED_AMOUNT' | '';
+  type?: 'PERCENT' | 'FIXED' | '';
   isActive?: boolean | null;
   audienceType?: 'ALL' | 'RANK' | '';
   sortBy?: 'createdAt' | 'updatedAt' | 'name' | 'value';
