@@ -113,3 +113,11 @@ export interface CreateUserRequest {
   firstName?: string;
   lastName?: string;
 }
+
+// User Rank (Membership tier) interface
+export interface UserRank {
+  id: number;
+  code: string;
+  name: string;
+  createdAt: string;
+}

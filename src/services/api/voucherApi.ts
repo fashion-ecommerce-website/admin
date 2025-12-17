@@ -21,10 +21,10 @@ class VoucherApi {
       
       if (params?.page !== undefined) queryParams.append('page', params.page.toString());
       if (params?.pageSize !== undefined) queryParams.append('pageSize', params.pageSize.toString());
-    if (params?.name) queryParams.append('name', params.name);
-  if (params?.type) queryParams.append('type', params.type);
+      if (params?.name) queryParams.append('name', params.name);
+      if (params?.type) queryParams.append('type', params.type);
       if (params?.isActive !== undefined) queryParams.append('isActive', params.isActive.toString());
-  if (params?.audienceType) queryParams.append('audienceType', params.audienceType);
+      if (params?.audienceType) queryParams.append('audienceType', params.audienceType);
       if (params?.sortBy) queryParams.append('sortBy', params.sortBy);
       if (params?.sortDirection) queryParams.append('sortDirection', params.sortDirection);
 
@@ -32,6 +32,14 @@ class VoucherApi {
       const endpoint = `/admin${this.endpoint}${queryString ? `?${queryString}` : ''}`;
 
       const response = await adminApiClient.get<VoucherListResponse>(endpoint);
+      
+      if (!response.success) {
+        return {
+          success: false,
+          data: null,
+          message: response.message || 'Failed to fetch vouchers'
+        };
+      }
       
       return {
         success: true,
@@ -58,6 +66,14 @@ class VoucherApi {
     try {
       const response = await adminApiClient.get<BackendVoucher>(`/admin${this.endpoint}/${id}`);
       
+      if (!response.success) {
+        return {
+          success: false,
+          data: null,
+          message: response.message || 'Failed to fetch voucher'
+        };
+      }
+      
       return {
         success: true,
         data: response.data,
@@ -83,6 +99,15 @@ class VoucherApi {
     try {
       const response = await adminApiClient.post<BackendVoucher>(`/admin${this.endpoint}`, voucherData);
       
+      // Check if the API call was successful
+      if (!response.success) {
+        return {
+          success: false,
+          data: null,
+          message: response.message || 'Failed to create voucher'
+        };
+      }
+      
       return {
         success: true,
         data: response.data,
@@ -107,6 +132,14 @@ class VoucherApi {
   async updateVoucher(id: number, voucherData: UpdateVoucherRequest): Promise<ApiResponse<BackendVoucher>> {
     try {
       const response = await adminApiClient.put<BackendVoucher>(`/admin${this.endpoint}/${id}`, voucherData);
+      
+      if (!response.success) {
+        return {
+          success: false,
+          data: null,
+          message: response.message || 'Failed to update voucher'
+        };
+      }
       
       return {
         success: true,
@@ -136,6 +169,14 @@ class VoucherApi {
         {}
       );
       
+      if (!response.success) {
+        return {
+          success: false,
+          data: null,
+          message: response.message || 'Failed to update voucher status'
+        };
+      }
+      
       return {
         success: true,
         data: response.data && typeof response.data === 'object' && 'id' in response.data 
@@ -161,7 +202,15 @@ class VoucherApi {
    */
   async deleteVoucher(id: number): Promise<ApiResponse<void>> {
     try {
-      await adminApiClient.delete(`/admin${this.endpoint}/${id}`);
+      const response = await adminApiClient.delete(`/admin${this.endpoint}/${id}`);
+      
+      if (!response.success) {
+        return {
+          success: false,
+          data: null,
+          message: response.message || 'Failed to delete voucher'
+        };
+      }
       
       return {
         success: true,
