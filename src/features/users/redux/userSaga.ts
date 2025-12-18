@@ -39,13 +39,13 @@ function* handleFetchUsers(action: PayloadAction<FetchUsersRequest>) {
 
     if (response.success && response.data) {
       // Convert backend users to frontend user format
-      const users = response.data.users.map(convertBackendUserToUser);
+      const users = response.data.items.map(convertBackendUserToUser);
       
       yield put(fetchUsersSuccess({
         users,
-        total: response.data.total ?? 0,
-        currentPage: response.data.page ?? 1,
-        totalPages: response.data.totalPages ?? 0,
+        total: response.data.totalItems,
+        currentPage: response.data.page + 1, // Convert 0-based to 1-based
+        totalPages: response.data.totalPages,
       }));
     } else {
       yield put(fetchUsersFailure({

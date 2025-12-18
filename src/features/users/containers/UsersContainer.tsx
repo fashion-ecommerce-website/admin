@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useAppDispatch } from '@/hooks/redux';
 import { useToast } from '@/providers/ToastProvider';
 import { useMinimumLoadingTime } from '@/hooks/useMinimumLoadingTime';
@@ -21,41 +21,36 @@ export const UsersContainer: React.FC = () => {
   const [apiError, setApiError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Server-side pagination state
+  const [serverPage, setServerPage] = useState(0); // Backend uses 0-based index
+  const [serverPageSize, setServerPageSize] = useState(10);
+  const [serverTotalItems, setServerTotalItems] = useState(0);
+  const [serverTotalPages, setServerTotalPages] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const [hasPrevious, setHasPrevious] = useState(false);
+
   // Use minimum loading time hook to ensure skeleton shows for at least 500ms
   const displayLoading = useMinimumLoadingTime(isLoading, 500);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async (page: number = serverPage, pageSize: number = serverPageSize) => {
     setIsLoading(true);
     dispatch(fetchUsersRequest());
     
     try {
-      const response = await userApi.getAllUsers();
+      const response = await userApi.getAllUsers({ page, pageSize });
 
       if (response.success && response.data) {
-        const convertedUsers = response.data.users.map(convertBackendUserToUser);
+        const convertedUsers = response.data.items.map(convertBackendUserToUser);
         setUsers(convertedUsers);
+        setServerPage(response.data.page);
+        setServerTotalItems(response.data.totalItems);
+        setServerTotalPages(response.data.totalPages);
+        setHasNext(response.data.hasNext);
+        setHasPrevious(response.data.hasPrevious);
         setApiError(null);
       } else {
         setApiError(response.message || 'Failed to fetch users');
         showError('Data load error', response.message || 'Unable to fetch users from server');
-
-        const mockUsers = Array.from({ length: 15 }, (_, index) => ({
-          id: index + 1,
-          name: `Test User ${index + 1}`,
-          email: `user${index + 1}@example.com`,
-          role: index % 3 === 0 ? 'VIP Customer' : 'Customer',
-          status: index % 4 === 0 ? 'Blocked' : (index % 2 === 0 ? 'Inactive' : 'Active'),
-          joinDate: new Date(Date.now() - Math.random() * 10000000000).toISOString(),
-          lastLogin: new Date(Date.now() - Math.random() * 1000000000).toISOString(),
-          totalOrders: Math.floor(Math.random() * 50),
-          totalSpent: Math.floor(Math.random() * 1000000),
-          phone: '',
-          firstName: '',
-          lastName: '',
-          avatar: '',
-          username: `user${index + 1}`,
-        } as User));
-        setUsers(mockUsers);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -64,10 +59,10 @@ export const UsersContainer: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [dispatch, serverPage, serverPageSize, showError]);
 
   useEffect(() => {
-    fetchUsers();
+    fetchUsers(0, serverPageSize);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -77,8 +72,21 @@ export const UsersContainer: React.FC = () => {
   const [sortBy, setSortBy] = useState('joinDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
+  // Client-side pagination for filtered results
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Handle server page size change
+  const handleServerPageSizeChange = useCallback((newPageSize: number) => {
+    setServerPageSize(newPageSize);
+    setItemsPerPage(newPageSize);
+    fetchUsers(0, newPageSize);
+  }, [fetchUsers]);
+
+  // Handle server page change
+  const handleServerPageChange = useCallback((newPage: number) => {
+    fetchUsers(newPage, serverPageSize);
+  }, [fetchUsers, serverPageSize]);
 
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -142,31 +150,58 @@ export const UsersContainer: React.FC = () => {
     return () => clearTimeout(timer);
   }, [searchTerm, statusFilter, roleFilter, sortBy, sortOrder]);
 
-  const totalItems = filteredAndSortedUsers.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentUsers = filteredAndSortedUsers.slice(startIndex, endIndex);
+  // When filters are applied, use client-side pagination on filtered results
+  // When no filters, use server-side pagination
+  const isFiltering = !!(searchTerm || statusFilter || roleFilter);
+  
+  const totalItems = isFiltering ? filteredAndSortedUsers.length : serverTotalItems;
+  const totalPages = isFiltering ? Math.ceil(filteredAndSortedUsers.length / itemsPerPage) : serverTotalPages;
+  const startIndex = isFiltering ? (currentPage - 1) * itemsPerPage : serverPage * serverPageSize;
+  const endIndex = startIndex + (isFiltering ? itemsPerPage : serverPageSize);
+  const currentUsers = isFiltering 
+    ? filteredAndSortedUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+    : filteredAndSortedUsers;
 
   const goToPage = (page: number) => {
-    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+    if (isFiltering) {
+      setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+    } else {
+      // Server-side: page is 0-based
+      handleServerPageChange(page - 1);
+    }
   };
 
   const goToPrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
+    if (isFiltering) {
+      if (currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
+    } else {
+      if (hasPrevious) {
+        handleServerPageChange(serverPage - 1);
+      }
     }
   };
 
   const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
+    if (isFiltering) {
+      if (currentPage < totalPages) {
+        setCurrentPage(currentPage + 1);
+      }
+    } else {
+      if (hasNext) {
+        handleServerPageChange(serverPage + 1);
+      }
     }
   };
 
+  // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, statusFilter, roleFilter]);
+
+  // Current page for display (1-based)
+  const displayCurrentPage = isFiltering ? currentPage : serverPage + 1;
 
   const handleExportExcel = () => {
     try {
@@ -396,7 +431,7 @@ export const UsersContainer: React.FC = () => {
     roleFilter,
     sortBy,
     sortOrder,
-    currentPage,
+    currentPage: displayCurrentPage,
     itemsPerPage,
     addModalOpen,
     viewModalOpen,
@@ -410,6 +445,12 @@ export const UsersContainer: React.FC = () => {
     startIndex,
     endIndex,
     currentUsers,
+    // Server pagination info
+    serverPage,
+    serverPageSize,
+    hasNext,
+    hasPrevious,
+    isFiltering,
   };
 
   const handlers = {
@@ -418,14 +459,14 @@ export const UsersContainer: React.FC = () => {
     setRoleFilter,
     setSortBy,
     setSortOrder,
-    setItemsPerPage,
+    setItemsPerPage: handleServerPageSizeChange,
     setCurrentPage,
     setAddModalOpen,
     setViewModalOpen,
     setEditModalOpen,
     setLockModalOpen,
     setSelectedUser,
-    fetchUsers,
+    fetchUsers: () => fetchUsers(serverPage, serverPageSize),
     goToPrevPage,
     goToNextPage,
     goToPage,
