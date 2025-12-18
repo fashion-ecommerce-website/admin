@@ -242,11 +242,6 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
       showError('Please select end date');
       return;
     }
-    
-    if (new Date(formData.startAt) >= new Date(formData.endAt)) {
-      showError('Start date must be before end date');
-      return;
-    }
 
     if (formData.audienceType === 'RANK' && formData.rankIds.length === 0) {
       showError('Please select at least one membership rank');
