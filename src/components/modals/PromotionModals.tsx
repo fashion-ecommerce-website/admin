@@ -38,7 +38,9 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
     type: 'PERCENT' as const,
     value: '' as number | '',
     startAt: '',
+    startTime: '00:00',
     endAt: '',
+    endTime: '23:59',
     isActive: true,
   });
   
@@ -138,12 +140,22 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
 
   useEffect(() => {
     if (promotion) {
+      // Parse time from promotion dates
+      const startTimePart = promotion.startAt.includes('T') 
+        ? promotion.startAt.split('T')[1]?.substring(0, 5) || '00:00'
+        : '00:00';
+      const endTimePart = promotion.endAt.includes('T')
+        ? promotion.endAt.split('T')[1]?.substring(0, 5) || '23:59'
+        : '23:59';
+      
       setFormData({
         name: promotion.name,
         type: promotion.type,
         value: promotion.value,
         startAt: promotion.startAt.split('T')[0],
+        startTime: startTimePart,
         endAt: promotion.endAt.split('T')[0],
+        endTime: endTimePart,
         isActive: promotion.isActive,
       });
       setTargets(promotion.targets || []);
@@ -153,7 +165,9 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
         type: 'PERCENT',
         value: '',
         startAt: '',
+        startTime: '00:00',
         endAt: '',
+        endTime: '23:59',
         isActive: true,
       });
       setTargets([]);
@@ -295,8 +309,12 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
       return;
     }
     
-    if (new Date(formData.startAt) >= new Date(formData.endAt)) {
-      showError('Validation Error', 'Start date must be before end date');
+    // Create full datetime strings for comparison
+    const startDateTime = new Date(`${formData.startAt}T${formData.startTime}:00`);
+    const endDateTime = new Date(`${formData.endAt}T${formData.endTime}:59`);
+    
+    if (startDateTime >= endDateTime) {
+      showError('Validation Error', 'Start date/time must be before end date/time');
       return;
     }
     
@@ -309,8 +327,8 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
     const submitData: CreatePromotionRequest = {
       ...formData,
       value: valueNum,
-      startAt: `${formData.startAt}T00:00:00`,
-      endAt: `${formData.endAt}T23:59:59`,
+      startAt: `${formData.startAt}T${formData.startTime}:00`,
+      endAt: `${formData.endAt}T${formData.endTime}:59`,
       // For edit mode, don't send targets (managed via API)
       // For create mode, send targets
       targets: isEditMode ? undefined : targets,
@@ -382,26 +400,42 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Start Date <span className="text-red-500">*</span>
+                Start Date & Time <span className="text-red-500">*</span>
               </label>
-              <input
-                type="date"
-                value={formData.startAt}
-                onChange={(e) => setFormData({ ...formData, startAt: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  value={formData.startAt}
+                  onChange={(e) => setFormData({ ...formData, startAt: e.target.value })}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
+                />
+                <input
+                  type="time"
+                  value={formData.startTime}
+                  onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                  className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
+                />
+              </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                End Date <span className="text-red-500">*</span>
+                End Date & Time <span className="text-red-500">*</span>
               </label>
-              <input
-                type="date"
-                value={formData.endAt}
-                onChange={(e) => setFormData({ ...formData, endAt: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  value={formData.endAt}
+                  onChange={(e) => setFormData({ ...formData, endAt: e.target.value })}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
+                />
+                <input
+                  type="time"
+                  value={formData.endTime}
+                  onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                  className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
+                />
+              </div>
             </div>
           </div>
 
