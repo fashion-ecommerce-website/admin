@@ -320,10 +320,22 @@ export const VouchersPresenter: React.FC<VouchersPresenterProps> = ({
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                           <div>
                             <div className="font-medium">
-                              {new Date(voucher.startAt).toLocaleDateString()}
+                              {new Date(voucher.startAt).toLocaleString('vi-VN', { 
+                                day: '2-digit', 
+                                month: '2-digit', 
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
                             </div>
                             <div className="text-xs text-gray-600">
-                              to {new Date(voucher.endAt).toLocaleDateString()}
+                              to {new Date(voucher.endAt).toLocaleString('vi-VN', { 
+                                day: '2-digit', 
+                                month: '2-digit', 
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
                             </div>
                             {new Date(voucher.endAt) < new Date() && (
                               <div className="text-xs text-red-600 font-medium">

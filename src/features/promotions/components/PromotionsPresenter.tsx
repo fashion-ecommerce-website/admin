@@ -310,10 +310,22 @@ export const PromotionsPresenter: React.FC<PromotionsPresenterProps> = ({
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                           <div>
                             <div className="font-medium">
-                              {new Date(promotion.startAt).toLocaleDateString()}
+                              {new Date(promotion.startAt).toLocaleString('vi-VN', { 
+                                day: '2-digit', 
+                                month: '2-digit', 
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
                             </div>
                             <div className="text-xs text-gray-600">
-                              to {new Date(promotion.endAt).toLocaleDateString()}
+                              to {new Date(promotion.endAt).toLocaleString('vi-VN', { 
+                                day: '2-digit', 
+                                month: '2-digit', 
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
                             </div>
                             {new Date(promotion.endAt) < new Date() && (
                               <div className="text-xs text-red-600 font-medium">
