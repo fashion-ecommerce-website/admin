@@ -34,6 +34,7 @@ const normalizeVoucher = (backendVoucher: BackendVoucher): Voucher => ({
   ...backendVoucher,
   rankIds: backendVoucher.rankIds ?? [],
   usedCount: backendVoucher.usedCount ?? 0,
+  usageCount: backendVoucher.usageCount ?? 0,
 });
 
 // Fetch vouchers saga
@@ -80,8 +81,43 @@ function* handleCreateVoucher(action: PayloadAction<CreateVoucherRequest>) {
       voucherApi.createVoucher(action.payload)
     );
 
-    if (response.success && response.data) {
-      yield put(createVoucherSuccess(normalizeVoucher(response.data)));
+    if (response.success) {
+      if (response.data) {
+        yield put(createVoucherSuccess(normalizeVoucher(response.data)));
+      } else {
+        // Success but no data returned - create a temporary voucher object and refetch
+        const tempVoucher: Voucher = {
+          id: Date.now(),
+          name: action.payload.name,
+          code: 'PENDING',
+          type: action.payload.type,
+          value: action.payload.value,
+          maxDiscount: action.payload.maxDiscount,
+          minOrderAmount: action.payload.minOrderAmount,
+          usageLimitTotal: action.payload.usageLimitTotal,
+          usageLimitPerUser: action.payload.usageLimitPerUser,
+          startAt: action.payload.startAt,
+          endAt: action.payload.endAt,
+          isActive: action.payload.isActive,
+          audienceType: action.payload.audienceType,
+          rankIds: action.payload.rankIds,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          usedCount: 0,
+        };
+        yield put(createVoucherSuccess(tempVoucher));
+        
+        // Refetch to get actual data
+        const { voucher: voucherState }: RootState = yield select((state: RootState) => state);
+        const { filters } = voucherState;
+        yield put(fetchVouchersRequest({
+          page: 0,
+          name: filters.name || undefined,
+          isActive: filters.isActive === null ? undefined : filters.isActive,
+          sortBy: filters.sortBy,
+          sortDirection: filters.sortDirection,
+        }));
+      }
     } else {
       yield put(createVoucherFailure(response.message || 'Failed to create voucher'));
     }
@@ -99,8 +135,43 @@ function* handleUpdateVoucher(action: PayloadAction<UpdateVoucherPayload>) {
       voucherApi.updateVoucher(id, voucherData)
     );
 
-    if (response.success && response.data) {
-      yield put(updateVoucherSuccess(normalizeVoucher(response.data)));
+    if (response.success) {
+      if (response.data) {
+        yield put(updateVoucherSuccess(normalizeVoucher(response.data)));
+      } else {
+        // Success but no data returned - create updated voucher object and refetch
+        const tempVoucher: Voucher = {
+          id: id,
+          name: voucherData.name,
+          code: voucherData.code,
+          type: voucherData.type,
+          value: voucherData.value,
+          maxDiscount: voucherData.maxDiscount,
+          minOrderAmount: voucherData.minOrderAmount,
+          usageLimitTotal: voucherData.usageLimitTotal,
+          usageLimitPerUser: voucherData.usageLimitPerUser,
+          startAt: voucherData.startAt,
+          endAt: voucherData.endAt,
+          isActive: voucherData.isActive,
+          audienceType: voucherData.audienceType,
+          rankIds: voucherData.rankIds,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          usedCount: 0,
+        };
+        yield put(updateVoucherSuccess(tempVoucher));
+        
+        // Refetch to get actual data
+        const { voucher: voucherState }: RootState = yield select((state: RootState) => state);
+        const { filters } = voucherState;
+        yield put(fetchVouchersRequest({
+          page: 0,
+          name: filters.name || undefined,
+          isActive: filters.isActive === null ? undefined : filters.isActive,
+          sortBy: filters.sortBy,
+          sortDirection: filters.sortDirection,
+        }));
+      }
     } else {
       yield put(updateVoucherFailure(response.message || 'Failed to update voucher'));
     }

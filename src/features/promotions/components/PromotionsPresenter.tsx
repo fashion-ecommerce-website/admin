@@ -310,10 +310,22 @@ export const PromotionsPresenter: React.FC<PromotionsPresenterProps> = ({
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                           <div>
                             <div className="font-medium">
-                              {new Date(promotion.startAt).toLocaleDateString()}
+                              {new Date(promotion.startAt).toLocaleString('vi-VN', { 
+                                day: '2-digit', 
+                                month: '2-digit', 
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
                             </div>
                             <div className="text-xs text-gray-600">
-                              to {new Date(promotion.endAt).toLocaleDateString()}
+                              to {new Date(promotion.endAt).toLocaleString('vi-VN', { 
+                                day: '2-digit', 
+                                month: '2-digit', 
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
                             </div>
                             {new Date(promotion.endAt) < new Date() && (
                               <div className="text-xs text-red-600 font-medium">
@@ -351,26 +363,38 @@ export const PromotionsPresenter: React.FC<PromotionsPresenterProps> = ({
                             <span className="text-sm font-medium text-black">
                               Status
                             </span>
-                            <button
-                              onClick={() => onTogglePromotionActive(promotion.id)}
-                              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
-                                promotion.isActive ? "bg-black" : "bg-gray-300"
-                              }`}
-                              aria-label={`Toggle status - currently ${
-                                promotion.isActive ? "active" : "inactive"
-                              }`}
-                              title={`Click to ${
-                                promotion.isActive ? "deactivate" : "activate"
-                              } promotion`}
-                            >
-                              <span
-                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                  promotion.isActive
-                                    ? "translate-x-6"
-                                    : "translate-x-1"
-                                }`}
-                              />
-                            </button>
+                            {(() => {
+                              const isExpired = new Date(promotion.endAt) < new Date();
+                              const cannotActivate = isExpired && !promotion.isActive;
+                              
+                              return (
+                                <button
+                                  onClick={() => !cannotActivate && onTogglePromotionActive(promotion.id)}
+                                  disabled={cannotActivate}
+                                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                    cannotActivate 
+                                      ? "bg-gray-200 cursor-not-allowed opacity-50" 
+                                      : `cursor-pointer ${promotion.isActive ? "bg-black" : "bg-gray-300"}`
+                                  }`}
+                                  aria-label={`Toggle status - currently ${
+                                    promotion.isActive ? "active" : "inactive"
+                                  }`}
+                                  title={
+                                    cannotActivate 
+                                      ? "Cannot activate an expired promotion" 
+                                      : `Click to ${promotion.isActive ? "deactivate" : "activate"} promotion`
+                                  }
+                                >
+                                  <span
+                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                      promotion.isActive
+                                        ? "translate-x-6"
+                                        : "translate-x-1"
+                                    }`}
+                                  />
+                                </button>
+                              );
+                            })()}
                           </div>
                         </td>
                       </tr>

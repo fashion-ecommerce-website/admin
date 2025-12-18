@@ -110,3 +110,11 @@ export interface CreateUserRequest {
   firstName?: string;
   lastName?: string;
 }
+
+// User Rank interface (from API response)
+export interface UserRank {
+  id: number;
+  code: string;
+  name: string;
+  createdAt: string;
+}

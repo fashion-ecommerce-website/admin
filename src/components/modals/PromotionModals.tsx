@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Promotion, CreatePromotionRequest, PromotionTarget, PromotionTargetType } from '../../types/promotion.types';
 import { categoryApi, CategoryBackend } from '../../services/api/categoryApi';
 import { productApi } from '../../services/api/productApi';
-import { promotionApi } from '../../services/api/promotionApi';
 import { SearchableSelect } from '../ui/SearchableSelect';
 import { CustomDropdown } from '../ui/CustomDropdown';
 import { useToast } from '../../providers/ToastProvider';
@@ -31,14 +30,16 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
   title,
   onTargetsUpdated,
 }) => {
-  const { showError, showSuccess } = useToast();
+  const { showError } = useToast();
   
   const [formData, setFormData] = useState({
     name: '',
     type: 'PERCENT' as const,
     value: '' as number | '',
     startAt: '',
+    startTime: '00:00',
     endAt: '',
+    endTime: '23:59',
     isActive: true,
   });
   
@@ -47,9 +48,26 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
     targetType: 'CATEGORY',
     targetId: '',
   });
-  const [isTargetLoading, setIsTargetLoading] = useState(false);
   
   const isEditMode = !!promotion;
+  
+  // Check if promotion is currently ongoing (startAt <= now <= endAt)
+  const isPromotionOngoing = isEditMode && promotion ? (() => {
+    const now = new Date();
+    const startAt = new Date(promotion.startAt);
+    const endAt = new Date(promotion.endAt);
+    return now >= startAt && now <= endAt;
+  })() : false;
+  
+  // Check if promotion is expired (endAt < now)
+  const isPromotionExpired = isEditMode && promotion ? (() => {
+    const now = new Date();
+    const endAt = new Date(promotion.endAt);
+    return now > endAt;
+  })() : false;
+  
+  // Combined readonly state - cannot edit if ongoing or expired
+  const isReadOnly = isPromotionOngoing || isPromotionExpired;
   
   // Data for dropdowns
   const [categories, setCategories] = useState<TargetOption[]>([]);
@@ -138,12 +156,22 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
 
   useEffect(() => {
     if (promotion) {
+      // Parse time from promotion dates
+      const startTimePart = promotion.startAt.includes('T') 
+        ? promotion.startAt.split('T')[1]?.substring(0, 5) || '00:00'
+        : '00:00';
+      const endTimePart = promotion.endAt.includes('T')
+        ? promotion.endAt.split('T')[1]?.substring(0, 5) || '23:59'
+        : '23:59';
+      
       setFormData({
         name: promotion.name,
         type: promotion.type,
         value: promotion.value,
         startAt: promotion.startAt.split('T')[0],
+        startTime: startTimePart,
         endAt: promotion.endAt.split('T')[0],
+        endTime: endTimePart,
         isActive: promotion.isActive,
       });
       setTargets(promotion.targets || []);
@@ -153,7 +181,9 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
         type: 'PERCENT',
         value: '',
         startAt: '',
+        startTime: '00:00',
         endAt: '',
+        endTime: '23:59',
         isActive: true,
       });
       setTargets([]);
@@ -165,8 +195,8 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
     setNewTarget({ targetType: type, targetId: '' });
   };
 
-  // Add target - for edit mode, call API directly
-  const handleAddTarget = async () => {
+  // Add target - update local state only (will be sent with form submit)
+  const handleAddTarget = () => {
     if (newTarget.targetId === '' || newTarget.targetId <= 0) {
       showError('Validation Error', 'Please select a target');
       return;
@@ -181,62 +211,13 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
       return;
     }
 
-    if (isEditMode && promotion) {
-      // Edit mode: call API to add target
-      setIsTargetLoading(true);
-      try {
-        const result = await promotionApi.upsertTargets(promotion.id, {
-          items: [{ targetType: newTarget.targetType, targetId: newTarget.targetId }]
-        });
-        
-        if (result.success) {
-          setTargets([...targets, { targetType: newTarget.targetType, targetId: newTarget.targetId }]);
-          setNewTarget({ ...newTarget, targetId: '' });
-          showSuccess('Success', 'Target added successfully');
-          onTargetsUpdated?.();
-        } else {
-          showError('Error', result.message || 'Failed to add target');
-        }
-      } catch (error) {
-        console.error('Error adding target:', error);
-        showError('Error', 'Failed to add target');
-      } finally {
-        setIsTargetLoading(false);
-      }
-    } else {
-      // Create mode: just update local state
-      setTargets([...targets, { targetType: newTarget.targetType, targetId: newTarget.targetId }]);
-      setNewTarget({ ...newTarget, targetId: '' });
-    }
+    setTargets([...targets, { targetType: newTarget.targetType, targetId: newTarget.targetId }]);
+    setNewTarget({ ...newTarget, targetId: '' });
   };
 
-  // Remove target - for edit mode, call API directly
-  const handleRemoveTarget = async (target: PromotionTarget, index: number) => {
-    if (isEditMode && promotion) {
-      // Edit mode: call API to remove target
-      setIsTargetLoading(true);
-      try {
-        const result = await promotionApi.removeTargets(promotion.id, [
-          { targetType: target.targetType, targetId: target.targetId }
-        ]);
-        
-        if (result.success) {
-          setTargets(targets.filter((_, i) => i !== index));
-          showSuccess('Success', 'Target removed successfully');
-          onTargetsUpdated?.();
-        } else {
-          showError('Error', result.message || 'Failed to remove target');
-        }
-      } catch (error) {
-        console.error('Error removing target:', error);
-        showError('Error', 'Failed to remove target');
-      } finally {
-        setIsTargetLoading(false);
-      }
-    } else {
-      // Create mode: just update local state
-      setTargets(targets.filter((_, i) => i !== index));
-    }
+  // Remove target - update local state only (will be sent with form submit)
+  const handleRemoveTarget = (_target: PromotionTarget, index: number) => {
+    setTargets(targets.filter((_, i) => i !== index));
   };
 
   // Get display name for target
@@ -295,8 +276,12 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
       return;
     }
     
-    if (new Date(formData.startAt) >= new Date(formData.endAt)) {
-      showError('Validation Error', 'Start date must be before end date');
+    // Create full datetime strings for comparison
+    const startDateTime = new Date(`${formData.startAt}T${formData.startTime}:00`);
+    const endDateTime = new Date(`${formData.endAt}T${formData.endTime}:59`);
+    
+    if (startDateTime >= endDateTime) {
+      showError('Validation Error', 'Start date/time must be before end date/time');
       return;
     }
     
@@ -309,11 +294,9 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
     const submitData: CreatePromotionRequest = {
       ...formData,
       value: valueNum,
-      startAt: `${formData.startAt}T00:00:00`,
-      endAt: `${formData.endAt}T23:59:59`,
-      // For edit mode, don't send targets (managed via API)
-      // For create mode, send targets
-      targets: isEditMode ? undefined : targets,
+      startAt: `${formData.startAt}T${formData.startTime}:00`,
+      endAt: `${formData.endAt}T${formData.endTime}:59`,
+      targets: targets,
     };
     
     onSubmit(submitData);
@@ -333,6 +316,44 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
             ✕
           </button>
         </div>
+
+        {/* Warning banner for ongoing promotion */}
+        {isPromotionOngoing && (
+          <div className="mb-4 p-4 bg-yellow-50 border border-yellow-300 rounded-md">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <div>
+                <p className="text-sm font-medium text-yellow-800">
+                  This promotion is currently ongoing
+                </p>
+                <p className="text-xs text-yellow-700 mt-1">
+                  You cannot edit a promotion that is in progress. Please wait until it ends or deactivate it first.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Warning banner for expired promotion */}
+        {isPromotionExpired && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-300 rounded-md">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-red-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <div>
+                <p className="text-sm font-medium text-red-800">
+                  This promotion has expired
+                </p>
+                <p className="text-xs text-red-700 mt-1">
+                  You cannot edit an expired promotion. Please create a new promotion instead.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Warning Notice */}
@@ -359,7 +380,8 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
+                disabled={isReadOnly}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black ${isReadOnly ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                 placeholder="e.g., Mid-season Sale"
               />
             </div>
@@ -385,7 +407,8 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
               type="number"
               value={formData.value}
               onChange={(e) => setFormData({ ...formData, value: e.target.value === '' ? '' : Number(e.target.value) })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
+              disabled={isReadOnly}
+              className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black ${isReadOnly ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               min="0"
               max="100"
               step="1"
@@ -397,26 +420,46 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Start Date <span className="text-red-500">*</span>
+                Start Date & Time <span className="text-red-500">*</span>
               </label>
-              <input
-                type="date"
-                value={formData.startAt}
-                onChange={(e) => setFormData({ ...formData, startAt: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  value={formData.startAt}
+                  onChange={(e) => setFormData({ ...formData, startAt: e.target.value })}
+                  disabled={isReadOnly}
+                  className={`flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black ${isReadOnly ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                />
+                <input
+                  type="time"
+                  value={formData.startTime}
+                  onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                  disabled={isReadOnly}
+                  className={`w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black ${isReadOnly ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                />
+              </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                End Date <span className="text-red-500">*</span>
+                End Date & Time <span className="text-red-500">*</span>
               </label>
-              <input
-                type="date"
-                value={formData.endAt}
-                onChange={(e) => setFormData({ ...formData, endAt: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  value={formData.endAt}
+                  onChange={(e) => setFormData({ ...formData, endAt: e.target.value })}
+                  disabled={isReadOnly}
+                  className={`flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black ${isReadOnly ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                />
+                <input
+                  type="time"
+                  value={formData.endTime}
+                  onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                  disabled={isReadOnly}
+                  className={`w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black ${isReadOnly ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                />
+              </div>
             </div>
           </div>
 
@@ -426,15 +469,16 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
               id="isActive"
               checked={formData.isActive}
               onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-              className="h-4 w-4 text-black focus:ring-black border-gray-300 rounded accent-black"
+              disabled={isReadOnly}
+              className={`h-4 w-4 text-black focus:ring-black border-gray-300 rounded accent-black ${isReadOnly ? 'cursor-not-allowed' : ''}`}
             />
-            <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
+            <label htmlFor="isActive" className={`ml-2 block text-sm text-gray-700 ${isReadOnly ? 'text-gray-400' : ''}`}>
               Active promotion
             </label>
           </div>
 
           {/* Targets Section */}
-          <div className="border-t pt-4">
+          <div className={`border-t pt-4 ${isReadOnly ? 'opacity-60' : ''}`}>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Promotion Targets <span className="text-red-500">*</span>
             </label>
@@ -449,7 +493,7 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
                   { value: 'PRODUCT', label: 'Product' },
                   { value: 'SKU', label: 'Product Detail' },
                 ]}
-                disabled={loadingOptions || isTargetLoading}
+                disabled={loadingOptions || isReadOnly}
                 className="w-40"
               />
               
@@ -458,17 +502,17 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
                 value={newTarget.targetId}
                 onChange={(value) => setNewTarget({ ...newTarget, targetId: value })}
                 placeholder={loadingOptions ? 'Loading...' : `Select ${newTarget.targetType === 'SKU' ? 'Product Detail' : newTarget.targetType}`}
-                disabled={loadingOptions || isTargetLoading}
+                disabled={loadingOptions || isReadOnly}
                 className="flex-1"
               />
               
               <button
                 type="button"
                 onClick={handleAddTarget}
-                disabled={newTarget.targetId === '' || loadingOptions || isTargetLoading}
+                disabled={newTarget.targetId === '' || loadingOptions || isReadOnly}
                 className="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isTargetLoading ? 'Adding...' : 'Add'}
+                Add
               </button>
             </div>
 
@@ -483,14 +527,15 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
                       </span>
                       {getTargetDisplayName(target)}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveTarget(target, index)}
-                      disabled={isTargetLoading}
-                      className="text-red-600 hover:text-red-800 cursor-pointer disabled:opacity-50"
-                    >
-                      ✕
-                    </button>
+                    {!isReadOnly && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTarget(target, index)}
+                        className="text-red-600 hover:text-red-800 cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -507,14 +552,16 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
               onClick={onClose}
               className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 cursor-pointer"
             >
-              Cancel
+              {isReadOnly ? 'Close' : 'Cancel'}
             </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 cursor-pointer"
-            >
-              {promotion ? 'Update Promotion' : 'Create Promotion'}
-            </button>
+            {!isReadOnly && (
+              <button
+                type="submit"
+                className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 cursor-pointer"
+              >
+                {promotion ? 'Update Promotion' : 'Create Promotion'}
+              </button>
+            )}
           </div>
         </form>
       </div>

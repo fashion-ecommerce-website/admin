@@ -6,6 +6,7 @@ import {
   GetUsersRequest,
   UpdateUserRequest,
   CreateUserRequest,
+  UserRank,
 } from '../../types/user.types';
 
 class UserApi {
@@ -196,6 +197,21 @@ class UserApi {
         success: false,
         data: null,
         message: error instanceof Error ? error.message : 'Failed to fetch user statistics',
+      };
+    }
+  }
+
+  /**
+   * Get all user ranks (membership tiers)
+   */
+  async getUserRanks(): Promise<ApiResponse<UserRank[]>> {
+    try {
+      return await adminApiClient.get<UserRank[]>(`${this.endpoint}/ranks`);
+    } catch (error) {
+      return {
+        success: false,
+        data: null,
+        message: error instanceof Error ? error.message : 'Failed to fetch user ranks',
       };
     }
   }
