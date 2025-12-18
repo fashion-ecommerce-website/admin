@@ -23,6 +23,32 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
   title,
 }) => {
   const { showError } = useToast();
+  
+  const isEditMode = !!voucher;
+  
+  // Check voucher status for edit restrictions
+  // CASE 1: now < start_at → Can edit ALL fields
+  // CASE 2: start_at ≤ now ≤ end_at (Ongoing) → Only allow INCREASING usage_limit_total
+  // CASE 3: now > end_at (Expired) → NO updates allowed
+  const getVoucherStatus = () => {
+    if (!isEditMode || !voucher) return 'upcoming';
+    
+    const now = new Date();
+    const startAt = new Date(voucher.startAt);
+    const endAt = new Date(voucher.endAt);
+    
+    if (now < startAt) return 'upcoming';
+    if (now > endAt) return 'expired';
+    return 'ongoing';
+  };
+  
+  const voucherStatus = getVoucherStatus();
+  const isExpired = voucherStatus === 'expired';
+  const isOngoing = voucherStatus === 'ongoing';
+  
+  // Store original usageLimitTotal for comparison (only allow increase when ongoing)
+  const originalUsageLimitTotal = voucher?.usageLimitTotal || 0;
+  
   const [formData, setFormData] = useState<{
     name: string;
     type: 'PERCENT' | 'FIXED';
@@ -160,6 +186,21 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // CASE 3: Expired voucher - no updates allowed
+    if (isExpired) {
+      showError('Cannot update an expired voucher');
+      return;
+    }
+    
+    // CASE 2: Ongoing voucher - only allow increasing usage_limit_total
+    if (isOngoing) {
+      const newUsageLimitTotal = parseInt(formData.usageLimitTotal.toString()) || 0;
+      if (newUsageLimitTotal <= originalUsageLimitTotal) {
+        showError(`Total Usage Limit must be greater than current value (${originalUsageLimitTotal})`);
+        return;
+      }
+    }
+    
     // Validation - Check all required fields
     if (!formData.name.trim()) {
       showError('Please enter voucher name');
@@ -291,6 +332,44 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
           </button>
         </div>
 
+        {/* Warning banner for ongoing voucher */}
+        {isOngoing && (
+          <div className="mb-4 p-4 bg-yellow-50 border border-yellow-300 rounded-md">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-yellow-600 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <div>
+                <p className="text-sm font-medium text-yellow-800">
+                  This voucher is currently active
+                </p>
+                <p className="text-xs text-yellow-700 mt-1">
+                  You can only <strong>increase</strong> the Total Usage Limit. Other fields cannot be modified.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Warning banner for expired voucher */}
+        {isExpired && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-300 rounded-md">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-red-600 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <div>
+                <p className="text-sm font-medium text-red-800">
+                  This voucher has expired
+                </p>
+                <p className="text-xs text-red-700 mt-1">
+                  You cannot edit an expired voucher. Please create a new voucher instead.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -300,7 +379,8 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
+              disabled={isExpired || isOngoing}
+              className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black ${(isExpired || isOngoing) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               required
             />
           </div>
@@ -317,7 +397,8 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
                   { value: 'PERCENT', label: 'Percentage (%)' },
                   { value: 'FIXED', label: 'Fixed Amount (VND)' }
                 ]}
-                bgColor="bg-gray-100"
+                disabled={isExpired || isOngoing}
+                bgColor={isExpired || isOngoing ? "bg-gray-100" : "bg-gray-100"}
                 borderRadius="rounded-md"
                 padding="px-3 py-2"
               />
@@ -332,7 +413,8 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
                   type="number"
                   value={formData.value}
                   onChange={(e) => setFormData({ ...formData, value: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
+                  disabled={isExpired || isOngoing}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black ${(isExpired || isOngoing) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                   min="0"
                   max="100"
                   step="0.01"
@@ -344,7 +426,8 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
                   type="text"
                   value={getFormattedValue(formData.value)}
                   onChange={(e) => handleCurrencyChange('value', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
+                  disabled={isExpired || isOngoing}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black ${(isExpired || isOngoing) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                   placeholder="0"
                   required
                 />
@@ -362,7 +445,8 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
                   type="text"
                   value={getFormattedValue(formData.maxDiscount)}
                   onChange={(e) => handleCurrencyChange('maxDiscount', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
+                  disabled={isExpired || isOngoing}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black ${(isExpired || isOngoing) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                   placeholder="0"
                   required
                 />
@@ -377,7 +461,8 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
                 type="text"
                 value={getFormattedValue(formData.minOrderAmount)}
                 onChange={(e) => handleCurrencyChange('minOrderAmount', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
+                disabled={isExpired || isOngoing}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black ${(isExpired || isOngoing) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                 placeholder="0"
                 required
               />
@@ -388,15 +473,24 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Total Usage Limit <span className="text-red-500">*</span>
+                {isOngoing && (
+                  <span className="ml-2 text-xs text-green-600 font-normal">(Can only increase)</span>
+                )}
               </label>
               <input
                 type="number"
                 value={formData.usageLimitTotal}
                 onChange={(e) => setFormData({ ...formData, usageLimitTotal: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
-                min="1"
+                disabled={isExpired}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black ${isExpired ? 'bg-gray-100 cursor-not-allowed' : ''} ${isOngoing ? 'border-green-500 ring-1 ring-green-200' : ''}`}
+                min={isOngoing ? originalUsageLimitTotal + 1 : 1}
                 required
               />
+              {isOngoing && (
+                <p className="mt-1 text-xs text-gray-500">
+                  Current: {originalUsageLimitTotal}. Must be greater than current value.
+                </p>
+              )}
             </div>
 
             <div>
@@ -407,7 +501,8 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
                 type="number"
                 value={formData.usageLimitPerUser}
                 onChange={(e) => setFormData({ ...formData, usageLimitPerUser: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
+                disabled={isExpired || isOngoing}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black ${(isExpired || isOngoing) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                 min="1"
                 required
               />
@@ -424,14 +519,16 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
                   type="date"
                   value={formData.startAt}
                   onChange={(e) => setFormData({ ...formData, startAt: e.target.value })}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
+                  disabled={isExpired || isOngoing}
+                  className={`flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black ${(isExpired || isOngoing) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                   required
                 />
                 <input
                   type="time"
                   value={formData.startTime}
                   onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
+                  disabled={isExpired || isOngoing}
+                  className={`px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black ${(isExpired || isOngoing) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                 />
               </div>
             </div>
@@ -445,14 +542,16 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
                   type="date"
                   value={formData.endAt}
                   onChange={(e) => setFormData({ ...formData, endAt: e.target.value })}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
+                  disabled={isExpired || isOngoing}
+                  className={`flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black ${(isExpired || isOngoing) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                   required
                 />
                 <input
                   type="time"
                   value={formData.endTime}
                   onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black"
+                  disabled={isExpired || isOngoing}
+                  className={`px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black ${(isExpired || isOngoing) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                 />
               </div>
             </div>
@@ -469,13 +568,14 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
                 { value: 'ALL', label: 'All Customers' },
                 { value: 'RANK', label: 'By Membership Rank' }
               ]}
+              disabled={isExpired || isOngoing}
               borderRadius="rounded-md"
               padding="px-3 py-2"
             />
           </div>
 
           {formData.audienceType === 'RANK' && (
-            <div>
+            <div className={isExpired || isOngoing ? 'opacity-60' : ''}>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Select Membership Ranks <span className="text-red-500">*</span>
               </label>
@@ -491,7 +591,9 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
                   {userRanks.map((rank) => (
                     <label
                       key={rank.id}
-                      className={`flex items-center space-x-2 p-3 border rounded-md cursor-pointer transition-colors ${
+                      className={`flex items-center space-x-2 p-3 border rounded-md transition-colors ${
+                        (isExpired || isOngoing) ? 'cursor-not-allowed' : 'cursor-pointer'
+                      } ${
                         formData.rankIds.includes(rank.id)
                           ? 'border-black bg-gray-100'
                           : 'border-gray-300 hover:border-gray-400'
@@ -501,7 +603,8 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
                         type="checkbox"
                         checked={formData.rankIds.includes(rank.id)}
                         onChange={() => handleRankToggle(rank.id)}
-                        className="h-4 w-4 text-black focus:ring-black border-gray-300 rounded accent-black"
+                        disabled={isExpired || isOngoing}
+                        className={`h-4 w-4 text-black focus:ring-black border-gray-300 rounded accent-black ${(isExpired || isOngoing) ? 'cursor-not-allowed' : ''}`}
                       />
                       <span className="text-sm font-medium text-black">{rank.name}</span>
                     </label>
@@ -525,9 +628,10 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
               id="isActive"
               checked={formData.isActive}
               onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-              className="h-4 w-4 text-black focus:ring-black border-gray-300 rounded accent-black"
+              disabled={isExpired || isOngoing}
+              className={`h-4 w-4 text-black focus:ring-black border-gray-300 rounded accent-black ${(isExpired || isOngoing) ? 'cursor-not-allowed' : ''}`}
             />
-            <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
+            <label htmlFor="isActive" className={`ml-2 block text-sm text-gray-700 ${(isExpired || isOngoing) ? 'text-gray-400' : ''}`}>
               Active voucher
             </label>
           </div>
@@ -538,14 +642,16 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
               onClick={onClose}
               className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 cursor-pointer"
             >
-              Cancel
+              {isExpired ? 'Close' : 'Cancel'}
             </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 cursor-pointer"
-            >
-              {voucher ? 'Update Voucher' : 'Create Voucher'}
-            </button>
+            {!isExpired && (
+              <button
+                type="submit"
+                className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 cursor-pointer"
+              >
+                {voucher ? 'Update Voucher' : 'Create Voucher'}
+              </button>
+            )}
           </div>
         </form>
       </div>

@@ -373,26 +373,38 @@ export const VouchersPresenter: React.FC<VouchersPresenterProps> = ({
                             <span className="text-sm font-medium text-black">
                               Status
                             </span>
-                            <button
-                              onClick={() => onToggleVoucherActive(voucher.id)}
-                              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
-                                voucher.isActive ? "bg-black" : "bg-gray-300"
-                              }`}
-                              aria-label={`Toggle status - currently ${
-                                voucher.isActive ? "active" : "inactive"
-                              }`}
-                              title={`Click to ${
-                                voucher.isActive ? "deactivate" : "activate"
-                              } voucher`}
-                            >
-                              <span
-                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                  voucher.isActive
-                                    ? "translate-x-6"
-                                    : "translate-x-1"
-                                }`}
-                              />
-                            </button>
+                            {(() => {
+                              const isExpired = new Date(voucher.endAt) < new Date();
+                              const cannotActivate = isExpired && !voucher.isActive;
+                              
+                              return (
+                                <button
+                                  onClick={() => !cannotActivate && onToggleVoucherActive(voucher.id)}
+                                  disabled={cannotActivate}
+                                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                    cannotActivate 
+                                      ? "bg-gray-200 cursor-not-allowed opacity-50" 
+                                      : `cursor-pointer ${voucher.isActive ? "bg-black" : "bg-gray-300"}`
+                                  }`}
+                                  aria-label={`Toggle status - currently ${
+                                    voucher.isActive ? "active" : "inactive"
+                                  }`}
+                                  title={
+                                    cannotActivate 
+                                      ? "Cannot activate an expired voucher" 
+                                      : `Click to ${voucher.isActive ? "deactivate" : "activate"} voucher`
+                                  }
+                                >
+                                  <span
+                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                      voucher.isActive
+                                        ? "translate-x-6"
+                                        : "translate-x-1"
+                                    }`}
+                                  />
+                                </button>
+                              );
+                            })()}
                           </div>
                         </td>
                       </tr>
