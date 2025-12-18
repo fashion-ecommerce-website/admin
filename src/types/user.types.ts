@@ -34,13 +34,15 @@ export interface BackendUser {
   active: boolean;
 }
 
-// User list response from API
+// User list response from API (matches backend PageResult)
 export interface UserListResponse {
-  users: BackendUser[];
-  total?: number;
-  page?: number;
-  limit?: number;
-  totalPages?: number;
+  items: BackendUser[];
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
 }
 
 // User state for Redux store
@@ -85,12 +87,7 @@ export const convertBackendUserToUser = (backendUser: BackendUser): User => {
 // API request types
 export interface GetUsersRequest {
   page?: number;
-  limit?: number;
-  search?: string;
-  status?: string;
-  role?: string;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  pageSize?: number;
 }
 
 export interface UpdateUserRequest {

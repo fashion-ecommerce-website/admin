@@ -23,6 +23,7 @@ export interface Refund {
   stripeRefundId: string | null;
   createdAt: string;
   updatedAt: string;
+  imageUrls: string[] | null; // List of image URLs from Cloudinary
 }
 
 // Re-export BackendPaginatedResponse as PaginatedResponse

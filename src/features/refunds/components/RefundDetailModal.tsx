@@ -133,6 +133,31 @@ export const RefundDetailModal: React.FC<RefundDetailModalProps> = ({
               </p>
             </div>
 
+            {/* Evidence Images */}
+            {refund.imageUrls && refund.imageUrls.length > 0 && (
+              <div>
+                <span className="text-sm font-medium text-gray-600">Evidence Images</span>
+                <div className="mt-2 flex gap-3 flex-wrap">
+                  {refund.imageUrls.map((url, index) => (
+                    <a
+                      key={index}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={url}
+                        alt={`Refund image ${index + 1}`}
+                        className="w-20 h-20 object-cover rounded-md border border-gray-200 hover:border-gray-400 transition-colors"
+                      />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Dates */}
             <div className="grid grid-cols-2 gap-4">
               <div>

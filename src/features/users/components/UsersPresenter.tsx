@@ -2,8 +2,31 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { User } from '../../../types/user.types';
-import { CustomDropdown } from '../../../components/ui';
 import { Skeleton } from '../../../components/ui/Skeleton';
+
+// UserAvatar component with fallback to initial letter
+const UserAvatar: React.FC<{ user: User; className?: string }> = ({ user, className = '' }) => {
+  const [imgError, setImgError] = useState(false);
+  const hasValidAvatar = user.avatar && !imgError;
+
+  if (hasValidAvatar) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={user.avatar}
+        alt={user.name}
+        className={`h-12 w-12 rounded-full object-cover shadow-lg group-hover:scale-110 transition-transform duration-200 ${className}`}
+        onError={() => setImgError(true)}
+      />
+    );
+  }
+
+  return (
+    <div className={`h-12 w-12 bg-gray-700 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-200 ${className}`}>
+      <span className="text-white font-bold text-lg">{user.name.charAt(0).toUpperCase()}</span>
+    </div>
+  );
+};
 
 interface UsersViewModel {
   users: User[];
@@ -28,6 +51,12 @@ interface UsersViewModel {
   startIndex: number;
   endIndex: number;
   currentUsers: User[];
+  // Server pagination
+  serverPage: number;
+  serverPageSize: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+  isFiltering: boolean;
 }
 
 interface UsersHandlers {
@@ -61,26 +90,21 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
     apiError,
     searchTerm,
     statusFilter,
-    roleFilter,
-    sortBy,
-    sortOrder,
     itemsPerPage,
     startIndex,
-    endIndex,
     totalItems,
     currentUsers,
+    serverPageSize,
+    isFiltering,
   } = vm;
 
   const {
     setSearchTerm,
     setStatusFilter,
     setRoleFilter,
-    setSortBy,
-    setSortOrder,
     goToPrevPage,
     goToNextPage,
     goToPage,
-    handleExportExcel,
     handleEditUser,
     handleToggleUserStatus,
   } = handlers;
@@ -121,14 +145,7 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
               <p className="text-gray-600">Manage user information and permissions across the system</p>
             </div>
           </div>
-          <div className="flex items-center space-x-3">
-            <button onClick={handleExportExcel} className="cursor-pointer bg-black text-white px-6 py-3 rounded-xl font-medium  focus:outline-none focus:ring-2 focus:ring-offset-2  transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
-              <div className="flex items-center space-x-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
-                <span>Export Excel</span>
-              </div>
-            </button>
-          </div>
+
         </div>
 
         {/* Search & Filters */}
@@ -198,48 +215,6 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-bold text-gray-900">User List</h3>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-900">Show:</span>
-                  <CustomDropdown
-                    value={itemsPerPage.toString()}
-                    onChange={(value) => { handlers.setItemsPerPage(Number(value)); handlers.setCurrentPage(1); }}
-                    options={[
-                      { value: '5', label: '5' },
-                      { value: '10', label: '10' },
-                      { value: '20', label: '20' },
-                      { value: '50', label: '50' }
-                    ]}
-                    padding="px-2 py-1"
-                    borderRadius="rounded-lg"
-                    bgColor="bg-white"
-                    className="text-sm"
-                  />
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-900">Sort by:</span>
-                  <CustomDropdown
-                    value={sortBy}
-                    onChange={(value) => setSortBy(value)}
-                    options={[
-                      { value: 'joinDate', label: 'Join date' },
-                      { value: 'name', label: 'Name A-Z' },
-                      { value: 'lastLogin', label: 'Latest activity' },
-                      { value: 'totalOrders', label: 'Orders' },
-                      { value: 'totalSpent', label: 'Total spent' }
-                    ]}
-                    padding="px-2 py-1"
-                    borderRadius="rounded-lg"
-                    bgColor="bg-white"
-                    className="text-sm"
-                  />
-                  <button onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')} className="cursor-pointer ml-2 p-1 text-gray-600 hover:text-gray-800 rounded border border-gray-300 hover:border-gray-400 transition-colors">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                    </svg>
-                  </button>
-                </div>
               </div>
             </div>
           </div>
@@ -315,7 +290,7 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
                           <h3 className="text-lg font-medium text-gray-900 mb-2">No users found</h3>
                           <p className="text-gray-500">Try adjusting filters or your search keywords.</p>
                         </div>
-                        {(searchTerm || statusFilter || roleFilter) && (
+                        {(searchTerm || statusFilter) && (
                           <button onClick={() => { setSearchTerm(''); setStatusFilter(''); setRoleFilter(''); }} className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200">Clear all filters</button>
                         )}
                       </div>
@@ -327,9 +302,7 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
                       <td className="px-8 py-6">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-12 w-12">
-                            <div className={`h-12 w-12 bg-gray-700 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-200`}>
-                              <span className="text-white font-bold text-lg">{user.name.charAt(0)}</span>
-                            </div>
+                            <UserAvatar user={user} />
                           </div>
                           <div className="ml-4">
                             <div className="text-sm font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors">{user.name}</div>
@@ -393,8 +366,12 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center space-x-4">
-                <div className="text-sm text-gray-700">Showing <span className="font-semibold text-gray-800">{startIndex + 1}-{Math.min(endIndex, totalItems)}</span> of <span className="font-semibold text-gray-900">{totalItems}</span> users</div>
-                
+                <div className="text-sm text-gray-700">
+                  Showing <span className="font-semibold text-gray-800">
+                    {startIndex + 1}-{Math.min(startIndex + (isFiltering ? itemsPerPage : serverPageSize), totalItems)}
+                  </span> of <span className="font-semibold text-gray-900">{totalItems}</span> users
+                  {isFiltering && <span className="text-gray-500 ml-2">(filtered)</span>}
+                </div>
               </div>
               <div className="flex items-center justify-center sm:justify-end space-x-2">
                 <button onClick={goToPrevPage} disabled={vm.currentPage === 1} className="cursor-pointer flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 disabled:hover:scale-100">

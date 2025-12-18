@@ -315,8 +315,8 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
                 });
               }}
               options={[
-                { value: "createdAt:asc", label: "Newest First" },
-                { value: "createdAt:desc", label: "Oldest First" },
+                { value: "createdAt:desc", label: "Newest First" },
+                { value: "createdAt:asc", label: "Oldest First" },
                 { value: "title:asc", label: "Name A-Z" },
                 { value: "title:desc", label: "Name Z-A" },
               ]}
