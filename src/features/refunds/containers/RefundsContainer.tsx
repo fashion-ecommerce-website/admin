@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '../../../hooks/redux';
 import { useMinimumLoadingTime } from '../../../hooks/useMinimumLoadingTime';
 import { useToast } from '../../../providers/ToastProvider';
@@ -29,6 +29,9 @@ export const RefundsContainer: React.FC = () => {
     adminNote: string;
   } | null>(null);
 
+  // Track pending operation for success toast
+  const [pendingOperation, setPendingOperation] = useState<string | null>(null);
+
   // Selectors
   const refunds = useAppSelector((state) => state.refunds.refunds);
   const loading = useAppSelector((state) => state.refunds.loading);
@@ -38,7 +41,23 @@ export const RefundsContainer: React.FC = () => {
   const totalPages = useAppSelector((state) => state.refunds.totalPages);
   const pageSize = useAppSelector((state) => state.refunds.pageSize);
 
+  // Track previous loading state
+  const prevLoading = useRef(loading);
+
   const displayLoading = useMinimumLoadingTime(loading, 500);
+
+  // Show success toast when operation completes successfully
+  useEffect(() => {
+    if (prevLoading.current && !loading && !error && pendingOperation) {
+      showToast({
+        type: 'success',
+        title: 'Success',
+        message: pendingOperation,
+      });
+      setPendingOperation(null);
+    }
+    prevLoading.current = loading;
+  }, [loading, error, showToast, pendingOperation]);
 
   // Filter refunds by search term (client-side)
   const filteredRefunds = useMemo(() => {
@@ -125,17 +144,13 @@ export const RefundsContainer: React.FC = () => {
   };
 
   const handleApproveFromModal = (refundId: number, adminNote: string) => {
+    setPendingOperation('The refund request has been approved and processed.');
     dispatch(
       updateRefundStatusRequest({
         refundId,
         data: { status: 'APPROVED', adminNote },
       })
     );
-    showToast({
-      type: 'success',
-      title: 'Refund Approved',
-      message: 'The refund request has been approved and processed.',
-    });
     handleCloseDetail();
   };
 
@@ -148,17 +163,13 @@ export const RefundsContainer: React.FC = () => {
       });
       return;
     }
+    setPendingOperation('The refund request has been rejected.');
     dispatch(
       updateRefundStatusRequest({
         refundId,
         data: { status: 'REJECTED', adminNote },
       })
     );
-    showToast({
-      type: 'success',
-      title: 'Refund Rejected',
-      message: 'The refund request has been rejected.',
-    });
     handleCloseDetail();
   };
 
@@ -176,6 +187,12 @@ export const RefundsContainer: React.FC = () => {
       return;
     }
 
+    setPendingOperation(
+      action === 'approve'
+        ? 'The refund request has been approved and processed.'
+        : 'The refund request has been rejected.'
+    );
+
     dispatch(
       updateRefundStatusRequest({
         refundId: refund.id,
@@ -185,15 +202,6 @@ export const RefundsContainer: React.FC = () => {
         },
       })
     );
-
-    showToast({
-      type: 'success',
-      title: action === 'approve' ? 'Refund Approved' : 'Refund Rejected',
-      message:
-        action === 'approve'
-          ? 'The refund request has been approved and processed.'
-          : 'The refund request has been rejected.',
-    });
 
     setConfirmModalOpen(false);
     setPendingAction(null);

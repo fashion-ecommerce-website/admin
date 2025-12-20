@@ -6,22 +6,7 @@ import { useToast } from "@/providers/ToastProvider";
 import { productApi } from "@/services/api/productApi";
 import { ProductDetail } from "@/types/product.types";
 import { CurrencyInput } from "../ui";
-
-// Color map with hex values
-const COLOR_MAP: { [key: string]: string } = {
-  black: "#2c2d31",
-  white: "#d6d8d3",
-  "dark blue": "#14202e",
-  red: "#cf2525",
-  blue: "#8ba6c1",
-  pink: "#d4a2bb",
-  yellow: "#dac7a7",
-  orange: "#c69338",
-  mint: "#60a1a7",
-  brown: "#624e4f",
-  green: "#76715d",
-  gray: "#c6c6c4",
-};
+import { useEnums } from "@/hooks/useEnums";
 
 interface EditProductDetailModalProps {
   isOpen: boolean;
@@ -47,6 +32,7 @@ export const EditProductDetailModal: React.FC<EditProductDetailModalProps> = ({
   onConfirm,
 }) => {
   const { showError, showSuccess } = useToast();
+  const { colorMap, sizeMap } = useEnums();
   const [productDetail, setProductDetail] = useState<ProductDetail | null>(
     null
   );
@@ -166,12 +152,14 @@ export const EditProductDetailModal: React.FC<EditProductDetailModalProps> = ({
           // Update product detail with new color data and available sizes
           setProductDetail(response.data);
           setSelectedColor(newColor);
-          
+
           // Reset size selection and set first available size if exists
-          const availableSizes = Object.keys(response.data.mapSizeToQuantity || {});
+          const availableSizes = Object.keys(
+            response.data.mapSizeToQuantity || {}
+          );
           const firstSize = availableSizes[0] || "";
           setSelectedSize(firstSize);
-          
+
           // Update price and quantity based on first available size
           setPrice(response.data.price || 0);
           const quantityForSize = firstSize
@@ -255,7 +243,9 @@ export const EditProductDetailModal: React.FC<EditProductDetailModalProps> = ({
           setProductDetail(d);
           console.log("Product detail data:", d);
           setPrice(d.price ?? initialPrice ?? 0);
-          setSelectedColor(d.activeColor || d.color?.name || "");
+          // Set selected color with proper fallback
+          const colorName = d.activeColor || d.color?.name || "";
+          setSelectedColor(colorName);
           setSelectedSize(d.activeSize || "");
           const activeSize = d.activeSize || "";
           if (
@@ -291,31 +281,15 @@ export const EditProductDetailModal: React.FC<EditProductDetailModalProps> = ({
     showError,
   ]);
 
-  // Helper functions to map color and size names to IDs
+  // Helper functions to get color and size IDs from dynamic data
   const getColorId = (colorName: string): number => {
-    const colorMap: { [key: string]: number } = {
-      black: 1,
-      white: 2,
-      "dark blue": 3,
-      red: 4,
-      pink: 5,
-      orange: 6,
-      mint: 7,
-      brown: 8,
-      yellow: 9,
-    };
-    return colorMap[colorName.toLowerCase()];
+    const color = colorMap[colorName.toLowerCase()];
+    return color?.id || 1; // Default to ID 1 if not found
   };
 
   const getSizeId = (sizeName: string): number => {
-    const sizeMap: { [key: string]: number } = {
-      S: 1,
-      M: 2,
-      L: 3,
-      XL: 4,
-      F: 5,
-    };
-    return sizeMap[sizeName.toUpperCase()] || 1; // Default to S if not found
+    const size = sizeMap[sizeName.toUpperCase()];
+    return size?.id || 1; // Default to ID 1 if not found
   };
 
   const handleSave = async () => {
@@ -379,7 +353,7 @@ export const EditProductDetailModal: React.FC<EditProductDetailModalProps> = ({
 
   return (
     <div
-      className={`fixed inset-0 bg-black/75 flex items-end md:items-center justify-center z-50 transition-opacity duration-300 ${
+      className={`fixed inset-0 backdrop-blur-md bg-black/30 flex items-end md:items-center justify-center z-50 transition-opacity duration-300 ${
         isAnimating ? "opacity-100" : "opacity-0"
       }`}
       onClick={onClose}
@@ -604,8 +578,8 @@ export const EditProductDetailModal: React.FC<EditProductDetailModalProps> = ({
                     </label>
                     <div className="flex flex-wrap gap-2">
                       {productDetail.colors.map((color) => {
-                        const hexColor =
-                          COLOR_MAP[color.toLowerCase()] || "#000000";
+                        const colorData = colorMap[color.toLowerCase()];
+                        const hexColor = colorData?.hexCode || "#000000";
                         const isSelected =
                           selectedColor.toLowerCase() === color.toLowerCase();
                         return (
@@ -669,36 +643,45 @@ export const EditProductDetailModal: React.FC<EditProductDetailModalProps> = ({
                     )}
                 </div>
 
-                {/* Price Input */}
-                <CurrencyInput
-                  label="Price (VND)"
-                  value={price}
-                  onChange={setPrice}
-                  placeholder="Enter price in VND"
-                  min={0}
-                  step={1000}
-                  className="px-4 py-3"
-                />
-
-                {/* Quantity Input */}
-                <div>
-                  <label className="block text-sm font-medium text-black mb-3">
-                    Quantity
-                  </label>
-                  <input
-                    type="number"
-                    value={quantity}
-                    onChange={(e) => setQuantity(Number(e.target.value))}
-                    className="w-full text-black px-4 py-3 border border-gray-300 rounded-md"
-                    min="0"
-                    step="1"
-                    placeholder="Enter available quantity"
+                <div className="flex gap-4">
+                  {/* Price Input */}
+                  <CurrencyInput
+                    label="Price (VND)"
+                    value={price}
+                    onChange={setPrice}
+                    placeholder="Enter price in VND"
+                    min={0}
+                    step={1000}
+                    className="px-4 py-3"
                   />
+
+                  {/* Quantity Input */}
+                  <div>
+                    <label className="block text-sm font-medium text-black mb-2">
+                      Quantity
+                    </label>
+                    <input
+                      type="number"
+                      value={quantity}
+                      onChange={(e) => setQuantity(Number(e.target.value))}
+                      className="w-full text-black px-4 py-3 border border-gray-300 rounded-md"
+                      min="0"
+                      step="1"
+                      placeholder="Enter available quantity"
+                    />
+                  </div>
                 </div>
               </div>
 
               {/* Desktop Action Buttons */}
               <div className="hidden md:grid grid-cols-2 gap-3 mt-6">
+                <button
+                  onClick={onClose}
+                  type="button"
+                  className="bg-white text-black py-4 px-6 font-bold text-sm uppercase border border-gray-300 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
                 <button
                   onClick={handleSave}
                   disabled={saving}
@@ -707,19 +690,14 @@ export const EditProductDetailModal: React.FC<EditProductDetailModalProps> = ({
                 >
                   {saving ? "SAVING..." : "SAVE CHANGES"}
                 </button>
-                <button
-                  onClick={onClose}
-                  type="button"
-                  className="bg-white text-black py-4 px-6 font-bold text-sm uppercase border border-gray-300 hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
               </div>
             </div>
           </div>
         ) : (
           <div className="flex items-center justify-center h-full">
-            <p className="text-gray-500 text-sm">Unable to load product detail</p>
+            <p className="text-gray-500 text-sm">
+              Unable to load product detail
+            </p>
           </div>
         )}
       </div>

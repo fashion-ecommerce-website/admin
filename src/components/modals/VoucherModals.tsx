@@ -306,7 +306,7 @@ const VoucherModal: React.FC<VoucherModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50">
+    <div className="fixed inset-0 backdrop-blur-md bg-black/20 flex items-center justify-center z-50">
       <style dangerouslySetInnerHTML={{__html: `
         select option {
           background-color: white !important;
@@ -691,7 +691,7 @@ const DeleteVoucherModal: React.FC<DeleteVoucherModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50">
+    <div className="fixed inset-0 backdrop-blur-md bg-black/20 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md">
         <h2 className="text-xl font-bold text-black mb-4">Confirm Delete</h2>
         <p className="text-gray-700 mb-6">

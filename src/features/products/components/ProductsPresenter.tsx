@@ -65,13 +65,11 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
   onPageChange,
   onCreateProduct,
   onEditProduct,
-  onDeleteProduct,
   onToggleProductActive,
   onClearError,
   onEditProductDetail, // New prop
   onExportExcel, // New prop
   onCreateProductDetail, // New prop
-  onToggleProductDetailStatus, // New prop
 }) => {
   const [categoryMap, setCategoryMap] = useState<Record<number, string>>({});
   const [uploadedFiles, setUploadedFiles] = useState<

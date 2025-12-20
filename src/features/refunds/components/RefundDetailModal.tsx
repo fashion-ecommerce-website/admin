@@ -76,7 +76,7 @@ export const RefundDetailModal: React.FC<RefundDetailModalProps> = ({
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
         {/* Backdrop */}
         <div
-          className="fixed inset-0 bg-black/50 transition-opacity"
+          className="fixed inset-0 backdrop-blur-sm bg-black/20 transition-opacity"
           onClick={handleClose}
         />
 

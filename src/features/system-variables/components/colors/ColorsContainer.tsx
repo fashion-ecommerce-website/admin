@@ -38,6 +38,7 @@ export const ColorsContainer: React.FC<ColorsContainerProps> = ({ onPaginationCh
         if (res.success && res.data) {
             const data = res.data as ColorListResponse;
             console.log('🎨 Fetched colors:', data.items);
+            console.log('🎨 Sample color structure:', data.items[0]);
             setAllItems(data.items);
             applyFiltersAndPagination();
         } else {

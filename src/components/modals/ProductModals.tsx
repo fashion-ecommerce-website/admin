@@ -21,6 +21,7 @@ import { fetchProductsSilentRequest } from "@/features/products/redux/productSli
 import { RootState } from "@/store";
 import { productApi } from "@/services/api/productApi";
 import { CurrencyInput } from "../ui";
+import { useEnums } from "@/hooks/useEnums";
 
 interface BaseModalProps {
   isOpen: boolean;
@@ -33,30 +34,6 @@ interface DeleteProductModalProps extends BaseModalProps {
   product?: Product | null;
 }
 
-// Mock data for available variants - in real app, this would come from API
-const AVAILABLE_COLORS: VariantColor[] = [
-  { id: 1, name: "black", hex: "#2c2d31" },
-  { id: 2, name: "white", hex: "#d6d8d3" },
-  { id: 3, name: "dark blue", hex: "#14202e" },
-  { id: 4, name: "red", hex: "#cf2525" },
-  { id: 5, name: "pink", hex: "#d4a2bb" },
-  { id: 6, name: "orange", hex: "#c69338" },
-  { id: 7, name: "mint", hex: "#60a1a7" },
-  { id: 8, name: "brown", hex: "#624e4f" },
-  { id: 9, name: "yellow", hex: "#dac7a7" },
-  { id: 10, name: "blue", hex: "#8ba6c1" },
-  { id: 11, name: "gray", hex: "#c6c6c4" },
-  { id: 12, name: "green", hex: "#76715d" },
-];
-
-const AVAILABLE_SIZES: VariantSize[] = [
-  { id: 1, code: "S", label: "S" },
-  { id: 2, code: "M", label: "M" },
-  { id: 3, code: "L", label: "L" },
-  { id: 4, code: "XL", label: "XL" },
-  { id: 5, code: "XXL", label: "XXL" },
-];
-
 // Base Modal Component
 const Modal: React.FC<
   BaseModalProps & { children: React.ReactNode; title: string }
@@ -67,7 +44,7 @@ const Modal: React.FC<
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Overlay */}
       <div
-        className="fixed inset-0 bg-black/50 transition-opacity"
+        className="fixed inset-0 backdrop-blur-sm bg-black/20 transition-opacity"
         onClick={onClose}
       />
 
@@ -117,6 +94,20 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   const dispatch = useDispatch();
   const { pagination, filters } = useSelector((s: RootState) => s.product);
   const { showSuccess, showError } = useToast();
+  const { colors, sizes } = useEnums();
+
+  // Convert colors and sizes to VariantColor and VariantSize format
+  const AVAILABLE_COLORS: VariantColor[] = colors.map(c => ({
+    id: c.id,
+    name: c.name,
+    hex: c.hexCode || "#000000"
+  }));
+
+  const AVAILABLE_SIZES: VariantSize[] = sizes.map(s => ({
+    id: s.id,
+    code: s.code,
+    label: s.label || s.code
+  }));
   const [loading, setLoading] = useState(false);
   const [imageUploading] = useState(false);
   const [categories, setCategories] = useState<CategoryBackend[]>([]);
@@ -724,36 +715,6 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       return { ...prev, [colorId]: newFiles };
     });
   };
-
-  // const handleProductDetailPriceChange = (colorId: number, price: number) => {
-  //   setFormData((prev) => ({
-  //     ...prev,
-  //     productDetails: prev.productDetails.map((productDetail) => {
-  //       if (productDetail.color.id === colorId) {
-  //         return { ...productDetail, price: Math.max(0, price) };
-  //       }
-  //       return productDetail;
-  //     }),
-  //   }));
-  // };
-
-  // const handleProductDetailQuantityChange = (
-  //   colorId: number,
-  //   quantity: number
-  // ) => {
-  //   setFormData((prev) => ({
-  //     ...prev,
-  //     productDetails: prev.productDetails.map((productDetail) => {
-  //       if (productDetail.color.id === colorId) {
-  //         return {
-  //           ...productDetail,
-  //           quantity: Math.max(0, Math.floor(quantity)),
-  //         };
-  //       }
-  //       return productDetail;
-  //     }),
-  //   }));
-  // };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={"Create New Product"}>
