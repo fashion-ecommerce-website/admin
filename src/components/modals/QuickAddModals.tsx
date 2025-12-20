@@ -60,7 +60,7 @@ export const AddColorModal: React.FC<AddColorModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
+    <div className="fixed inset-0 backdrop-blur-sm bg-black/20 flex items-center justify-center z-[60]">
       <div className="bg-white rounded-xl shadow-2xl p-5 w-full max-w-sm border border-gray-200">
         <h3 className="text-lg font-bold text-black mb-4">Add New Color</h3>
 
@@ -189,7 +189,7 @@ export const AddSizeModal: React.FC<AddSizeModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
+    <div className="fixed inset-0 backdrop-blur-sm bg-black/20 flex items-center justify-center z-[60]">
       <div className="bg-white rounded-xl shadow-2xl p-5 w-full max-w-sm border border-gray-200">
         <h3 className="text-lg font-bold text-black mb-4">Add New Size</h3>
 
@@ -342,7 +342,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
     : name || '...';
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
+    <div className="fixed inset-0 backdrop-blur-sm bg-black/20 flex items-center justify-center z-[60]">
       <div className="bg-white rounded-xl shadow-2xl p-5 w-full max-w-md border border-gray-200">
         <h3 className="text-lg font-bold text-black mb-4">Add New Category</h3>
 

@@ -184,7 +184,7 @@ export const EditProductAdminModal: React.FC<Props> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
+      <div className="fixed inset-0 backdrop-blur-sm bg-black/20" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
         <div className="bg-black px-6 py-4">
           <div className="flex items-center justify-between">

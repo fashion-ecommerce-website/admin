@@ -1,32 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import Image from "next/image";
 import { Product, VariantColor, VariantSize } from "../../types/product.types";
 import CurrencyInput from "../ui/CurrencyInput";
 import { useToast } from "@/providers/ToastProvider";
-
-const AVAILABLE_COLORS: VariantColor[] = [
-  { id: 1, name: "black", hex: "#2c2d31" },
-  { id: 2, name: "white", hex: "#d6d8d3" },
-  { id: 3, name: "dark blue", hex: "#14202e" },
-  { id: 4, name: "red", hex: "#cf2525" },
-  { id: 5, name: "pink", hex: "#d4a2bb" },
-  { id: 6, name: "orange", hex: "#c69338" },
-  { id: 7, name: "mint", hex: "#60a1a7" },
-  { id: 8, name: "brown", hex: "#624e4f" },
-  { id: 9, name: "yellow", hex: "#dac7a7" },
-  { id: 10, name: "blue", hex: "#8ba6c1" },
-  { id: 11, name: "gray", hex: "#c6c6c4" },
-  { id: 12, name: "green", hex: "#76715d" },
-];
-
-const AVAILABLE_SIZES: VariantSize[] = [
-  { id: 1, code: "S", label: "S" },
-  { id: 2, code: "M", label: "M" },
-  { id: 3, code: "L", label: "L" },
-  { id: 4, code: "XL", label: "XL" },
-  { id: 5, code: "XXL", label: "XXL" },
-];
+import { useEnums } from "@/hooks/useEnums";
 
 interface CreateProductDetailModalProps {
   isOpen: boolean;
@@ -45,6 +24,18 @@ const CreateProductDetailModal: React.FC<CreateProductDetailModalProps> = ({
   onConfirm,
 }) => {
   const { showError, showSuccess } = useToast();
+  const { colors, sizes } = useEnums();
+
+  // Convert colors and sizes to VariantColor and VariantSize format (memoized)
+  const AVAILABLE_COLORS: VariantColor[] = useMemo(() =>
+    colors.map((c) => ({ id: c.id, name: c.name, hex: c.hexCode || "#000000" })),
+    [colors]
+  );
+
+  const AVAILABLE_SIZES: VariantSize[] = useMemo(() =>
+    sizes.map((s) => ({ id: s.id, code: s.code, label: s.label || s.code })),
+    [sizes]
+  );
   const [selectedColorId, setSelectedColorId] = useState<number | null>(null);
   const [selectedSizeId, setSelectedSizeId] = useState<number | null>(null);
   const [price, setPrice] = useState<number>(0);
@@ -62,7 +53,24 @@ const CreateProductDetailModal: React.FC<CreateProductDetailModalProps> = ({
       setImageFiles([]);
       setImagePreviews([]);
     }
-  }, [isOpen, product]);
+  }, [isOpen, product, AVAILABLE_COLORS, AVAILABLE_SIZES]);
+
+  // Handle escape key to close modal and prevent body scroll when open
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+
+    if (isOpen) {
+      document.addEventListener("keydown", handleEscape);
+      document.body.style.overflow = "hidden";
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen, onClose]);
 
   // Cleanup previews on unmount
   useEffect(() => {
@@ -187,11 +195,45 @@ const handleSubmit = async (e: React.FormEvent) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl" style={{ width: "40vw", maxHeight: "90vh", overflowY: "auto" }}>
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">Create Product Detail</h2>
+    <div className={`fixed inset-0 backdrop-blur-md bg-black/30 flex items-end md:items-center justify-center z-50`} onClick={onClose}>
+      <div
+        className={`bg-white rounded-t-2xl md:rounded-lg p-4 w-full max-w-4xl mx-4 relative shadow-2xl border border-gray-200 overflow-hidden max-h-[90vh]`}
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className="md:hidden flex items-center justify-center">
+          <div className="w-12 h-1.5 bg-gray-300 rounded-full my-2" />
         </div>
+
+        <button
+          className="absolute top-3 right-6 text-gray-400 text-xl z-10"
+          onClick={onClose}
+          aria-label="Close modal"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M18 6L6 18"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M6 6L18 18"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Color Selection */}
@@ -296,11 +338,15 @@ const handleSubmit = async (e: React.FormEvent) => {
               <div className="grid grid-cols-5 gap-2 mb-3">
                 {imagePreviews.map((preview, index) => (
                   <div key={index} className="relative group">
-                    <img
-                      src={preview}
-                      alt={`Preview ${index + 1}`}
-                      className="w-full h-20 object-cover rounded-lg border border-gray-300"
-                    />
+                    <div className="w-full h-20 relative rounded-lg overflow-hidden border border-gray-300">
+                      <Image
+                        src={preview}
+                        alt={`Preview ${index + 1}`}
+                        fill
+                        sizes="(max-width: 640px) 100vw, 160px"
+                        className="object-cover"
+                      />
+                    </div>
                     <button
                       type="button"
                       onClick={() => handleRemoveImage(index)}

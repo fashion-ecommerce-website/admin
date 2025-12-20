@@ -49,7 +49,7 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
   if (!isLoading) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]">
+    <div className="fixed inset-0 backdrop-blur-sm bg-black/20 flex items-center justify-center z-[100]">
       <div className="bg-white rounded-2xl p-8 shadow-2xl flex flex-col items-center gap-4">
         <Spinner size="xl" color="black" />
         <div className="text-center">

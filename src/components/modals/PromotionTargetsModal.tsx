@@ -104,7 +104,7 @@ const PromotionTargetsModal: React.FC<PromotionTargetsModalProps> = ({
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-screen items-center justify-center p-4">
         {/* Backdrop */}
-        <div className="fixed inset-0 bg-black/50" onClick={onClose} />
+        <div className="fixed inset-0 backdrop-blur-sm bg-black/20" onClick={onClose} />
         
         {/* Modal */}
         <div className="relative bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-hidden">

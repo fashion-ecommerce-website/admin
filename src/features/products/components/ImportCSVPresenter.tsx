@@ -419,7 +419,7 @@ const ImportCSVPresenter: React.FC<ImportCSVPresenterProps> = ({
 
       {/* Edit Modal */}
       {isEditOpen && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+        <div className="fixed inset-0 backdrop-blur-sm bg-black/20 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md border-2 border-gray-200">
             <h3 className="text-lg font-bold text-black mb-4">Edit Row</h3>
 

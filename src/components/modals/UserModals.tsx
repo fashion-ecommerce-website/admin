@@ -28,7 +28,7 @@ const Modal: React.FC<BaseModalProps & { children: React.ReactNode; title: strin
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Overlay */}
       <div
-        className="fixed inset-0 bg-transparent transition-opacity"
+        className="fixed inset-0 backdrop-blur-sm bg-black/20 transition-opacity"
         onClick={onClose}
       ></div>
 

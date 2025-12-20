@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '../../../hooks/redux';
 import {
   fetchCategoriesRequest,
@@ -26,6 +26,11 @@ const CategoriesContainer: React.FC = () => {
     toggleLoading,
   } = useAppSelector((state) => state.category);
 
+  // Track previous loading states to detect successful completions
+  const prevCreateLoading = useRef(createLoading);
+  const prevUpdateLoading = useRef(updateLoading);
+  const prevToggleLoading = useRef(toggleLoading);
+
   // Show error toast when error occurs
   useEffect(() => {
     if (error) {
@@ -33,6 +38,30 @@ const CategoriesContainer: React.FC = () => {
       dispatch(clearError());
     }
   }, [error, showError, dispatch]);
+
+  // Show success toast when create operation completes successfully
+  useEffect(() => {
+    if (prevCreateLoading.current && !createLoading && !error) {
+      showSuccess('Created', 'Category has been created successfully');
+    }
+    prevCreateLoading.current = createLoading;
+  }, [createLoading, error, showSuccess]);
+
+  // Show success toast when update operation completes successfully
+  useEffect(() => {
+    if (prevUpdateLoading.current && !updateLoading && !error) {
+      showSuccess('Updated', 'Category has been updated successfully');
+    }
+    prevUpdateLoading.current = updateLoading;
+  }, [updateLoading, error, showSuccess]);
+
+  // Show success toast when toggle operation completes successfully
+  useEffect(() => {
+    if (prevToggleLoading.current && !toggleLoading && !error) {
+      showSuccess('Status Updated', 'Category status has been updated successfully');
+    }
+    prevToggleLoading.current = toggleLoading;
+  }, [toggleLoading, error, showSuccess]);
 
   // Fetch categories on mount
   useEffect(() => {
@@ -42,20 +71,17 @@ const CategoriesContainer: React.FC = () => {
   // Handle create category
   const handleCreateCategory = useCallback((categoryData: CreateCategoryRequest) => {
     dispatch(createCategoryRequest(categoryData));
-    showSuccess('Created', `Category "${categoryData.name}" has been created`);
-  }, [dispatch, showSuccess]);
+  }, [dispatch]);
 
   // Handle update category
   const handleUpdateCategory = useCallback((categoryData: UpdateCategoryRequest) => {
     dispatch(updateCategoryRequest(categoryData));
-    showSuccess('Update Successful', `Updated category "${categoryData.name}"`);
-  }, [dispatch, showSuccess]);
+  }, [dispatch]);
 
   // Handle toggle status
   const handleToggleStatus = useCallback((id: number) => {
     dispatch(toggleCategoryStatusRequest(id));
-    showSuccess('Status Updated', 'Category status has been updated successfully');
-  }, [dispatch, showSuccess]);
+  }, [dispatch]);
 
   return (
     <CategoriesPresenter

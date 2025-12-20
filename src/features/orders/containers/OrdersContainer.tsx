@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { useAppDispatch, useAppSelector } from '../../../hooks/redux';
@@ -82,6 +82,13 @@ export const OrdersContainer: React.FC = () => {
     }
   }, [error, showToast, dispatch]);
 
+  // Define handleCloseDetail early so it can be used in useEffect
+  const handleCloseDetail = useCallback(() => {
+    setIsDetailOpen(false);
+    setSelectedOrderId(null);
+    dispatch(clearSelectedOrder());
+  }, [dispatch]);
+
   // Handle successful order cancellation
   useEffect(() => {
     // Check if we were cancelling an order and it's now cancelled
@@ -101,7 +108,7 @@ export const OrdersContainer: React.FC = () => {
         }
       }
     }
-  }, [cancellingOrderId, loading, orders, selectedOrderId, showToast]);
+  }, [cancellingOrderId, loading, orders, selectedOrderId, showToast, handleCloseDetail]);
 
   // Fetch order detail when selected
   useEffect(() => {
@@ -154,12 +161,6 @@ export const OrdersContainer: React.FC = () => {
   const handleViewDetail = (order: Order) => {
     setSelectedOrderId(order.id);
     setIsDetailOpen(true);
-  };
-
-  const handleCloseDetail = () => {
-    setIsDetailOpen(false);
-    setSelectedOrderId(null);
-    dispatch(clearSelectedOrder());
   };
 
   const handleUpdateStatus = (orderId: number, status: OrderStatus) => {

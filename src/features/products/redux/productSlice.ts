@@ -279,10 +279,12 @@ const productSlice = createSlice({
 
     // Create product detail
     createProductDetailRequest: (state, _action: PayloadAction<CreateProductDetailRequest>) => {
+      void _action;
       state.loading = true;
       state.error = null;
     },
     createProductDetailSuccess: (state, _action: PayloadAction<CreateProductDetailSuccess>) => {
+      void _action;
       state.loading = false;
       state.error = null;
       // Product detail created successfully, list will be refreshed by saga
@@ -294,10 +296,12 @@ const productSlice = createSlice({
 
     // Toggle product detail status
     toggleProductDetailStatusRequest: (state, _action: PayloadAction<ToggleProductDetailStatusRequest>) => {
+      void _action;
       state.loading = true;
       state.error = null;
     },
     toggleProductDetailStatusSuccess: (state, _action: PayloadAction<ToggleProductDetailStatusSuccess>) => {
+      void _action;
       state.loading = false;
       state.error = null;
       // Status toggled successfully, list will be refreshed by saga
