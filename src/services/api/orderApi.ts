@@ -121,14 +121,13 @@ class OrderApi {
   }
 
   /**
-   * Cancel order (using updateOrder with CANCELLED status)
+   * Cancel order (using dedicated cancel endpoint)
    */
   async cancelOrder(orderId: number): Promise<ApiResponse<Order>> {
     try {
-      // Backend doesn't have /cancel endpoint, use PUT with CANCELLED status
-      const response = await adminApiClient.put<Order>(
-        `${this.endpoint}/${orderId}`,
-        { status: 'CANCELLED' }
+      const response = await adminApiClient.post<Order>(
+        `${this.endpoint}/${orderId}/cancel`,
+        {}
       );
       
       return {
