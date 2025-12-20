@@ -205,7 +205,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
         </div>
         <div className="flex gap-3">
           {onExportExcel && <ExportExcelButton onClick={onExportExcel} />}
-          {/* Import CSV Button client-side navigation */}
+          {/* Import Excel Button client-side navigation */}
           <Link
             href="/products/import-csv"
             className="bg-black text-white px-6 py-3 rounded-lg font-medium flex items-center space-x-2 hover:bg-gray-800 transition-colors"
@@ -230,7 +230,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
                 d="M7 9l5-5 5 5M12 4v12"
               />
             </svg>
-            <span>Import CSV</span>
+            <span>Import Excel</span>
           </Link>
           <button
             onClick={onCreateProduct}

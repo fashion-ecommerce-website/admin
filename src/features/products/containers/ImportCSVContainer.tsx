@@ -265,7 +265,7 @@ const ImportCSVContainer: React.FC = () => {
     setPreviewData([]);
     try {
       const formData = new FormData();
-      formData.append('csv', csvFile);
+      formData.append('excel', csvFile);
       
       // Append all zip files
       zipFiles.forEach((zip) => {
@@ -299,7 +299,7 @@ const ImportCSVContainer: React.FC = () => {
 
   const handleStartPreview = useCallback(() => {
     if (!uploadedFile) {
-      setError('Please upload a CSV file first');
+      setError('Please upload an Excel file first');
       return;
     }
     if (uploadedZips.length === 0) {
@@ -556,7 +556,7 @@ const ImportCSVContainer: React.FC = () => {
     }
 
     if (previewData.length === 0) {
-      showError('No products', 'No products to save. Please upload a CSV file.');
+      showError('No products', 'No products to save. Please upload an Excel file.');
       return;
     }
 
