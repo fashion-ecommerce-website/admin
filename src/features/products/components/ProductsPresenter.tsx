@@ -23,7 +23,7 @@ interface ProductFilters {
   title?: string;
   categorySlug?: string;
   isActive?: boolean | null;
-  sortBy?: "createdAt" | "updatedAt" | "title";
+  sortBy?: "createdAt" | "updatedAt" | "quantity";
   sortDirection?: "asc" | "desc";
 }
 
@@ -308,15 +308,15 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
                 const [sortBy, sortDirection] = value.split(":");
                 onFilterChange({
                   ...filters,
-                  sortBy: sortBy as "createdAt" | "title",
+                  sortBy: sortBy as "createdAt" | "quantity",
                   sortDirection: sortDirection as "asc" | "desc",
                 });
               }}
               options={[
                 { value: "createdAt:desc", label: "Newest First" },
                 { value: "createdAt:asc", label: "Oldest First" },
-                { value: "title:asc", label: "Name A-Z" },
-                { value: "title:desc", label: "Name Z-A" },
+                { value: "quantity:desc", label: "Quantity High-Low" },
+                { value: "quantity:asc", label: "Quantity Low-High" },
               ]}
               padding="px-4 py-3"
               borderRadius="rounded-lg"
@@ -383,6 +383,9 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
                   </th>
                   <th className="px-6 py-3 text-left text-sm font-semibold">
                     Sizes
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold">
+                    Quantity
                   </th>
                   <th className="px-6 py-3 text-left text-sm font-semibold">
                     Actions
@@ -458,6 +461,9 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
                     </th>
                     <th className="px-6 py-3 text-left text-sm font-semibold">
                       Sizes
+                    </th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold">
+                      Quantity
                     </th>
                     <th className="px-6 py-3 text-left text-sm font-semibold">
                       Actions
@@ -553,6 +559,22 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
                                 +{product.variantSizes.length - 4}
                               </span>
                             )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-sm font-medium ${product.hasOutOfStock ? 'text-red-600' : 'text-gray-900'}`}>
+                            {product.totalQuantity ?? 0}
+                          </span>
+                          {product.hasOutOfStock && (
+                            <span 
+                              className="relative flex h-2 w-2"
+                              title="Some variants are out of stock"
+                            >
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm">
