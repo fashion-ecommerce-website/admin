@@ -235,7 +235,7 @@ const handleSubmit = async (e: React.FormEvent) => {
           </svg>
         </button>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-2rem)]">
           {/* Color Selection */}
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-2">
