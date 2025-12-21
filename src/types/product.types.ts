@@ -84,6 +84,8 @@ export interface Product {
   createdAt: string | null;
   updatedAt: string | null;
   isActive: boolean;
+  totalQuantity?: number;
+  hasOutOfStock?: boolean;
 }
 
 // Product list response from API
@@ -104,7 +106,7 @@ export interface GetProductsRequest {
   title?: string;
   categorySlug?: string;
   isActive?: boolean;
-  sortBy?: 'createdAt' | 'updatedAt' | 'title';
+  sortBy?: 'createdAt' | 'updatedAt' | 'quantity';
   sortDirection?: 'asc' | 'desc';
 }
 
@@ -141,7 +143,7 @@ export interface ProductState {
     title: string;
     categorySlug: string;
     isActive: boolean | null;
-    sortBy: 'createdAt' | 'updatedAt' | 'title';
+    sortBy: 'createdAt' | 'updatedAt' | 'quantity';
     sortDirection: 'asc' | 'desc';
   };
 }

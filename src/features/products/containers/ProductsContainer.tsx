@@ -201,7 +201,7 @@ const ProductsContainer: React.FC = () => {
       title?: string;
       categorySlug?: string;
       isActive?: boolean | null;
-      sortBy?: "createdAt" | "updatedAt" | "title";
+      sortBy?: "createdAt" | "updatedAt" | "quantity";
       sortDirection?: "asc" | "desc";
     }) => {
       dispatch(setFilters({ filters: newFilters }));
@@ -350,26 +350,33 @@ const ProductsContainer: React.FC = () => {
       productId: number;
       formData: FormData;
     }) => {
-      try {
-        const response = await (await import("@/services/api/productApi")).productApi.createProductDetailAdmin(
-          data.productId,
-          data.formData
+      const response = await (await import("@/services/api/productApi")).productApi.createProductDetailAdmin(
+        data.productId,
+        data.formData
+      );
+      
+      if (response.success) {
+        // Refresh product list with current filters and sort
+        dispatch(
+          fetchProductsRequest({
+            page: pagination.page,
+            pageSize: pagination.pageSize,
+            title: filters.title || undefined,
+            categorySlug: filters.categorySlug || undefined,
+            isActive: filters.isActive ?? undefined,
+            sortBy: filters.sortBy,
+            sortDirection: filters.sortDirection,
+          })
         );
-        
-        if (response.success) {
-          showSuccess("Product detail created successfully!");
-          // Refresh product list
-          dispatch(fetchProductsRequest({ page: 0, pageSize: 10 }));
-          setIsCreateProductDetailModalOpen(false);
-          setProductForDetailCreation(null);
-        } else {
-          showError(response.message || "Failed to create product detail");
-        }
-      } catch (error) {
-        showError(error instanceof Error ? error.message : "Failed to create product detail");
+        setIsCreateProductDetailModalOpen(false);
+        setProductForDetailCreation(null);
+        // Don't show toast here - modal will show it
+      } else {
+        // Throw error so modal can catch and show error toast
+        throw new Error(response.message || "Failed to create product detail");
       }
     },
-    [dispatch, showSuccess, showError]
+    [dispatch, pagination.page, pagination.pageSize, filters]
   );
 
   const handleToggleProductDetailStatus = useCallback(
@@ -1031,6 +1038,11 @@ const ProductsContainer: React.FC = () => {
                               fetchProductsRequest({
                                 page: pagination.page,
                                 pageSize: pagination.pageSize,
+                                title: filters.title || undefined,
+                                categorySlug: filters.categorySlug || undefined,
+                                isActive: filters.isActive ?? undefined,
+                                sortBy: filters.sortBy,
+                                sortDirection: filters.sortDirection,
                               })
                             );
                             setIsVariantPickerOpen(false);
