@@ -179,7 +179,7 @@ const ProductsContainer: React.FC = () => {
       title?: string;
       categorySlug?: string;
       isActive?: boolean | null;
-      sortBy?: "createdAt" | "updatedAt" | "title";
+      sortBy?: "createdAt" | "updatedAt" | "title" | "quantity";
       sortDirection?: "asc" | "desc";
     }) => {
       dispatch(setFilters({ filters: newFilters }));
@@ -336,8 +336,16 @@ const ProductsContainer: React.FC = () => {
         
         if (response.success) {
           showSuccess("Product detail created successfully!");
-          // Refresh product list
-          dispatch(fetchProductsRequest({ page: 0, pageSize: 10 }));
+          // Refresh product list with current filters
+          dispatch(fetchProductsRequest({
+            page: pagination.page,
+            pageSize: pagination.pageSize,
+            title: filters.title || undefined,
+            categorySlug: filters.categorySlug || undefined,
+            isActive: filters.isActive ?? undefined,
+            sortBy: filters.sortBy,
+            sortDirection: filters.sortDirection,
+          }));
           setIsCreateProductDetailModalOpen(false);
           setProductForDetailCreation(null);
         } else {
@@ -347,7 +355,7 @@ const ProductsContainer: React.FC = () => {
         showError(error instanceof Error ? error.message : "Failed to create product detail");
       }
     },
-    [dispatch, showSuccess, showError]
+    [dispatch, showSuccess, showError, pagination.page, pagination.pageSize, filters]
   );
 
   const handleToggleProductDetailStatus = useCallback(
@@ -1004,11 +1012,16 @@ const ProductsContainer: React.FC = () => {
                             body
                           );
                           if (upd.success) {
-                            // Refresh products list
+                            // Refresh products list with current filters
                             dispatch(
                               fetchProductsRequest({
                                 page: pagination.page,
                                 pageSize: pagination.pageSize,
+                                title: filters.title || undefined,
+                                categorySlug: filters.categorySlug || undefined,
+                                isActive: filters.isActive ?? undefined,
+                                sortBy: filters.sortBy,
+                                sortDirection: filters.sortDirection,
                               })
                             );
                             setIsVariantPickerOpen(false);
@@ -1045,11 +1058,16 @@ const ProductsContainer: React.FC = () => {
         productDetailId={selectedDetailId}
         productId={selectedProductId ?? undefined}
         onConfirm={() => {
-          // After successful update you may want to refresh product list
+          // After successful update, refresh product list with current filters
           dispatch(
             fetchProductsRequest({
               page: pagination.page,
               pageSize: pagination.pageSize,
+              title: filters.title || undefined,
+              categorySlug: filters.categorySlug || undefined,
+              isActive: filters.isActive ?? undefined,
+              sortBy: filters.sortBy,
+              sortDirection: filters.sortDirection,
             })
           );
           setSelectedDetailId(null);

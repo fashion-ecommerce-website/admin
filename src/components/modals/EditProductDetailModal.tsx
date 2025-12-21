@@ -53,7 +53,7 @@ export const EditProductDetailModal: React.FC<EditProductDetailModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [price, setPrice] = useState<number>(initialPrice ?? 0);
-  const [quantity, setQuantity] = useState<number>(initialQuantity ?? 0);
+  const [quantity, setQuantity] = useState<number | ''>(initialQuantity ?? 0);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [imageError, setImageError] = useState(false);
 
@@ -323,12 +323,15 @@ export const EditProductDetailModal: React.FC<EditProductDetailModalProps> = ({
     const currentDetailId = productDetail?.detailId || productDetailId;
     if (!currentDetailId) return;
 
+    // Convert empty string to 0 for quantity
+    const qty = quantity === '' ? 0 : quantity;
+
     // Basic validation
     if (!Number.isFinite(price) || price <= 0) {
       showError("Price must be a positive number");
       return;
     }
-    if (!Number.isInteger(quantity) || quantity < 0) {
+    if (!Number.isInteger(qty) || qty < 0) {
       showError("Quantity must be an integer >= 0");
       return;
     }
@@ -343,7 +346,7 @@ export const EditProductDetailModal: React.FC<EditProductDetailModalProps> = ({
 
       const updateData = {
         price,
-        quantity,
+        quantity: qty,
         colorId,
         sizeId,
       };
@@ -356,7 +359,7 @@ export const EditProductDetailModal: React.FC<EditProductDetailModalProps> = ({
       if (response.success) {
         showSuccess("Product detail updated successfully");
         if (onConfirm) {
-          onConfirm({ detailId: currentDetailId, price, quantity });
+          onConfirm({ detailId: currentDetailId, price, quantity: qty });
         }
         onClose();
       } else {
@@ -552,7 +555,10 @@ export const EditProductDetailModal: React.FC<EditProductDetailModalProps> = ({
                   <input
                     type="number"
                     value={quantity}
-                    onChange={(e) => setQuantity(Number(e.target.value))}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setQuantity(val === '' ? '' : Number(val));
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                     min="0"
                     step="1"
@@ -688,7 +694,10 @@ export const EditProductDetailModal: React.FC<EditProductDetailModalProps> = ({
                   <input
                     type="number"
                     value={quantity}
-                    onChange={(e) => setQuantity(Number(e.target.value))}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setQuantity(val === '' ? '' : Number(val));
+                    }}
                     className="w-full text-black px-4 py-3 border border-gray-300 rounded-md"
                     min="0"
                     step="1"
