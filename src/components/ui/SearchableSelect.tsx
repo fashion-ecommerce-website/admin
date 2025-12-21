@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 interface Option {
   id: number;
@@ -26,8 +27,10 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Get selected option
   const selectedOption = options.find(opt => opt.id === value);
@@ -37,10 +40,27 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
     opt.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Update dropdown position when open
+  useEffect(() => {
+    if (isOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+  }, [isOpen]);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        containerRef.current && 
+        !containerRef.current.contains(event.target as Node) &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
         setSearchQuery('');
       }
@@ -76,6 +96,69 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
   // Display value in input
   const inputDisplayValue = isOpen ? searchQuery : (selectedOption?.name || '');
+
+  // Dropdown content rendered via portal
+  const dropdownContent = isOpen && (
+    <div
+      ref={dropdownRef}
+      style={{
+        position: 'fixed',
+        top: dropdownPosition.top,
+        left: dropdownPosition.left,
+        width: dropdownPosition.width,
+        zIndex: 9999,
+      }}
+      className="
+        bg-white border border-gray-200
+        rounded-xl shadow-xl
+        max-h-60 overflow-y-auto
+        animate-in fade-in slide-in-from-top-2 duration-300
+      "
+      role="listbox"
+    >
+      {filteredOptions.length === 0 ? (
+        <div className="px-4 py-3 text-sm text-gray-500">No results found</div>
+      ) : (
+        filteredOptions.map((option, index) => (
+          <button
+            key={option.id}
+            type="button"
+            onClick={() => handleSelect(option.id)}
+            className={`
+              w-full text-left px-4 py-3
+              bg-white text-gray-900
+              hover:bg-indigo-50 hover:text-indigo-700
+              transition-all duration-300
+              cursor-pointer
+              ${option.id === value ? 'bg-indigo-50 text-indigo-700 font-medium' : ''}
+              ${index === 0 ? 'rounded-t-lg' : ''}
+              ${index === filteredOptions.length - 1 ? 'rounded-b-lg' : ''}
+              focus:outline-none focus:bg-indigo-100 focus:ring-2 focus:ring-inset focus:ring-indigo-500
+            `}
+            role="option"
+            aria-selected={option.id === value}
+          >
+            <div className="flex items-center justify-between">
+              <span>{option.name}</span>
+              {option.id === value && (
+                <svg
+                  className="w-4 h-4 text-indigo-600"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              )}
+            </div>
+          </button>
+        ))
+      )}
+    </div>
+  );
 
   return (
     <div ref={containerRef} className={`relative ${className}`}>
@@ -118,61 +201,8 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
         </div>
       </div>
 
-      {/* Dropdown Menu */}
-      {isOpen && (
-        <div
-          className="
-            absolute z-50 w-full mt-2
-            bg-white border border-gray-200
-            rounded-xl shadow-xl
-            max-h-60 overflow-y-auto
-            animate-in fade-in slide-in-from-top-2 duration-300
-          "
-          role="listbox"
-        >
-          {filteredOptions.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-gray-500">No results found</div>
-          ) : (
-            filteredOptions.map((option, index) => (
-              <button
-                key={option.id}
-                type="button"
-                onClick={() => handleSelect(option.id)}
-                className={`
-                  w-full text-left px-4 py-3
-                  bg-white text-gray-900
-                  hover:bg-indigo-50 hover:text-indigo-700
-                  transition-all duration-300
-                  cursor-pointer
-                  ${option.id === value ? 'bg-indigo-50 text-indigo-700 font-medium' : ''}
-                  ${index === 0 ? 'rounded-t-lg' : ''}
-                  ${index === filteredOptions.length - 1 ? 'rounded-b-lg' : ''}
-                  focus:outline-none focus:bg-indigo-100 focus:ring-2 focus:ring-inset focus:ring-indigo-500
-                `}
-                role="option"
-                aria-selected={option.id === value}
-              >
-                <div className="flex items-center justify-between">
-                  <span>{option.name}</span>
-                  {option.id === value && (
-                    <svg
-                      className="w-4 h-4 text-indigo-600"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  )}
-                </div>
-              </button>
-            ))
-          )}
-        </div>
-      )}
+      {/* Dropdown Menu - rendered via portal to escape modal overflow */}
+      {typeof document !== 'undefined' && createPortal(dropdownContent, document.body)}
     </div>
   );
 };

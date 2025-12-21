@@ -195,70 +195,6 @@ const ImportCSVContainer: React.FC = () => {
     };
   }, []);
 
-  // Handlers to create new color, size, category
-  const handleCreateColor = useCallback(async (data: { name: string; hex?: string }): Promise<boolean> => {
-    try {
-      const res = await adminApiClient.post<{ id: number; name: string }>('/colors', data);
-      if (res.success && res.data) {
-        setAllowedColors(prev => [...prev, res.data!.name]);
-        showSuccess('Color Created', `Color "${data.name}" has been added.`);
-        return true;
-      }
-      showError('Failed', res.message || 'Failed to create color');
-      return false;
-    } catch {
-      showError('Failed', 'Failed to create color');
-      return false;
-    }
-  }, [showSuccess, showError]);
-
-  const handleCreateSize = useCallback(async (data: { code: string; label: string }): Promise<boolean> => {
-    try {
-      const res = await adminApiClient.post<{ id: number; code: string }>('/sizes', data);
-      if (res.success && res.data) {
-        setAllowedSizes(prev => [...prev, res.data!.code]);
-        showSuccess('Size Created', `Size "${data.code}" has been added.`);
-        return true;
-      }
-      showError('Failed', res.message || 'Failed to create size');
-      return false;
-    } catch {
-      showError('Failed', 'Failed to create size');
-      return false;
-    }
-  }, [showSuccess, showError]);
-
-  const handleCreateCategory = useCallback(async (data: { name: string; slug: string; isActive: boolean; parentId?: number }): Promise<boolean> => {
-    try {
-      const res = await adminApiClient.post<{ id: number; name: string }>('/categories', data);
-      if (res.success && res.data) {
-        // Find parent path if parentId exists
-        const parent = data.parentId ? parentCategories.find(c => c.id === data.parentId) : null;
-        const newPath = parent ? `${parent.path} > ${data.name}` : data.name;
-        
-        // Add to allowed categories (leaf categories for dropdown)
-        setAllowedCategories(prev => [...prev, newPath].sort((a, b) => 
-          a.localeCompare(b, 'vi', { sensitivity: 'base' })
-        ));
-        
-        // Add to parent categories list
-        setParentCategories(prev => [...prev, {
-          id: res.data!.id,
-          name: data.name,
-          path: newPath,
-        }].sort((a, b) => a.path.localeCompare(b.path, 'vi', { sensitivity: 'base' })));
-        
-        showSuccess('Category Created', `Category "${data.name}" has been added.`);
-        return true;
-      }
-      showError('Failed', res.message || 'Failed to create category');
-      return false;
-    } catch {
-      showError('Failed', 'Failed to create category');
-      return false;
-    }
-  }, [showSuccess, showError, parentCategories]);
-
   const handlePreview = useCallback(async (csvFile: File, zipFiles: File[]) => {
     setPreviewLoading(true);
     setError(null);
@@ -282,6 +218,102 @@ const ImportCSVContainer: React.FC = () => {
       setPreviewLoading(false);
     }
   }, []);
+
+  // Re-run preview to re-validate all data after adding new color/size/category
+  const rerunPreview = useCallback(() => {
+    if (!uploadedFile || uploadedZips.length === 0) return;
+    
+    // Check if there are any errors to fix
+    const hasErrors = previewData.some(group =>
+      (group.productDetails || []).some(detail => detail.error || detail.isError)
+    );
+    if (!hasErrors) return;
+
+    handlePreview(uploadedFile.file, uploadedZips.map(z => z.file));
+  }, [uploadedFile, uploadedZips, previewData, handlePreview]);
+
+  // Handlers to create new color, size, category
+  const handleCreateColor = useCallback(async (data: { name: string; hex?: string }): Promise<boolean> => {
+    try {
+      const res = await adminApiClient.post<{ id: number; name: string }>('/colors', data);
+      if (res.success && res.data) {
+        setAllowedColors(prev => [...prev, res.data!.name]);
+        showSuccess('Color Created', `Color "${data.name}" has been added. Re-validating...`);
+        // Re-run preview to validate all rows
+        setTimeout(() => rerunPreview(), 100);
+        return true;
+      }
+      showError('Failed', res.message || 'Failed to create color');
+      return false;
+    } catch {
+      showError('Failed', 'Failed to create color');
+      return false;
+    }
+  }, [showSuccess, showError, rerunPreview]);
+
+  const handleCreateSize = useCallback(async (data: { code: string; label: string }): Promise<boolean> => {
+    try {
+      const res = await adminApiClient.post<{ id: number; code: string }>('/sizes', data);
+      if (res.success && res.data) {
+        setAllowedSizes(prev => [...prev, res.data!.code]);
+        showSuccess('Size Created', `Size "${data.code}" has been added. Re-validating...`);
+        // Re-run preview to validate all rows
+        setTimeout(() => rerunPreview(), 100);
+        return true;
+      }
+      showError('Failed', res.message || 'Failed to create size');
+      return false;
+    } catch {
+      showError('Failed', 'Failed to create size');
+      return false;
+    }
+  }, [showSuccess, showError, rerunPreview]);
+
+  const handleCreateCategory = useCallback(async (data: { name: string; slug: string; isActive: boolean; parentId?: number }): Promise<boolean> => {
+    try {
+      const res = await adminApiClient.post<{ id: number; name: string }>('/categories', data);
+      if (res.success && res.data) {
+        // Find parent path if parentId exists
+        const parent = data.parentId ? parentCategories.find(c => c.id === data.parentId) : null;
+        const newPath = parent ? `${parent.path} > ${data.name}` : data.name;
+        
+        // Add to allowed categories (leaf categories for dropdown)
+        setAllowedCategories(prev => [...prev, newPath].sort((a, b) => 
+          a.localeCompare(b, 'vi', { sensitivity: 'base' })
+        ));
+        
+        // Add to parent categories list
+        setParentCategories(prev => [...prev, {
+          id: res.data!.id,
+          name: data.name,
+          path: newPath,
+        }].sort((a, b) => a.path.localeCompare(b.path, 'vi', { sensitivity: 'base' })));
+        
+        // Auto-update editForm.category if it matches the newly created category
+        setEditForm(prev => {
+          const currentCategory = prev.category?.trim().toLowerCase();
+          const newCategoryName = data.name.trim().toLowerCase();
+          
+          // If current category (leaf name) matches the new category name, update to full path
+          if (currentCategory === newCategoryName || 
+              (currentCategory && !currentCategory.includes(' > ') && currentCategory === newCategoryName)) {
+            return { ...prev, category: newPath };
+          }
+          return prev;
+        });
+        
+        showSuccess('Category Created', `Category "${data.name}" has been added. Re-validating...`);
+        // Re-run preview to validate all rows
+        setTimeout(() => rerunPreview(), 100);
+        return true;
+      }
+      showError('Failed', res.message || 'Failed to create category');
+      return false;
+    } catch {
+      showError('Failed', 'Failed to create category');
+      return false;
+    }
+  }, [showSuccess, showError, parentCategories, rerunPreview]);
 
   const handleFileChange = useCallback((file: File) => {
     setUploadedFile({ name: file.name, size: file.size, file });
@@ -351,13 +383,26 @@ const ImportCSVContainer: React.FC = () => {
       ? found.imageUrls 
       : (foundGroup?.imageUrls ?? []);
     
-    console.log('Edit - found.imageUrls:', found.imageUrls);
-    console.log('Edit - foundGroup.imageUrls:', foundGroup?.imageUrls);
-    console.log('Edit - using imageUrls:', detailImageUrls);
+    // Get category - need to find full path from leaf name
+    const leafCategory = found.category ?? foundGroup?.category ?? '';
+    let categoryFullPath = leafCategory;
+    
+    // If category is just leaf name (no " > "), find full path from allowedCategories
+    if (leafCategory && !leafCategory.includes(' > ')) {
+      const matchedPath = allowedCategories.find(path => {
+        const leafName = path.includes(' > ') 
+          ? path.split(' > ').pop()?.trim() 
+          : path;
+        return leafName?.toLowerCase() === leafCategory.toLowerCase();
+      });
+      if (matchedPath) {
+        categoryFullPath = matchedPath;
+      }
+    }
     
     setEditForm({
       title: found.productTitle ?? found.title ?? foundGroup?.productTitle ?? foundGroup?.title ?? '',
-      category: found.category ?? foundGroup?.category ?? '',
+      category: categoryFullPath,
       color: found.color ?? '',
       size: found.size ?? '',
       price: Number(found.price ?? 0),
@@ -365,7 +410,7 @@ const ImportCSVContainer: React.FC = () => {
       imageUrls: detailImageUrls,
     });
     setIsEditOpen(true);
-  }, [previewData]);
+  }, [previewData, allowedCategories]);
 
   const closeEditModal = useCallback(() => {
     setIsEditOpen(false);
@@ -498,6 +543,11 @@ const ImportCSVContainer: React.FC = () => {
       );
 
       if (res.success && res.data) {
+        // Extract leaf category name to store in previewData (for consistency)
+        const categoryLeafName = editForm.category?.includes(' > ')
+          ? editForm.category.split(' > ').pop()?.trim() || editForm.category
+          : editForm.category;
+
         // Update preview data with check result
         setPreviewData((prev) => {
           let currentIndex = 0;
@@ -514,7 +564,8 @@ const ImportCSVContainer: React.FC = () => {
               } else {
                 next.title = editForm.title;
               }
-              next.category = editForm.category;
+              // Store leaf category name (not full path) for consistency
+              next.category = categoryLeafName;
               next.color = editForm.color;
               next.size = editForm.size;
               next.price = editForm.price;
@@ -528,7 +579,7 @@ const ImportCSVContainer: React.FC = () => {
               return next;
             });
             const updatedGroup = touchedThisGroup 
-              ? { ...group, productTitle: editForm.title, category: editForm.category, imageUrls: editForm.imageUrls } 
+              ? { ...group, productTitle: editForm.title, category: categoryLeafName, imageUrls: editForm.imageUrls } 
               : group;
             return { ...updatedGroup, productDetails: updatedDetails };
           });

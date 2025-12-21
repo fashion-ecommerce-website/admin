@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 export interface DropdownOption {
   value: string;
@@ -82,13 +83,32 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
   animationDuration = 'duration-300',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const selectedOption = options.find(opt => opt.value === value);
 
+  // Update dropdown position when open
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        buttonRef.current && 
+        !buttonRef.current.contains(event.target as Node) &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -128,10 +148,70 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
     }
   };
 
+  // Dropdown content rendered via portal
+  const dropdownContent = isOpen && (
+    <div
+      ref={dropdownRef}
+      style={{
+        position: 'fixed',
+        top: dropdownPosition.top,
+        left: dropdownPosition.left,
+        width: dropdownPosition.width,
+        zIndex: 9999,
+      }}
+      className={`
+        ${dropdownBgColor} border ${dropdownBorderColor}
+        ${borderRadius} ${dropdownShadow}
+        ${dropdownMaxHeight} overflow-y-auto
+        animate-in fade-in slide-in-from-top-2 ${animationDuration}
+      `}
+      role="listbox"
+    >
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          onClick={() => !option.disabled && handleSelect(option.value)}
+          disabled={option.disabled}
+          className={`
+            w-full text-left px-4 py-3
+            ${dropdownItemBgColor} ${dropdownItemTextColor}
+            ${option.disabled ? 'opacity-50 cursor-not-allowed' : `${dropdownItemHoverBgColor} ${dropdownItemHoverTextColor} cursor-pointer`}
+            transition-all ${animationDuration}
+            ${option.value === value ? 'bg-indigo-50 text-indigo-700 font-medium' : ''}
+            first:${dropdownItemBorderRadius.replace('rounded-', 'rounded-t-')}
+            last:${dropdownItemBorderRadius.replace('rounded-', 'rounded-b-')}
+            focus:outline-none focus:bg-indigo-100 focus:ring-2 focus:ring-inset focus:ring-indigo-500
+          `}
+          role="option"
+          aria-selected={option.value === value}
+        >
+          <div className="flex items-center justify-between">
+            <span>{option.label}</span>
+            {option.value === value && (
+              <svg
+                className="w-4 h-4 text-indigo-600"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            )}
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+
   return (
-    <div ref={dropdownRef} className={`relative ${className}`}>
+    <div className={`relative ${className}`}>
       {/* Dropdown Button */}
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         onKeyDown={handleKeyDown}
@@ -174,57 +254,8 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
         </svg>
       </button>
 
-      {/* Dropdown Menu */}
-      {isOpen && (
-        <div
-          className={`
-            absolute z-50 w-full mt-2
-            ${dropdownBgColor} border ${dropdownBorderColor}
-            ${borderRadius} ${dropdownShadow}
-            ${dropdownMaxHeight} overflow-y-auto
-            animate-in fade-in slide-in-from-top-2 ${animationDuration}
-          `}
-          role="listbox"
-        >
-          {options.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => !option.disabled && handleSelect(option.value)}
-              disabled={option.disabled}
-              className={`
-                w-full text-left px-4 py-3
-                ${dropdownItemBgColor} ${dropdownItemTextColor}
-                ${option.disabled ? 'opacity-50 cursor-not-allowed' : `${dropdownItemHoverBgColor} ${dropdownItemHoverTextColor} cursor-pointer`}
-                transition-all ${animationDuration}
-                ${option.value === value ? 'bg-indigo-50 text-indigo-700 font-medium' : ''}
-                first:${dropdownItemBorderRadius.replace('rounded-', 'rounded-t-')}
-                last:${dropdownItemBorderRadius.replace('rounded-', 'rounded-b-')}
-                focus:outline-none focus:bg-indigo-100 focus:ring-2 focus:ring-inset focus:ring-indigo-500
-              `}
-              role="option"
-              aria-selected={option.value === value}
-            >
-              <div className="flex items-center justify-between">
-                <span>{option.label}</span>
-                {option.value === value && (
-                  <svg
-                    className="w-4 h-4 text-indigo-600"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                )}
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Dropdown Menu - rendered via portal to escape modal overflow */}
+      {typeof document !== 'undefined' && createPortal(dropdownContent, document.body)}
     </div>
   );
 };

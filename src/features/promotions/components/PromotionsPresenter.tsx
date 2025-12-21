@@ -25,7 +25,6 @@ interface PromotionsPresenterProps {
   onTogglePromotionActive: (promotionId: number) => void;
   onCreatePromotion: (promotionData: CreatePromotionRequest) => void;
   onUpdatePromotion: (id: number, promotionData: UpdatePromotionRequest) => void;
-  onTargetsUpdated: () => void;
 }
 
 export const PromotionsPresenter: React.FC<PromotionsPresenterProps> = ({
@@ -40,7 +39,6 @@ export const PromotionsPresenter: React.FC<PromotionsPresenterProps> = ({
   onTogglePromotionActive,
   onCreatePromotion,
   onUpdatePromotion,
-  onTargetsUpdated,
 }) => {
   const [searchQuery, setSearchQuery] = useState(filters.name || "");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -434,7 +432,6 @@ export const PromotionsPresenter: React.FC<PromotionsPresenterProps> = ({
         onSubmit={handleEditPromotion}
         promotion={selectedPromotion}
         title="Edit Promotion"
-        onTargetsUpdated={onTargetsUpdated}
       />
     </div>
   );

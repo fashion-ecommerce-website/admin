@@ -164,7 +164,6 @@ const PromotionsContainer: React.FC = () => {
       onTogglePromotionActive={handleTogglePromotionActive}
       onCreatePromotion={handleCreatePromotion}
       onUpdatePromotion={handleUpdatePromotion}
-      onTargetsUpdated={refetchPromotions}
     />
   );
 };
