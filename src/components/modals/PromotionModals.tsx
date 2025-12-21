@@ -19,7 +19,6 @@ interface PromotionModalProps {
   onSubmit: (promotionData: CreatePromotionRequest) => void;
   promotion?: Promotion | null;
   title: string;
-  onTargetsUpdated?: () => void;
 }
 
 const PromotionModal: React.FC<PromotionModalProps> = ({
@@ -28,7 +27,6 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
   onSubmit,
   promotion,
   title,
-  onTargetsUpdated,
 }) => {
   const { showError } = useToast();
   
@@ -222,6 +220,12 @@ const PromotionModal: React.FC<PromotionModalProps> = ({
 
   // Get display name for target
   const getTargetDisplayName = (target: PromotionTarget): string => {
+    // First, check if target already has targetName from backend
+    if (target.targetName) {
+      return target.targetName;
+    }
+    
+    // Fallback to looking up in local arrays
     if (target.targetType === 'CATEGORY') {
       const cat = categories.find(c => c.id === target.targetId);
       return cat ? cat.name : `Category ID: ${target.targetId}`;
