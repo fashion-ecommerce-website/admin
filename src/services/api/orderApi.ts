@@ -23,6 +23,7 @@ class OrderApi {
       if (params?.userId) queryParams.append('userId', params.userId.toString());
       if (params?.status) queryParams.append('status', params.status);
       if (params?.paymentStatus) queryParams.append('paymentStatus', params.paymentStatus);
+      if (params?.keyword) queryParams.append('keyword', params.keyword);
       if (params?.sortBy) queryParams.append('sortBy', params.sortBy);
       if (params?.direction) queryParams.append('direction', params.direction);
 

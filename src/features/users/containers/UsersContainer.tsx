@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useAppDispatch } from '@/hooks/redux';
 import { useToast } from '@/providers/ToastProvider';
 import { useMinimumLoadingTime } from '@/hooks/useMinimumLoadingTime';
@@ -8,8 +8,8 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { fetchUsersRequest } from '../redux/userSlice';
 import { userApi } from '@/services/api/userApi';
-import { User, convertBackendUserToUser } from '@/types/user.types';
-import { AddUserModal, ViewUserModal, EditUserModal, LockUserModal } from '@/components/modals/UserModals';
+import { User, convertBackendUserToUser, UserRank } from '@/types/user.types';
+import { AddUserModal, ViewUserModal, LockUserModal } from '@/components/modals/UserModals';
 import { UsersPresenter } from '../components/UsersPresenter';
 
 export const UsersContainer: React.FC = () => {
@@ -20,6 +20,9 @@ export const UsersContainer: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Ranks map for mapping rankId to rankName
+  const ranksMapRef = useRef<Map<number, string>>(new Map());
 
   // Server-side pagination state
   const [serverPage, setServerPage] = useState(0); // Backend uses 0-based index
@@ -29,18 +32,56 @@ export const UsersContainer: React.FC = () => {
   const [hasNext, setHasNext] = useState(false);
   const [hasPrevious, setHasPrevious] = useState(false);
 
+  // Server-side filters
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'blocked'>('all');
+
   // Use minimum loading time hook to ensure skeleton shows for at least 500ms
   const displayLoading = useMinimumLoadingTime(isLoading, 500);
 
-  const fetchUsers = useCallback(async (page: number = serverPage, pageSize: number = serverPageSize) => {
+  // Fetch ranks once on mount
+  const fetchRanks = useCallback(async () => {
+    try {
+      const response = await userApi.getUserRanks();
+      if (response.success && response.data) {
+        const map = new Map<number, string>();
+        response.data.forEach((rank: UserRank) => {
+          map.set(rank.id, rank.name);
+        });
+        ranksMapRef.current = map;
+      }
+    } catch (error) {
+      console.error('Failed to fetch ranks:', error);
+    }
+  }, []);
+
+  const fetchUsers = useCallback(async (
+    page: number = serverPage, 
+    pageSize: number = serverPageSize,
+    search?: string,
+    isActive?: boolean
+  ) => {
     setIsLoading(true);
     dispatch(fetchUsersRequest());
     
     try {
-      const response = await userApi.getAllUsers({ page, pageSize });
+      const response = await userApi.getAllUsers({ 
+        page, 
+        pageSize,
+        search: search || undefined,
+        isActive
+      });
 
       if (response.success && response.data) {
-        const convertedUsers = response.data.items.map(convertBackendUserToUser);
+        // Map rankId to rankName using ranksMap
+        const convertedUsers = response.data.items.map(backendUser => {
+          const user = convertBackendUserToUser(backendUser);
+          // If rankName not provided by backend, lookup from ranksMap
+          if (!user.rankName && backendUser.rankId) {
+            user.rankName = ranksMapRef.current.get(backendUser.rankId) || undefined;
+          }
+          return user;
+        });
         setUsers(convertedUsers);
         setServerPage(response.data.page);
         setServerTotalItems(response.data.totalItems);
@@ -61,13 +102,42 @@ export const UsersContainer: React.FC = () => {
     }
   }, [dispatch, serverPage, serverPageSize, showError]);
 
+  // Convert statusFilter to isActive boolean
+  const getIsActiveFromFilter = useCallback((filter: 'all' | 'active' | 'blocked'): boolean | undefined => {
+    if (filter === 'active') return true;
+    if (filter === 'blocked') return false;
+    return undefined;
+  }, []);
+
+  // Track if initial load has happened using ref to avoid re-renders
+  const isInitialLoadRef = React.useRef(true);
+
   useEffect(() => {
-    fetchUsers(0, serverPageSize);
+    // Fetch ranks first, then fetch users
+    const init = async () => {
+      await fetchRanks();
+      fetchUsers(0, serverPageSize, '', undefined);
+    };
+    init();
+    // Mark initial load as complete after a small delay
+    setTimeout(() => {
+      isInitialLoadRef.current = false;
+    }, 100);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  // Debounced search effect - only runs after initial load
+  useEffect(() => {
+    if (isInitialLoadRef.current) return;
+    
+    const timeoutId = setTimeout(() => {
+      fetchUsers(0, serverPageSize, searchTerm, getIsActiveFromFilter(statusFilter));
+    }, 300);
+    
+    return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, statusFilter]);
+
   const [roleFilter, setRoleFilter] = useState('');
   const [sortBy, setSortBy] = useState('joinDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -80,17 +150,21 @@ export const UsersContainer: React.FC = () => {
   const handleServerPageSizeChange = useCallback((newPageSize: number) => {
     setServerPageSize(newPageSize);
     setItemsPerPage(newPageSize);
-    fetchUsers(0, newPageSize);
-  }, [fetchUsers]);
+    fetchUsers(0, newPageSize, searchTerm, getIsActiveFromFilter(statusFilter));
+  }, [fetchUsers, searchTerm, statusFilter, getIsActiveFromFilter]);
 
   // Handle server page change
   const handleServerPageChange = useCallback((newPage: number) => {
-    fetchUsers(newPage, serverPageSize);
-  }, [fetchUsers, serverPageSize]);
+    fetchUsers(newPage, serverPageSize, searchTerm, getIsActiveFromFilter(statusFilter));
+  }, [fetchUsers, serverPageSize, searchTerm, statusFilter, getIsActiveFromFilter]);
+
+  // Handle status filter change
+  const handleStatusFilterChange = useCallback((filter: 'all' | 'active' | 'blocked') => {
+    setStatusFilter(filter);
+  }, []);
 
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false);
   const [lockModalOpen, setLockModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
@@ -102,17 +176,12 @@ export const UsersContainer: React.FC = () => {
         // Exclude admin users from the list
         const isNotAdmin = user.role !== 'Admin' && user.role !== 'ADMIN' && !user.email?.toLowerCase().includes('admin');
         
-        const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            user.email.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = statusFilter === '' ||
-                             (statusFilter === 'active' && user.status === 'Active') ||
-                             (statusFilter === 'inactive' && user.status === 'Inactive') ||
-                             (statusFilter === 'blocked' && user.status === 'Blocked');
+        // Role filter (client-side only since backend doesn't support it)
         const matchesRole = roleFilter === '' ||
                            (roleFilter === 'customer' && user.role === 'Customer') ||
                            (roleFilter === 'vip' && user.role === 'VIP Customer');
 
-        return isNotAdmin && matchesSearch && matchesStatus && matchesRole;
+        return isNotAdmin && matchesRole;
       })
       .sort((a, b) => {
         let comparison = 0;
@@ -141,18 +210,17 @@ export const UsersContainer: React.FC = () => {
       });
 
     return filtered;
-  }, [users, searchTerm, statusFilter, roleFilter, sortBy, sortOrder]);
+  }, [users, roleFilter, sortBy, sortOrder]);
 
   // Handle filtering state in useEffect instead of useMemo
   useEffect(() => {
     setIsFilteringData(true);
     const timer = setTimeout(() => setIsFilteringData(false), 150);
     return () => clearTimeout(timer);
-  }, [searchTerm, statusFilter, roleFilter, sortBy, sortOrder]);
+  }, [roleFilter, sortBy, sortOrder]);
 
-  // When filters are applied, use client-side pagination on filtered results
-  // When no filters, use server-side pagination
-  const isFiltering = !!(searchTerm || statusFilter || roleFilter);
+  // Server-side filtering is now used for search and status
+  const isFiltering = !!roleFilter;
   
   const totalItems = isFiltering ? filteredAndSortedUsers.length : serverTotalItems;
   const totalPages = isFiltering ? Math.ceil(filteredAndSortedUsers.length / itemsPerPage) : serverTotalPages;
@@ -195,10 +263,10 @@ export const UsersContainer: React.FC = () => {
     }
   };
 
-  // Reset to first page when filters change
+  // Reset to first page when role filter changes (client-side only)
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, roleFilter]);
+  }, [roleFilter]);
 
   // Current page for display (1-based)
   const displayCurrentPage = isFiltering ? currentPage : serverPage + 1;
@@ -242,7 +310,7 @@ export const UsersContainer: React.FC = () => {
 
       // Thêm header thông tin trước
       XLSX.utils.sheet_add_aoa(ws, [
-        ['FASHION ECOMMERCE ADMIN'],
+        ['FIT ECOMMERCE ADMIN'],
         ['USERS REPORT'],
         [`Export date: ${new Date().toLocaleDateString('en-US')}`],
         [`Total users: ${exportData.length}`],
@@ -372,20 +440,6 @@ export const UsersContainer: React.FC = () => {
     setUsers(prev => [...prev, typed]);
   };
 
-  const handleEditUser = (userId: number) => {
-    const user = users.find(u => u.id === userId);
-    if (user) {
-      setSelectedUser(user);
-      setViewModalOpen(false); // Đóng view modal nếu đang mở
-      setEditModalOpen(true);
-    }
-  };
-
-  const handleSaveEdit = (updatedUser: User) => {
-    const typed = convertModalUserToTyped(updatedUser);
-    setUsers(prev => prev.map(user => user.id === typed.id ? typed : user));
-  };
-
   const handleToggleUserStatus = (userId: number) => {
     const user = users.find(u => u.id === userId);
     if (user) {
@@ -401,6 +455,10 @@ export const UsersContainer: React.FC = () => {
       if (response.success && response.data) {
         const updatedBackendUser = response.data;
         const convertedUser = convertBackendUserToUser(updatedBackendUser);
+        // Map rankName from ranksMap if not provided
+        if (!convertedUser.rankName && updatedBackendUser.rankId) {
+          convertedUser.rankName = ranksMapRef.current.get(updatedBackendUser.rankId) || undefined;
+        }
         setUsers(prev => prev.map(user => user.id === userId ? convertedUser : user));
         if (action === 'lock') {
           showWarning('Account locked successfully!', 'The user account has been locked.');
@@ -435,7 +493,6 @@ export const UsersContainer: React.FC = () => {
     itemsPerPage,
     addModalOpen,
     viewModalOpen,
-    editModalOpen,
     lockModalOpen,
     selectedUser,
     isFilteringData,
@@ -455,7 +512,7 @@ export const UsersContainer: React.FC = () => {
 
   const handlers = {
     setSearchTerm,
-    setStatusFilter,
+    setStatusFilter: handleStatusFilterChange,
     setRoleFilter,
     setSortBy,
     setSortOrder,
@@ -463,17 +520,14 @@ export const UsersContainer: React.FC = () => {
     setCurrentPage,
     setAddModalOpen,
     setViewModalOpen,
-    setEditModalOpen,
     setLockModalOpen,
     setSelectedUser,
-    fetchUsers: () => fetchUsers(serverPage, serverPageSize),
+    fetchUsers: () => fetchUsers(serverPage, serverPageSize, searchTerm, getIsActiveFromFilter(statusFilter)),
     goToPrevPage,
     goToNextPage,
     goToPage,
     handleExportExcel,
     handleAddUser,
-    handleEditUser,
-    handleSaveEdit,
     handleToggleUserStatus,
     handleDeleteUser,
     handleLockAction,
@@ -484,7 +538,6 @@ export const UsersContainer: React.FC = () => {
       {/* Keep existing modals mounted here to retain context/state */}
       <AddUserModal isOpen={addModalOpen} onClose={() => setAddModalOpen(false)} onSave={handleAddUser} />
       <ViewUserModal isOpen={viewModalOpen} onClose={() => setViewModalOpen(false)} user={selectedUser} />
-      <EditUserModal isOpen={editModalOpen} onClose={() => setEditModalOpen(false)} user={selectedUser} onSave={handleSaveEdit} />
       <LockUserModal isOpen={lockModalOpen} onClose={() => setLockModalOpen(false)} user={selectedUser} onConfirm={handleLockAction} />
 
       <UsersPresenter vm={vm} handlers={handlers} />

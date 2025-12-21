@@ -40,7 +40,7 @@ export const AdminLoginContainer: React.FC = () => {
         if (isAdmin) {
           showSuccess(
             'Login successful!',
-            'Welcome to the Fashion Administration System.'
+            'Welcome to the FIT Administration System.'
           );
           router.push('/dashboard');
           router.refresh();

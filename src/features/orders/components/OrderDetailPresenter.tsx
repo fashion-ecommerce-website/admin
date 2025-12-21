@@ -7,16 +7,12 @@ interface OrderDetailPresenterProps {
   order: Order | null;
   isOpen: boolean;
   onClose: () => void;
-  onUpdateStatus?: (orderId: number, status: OrderStatus) => void;
-  onUpdatePaymentStatus?: (orderId: number, status: PaymentStatus) => void;
 }
 
 export const OrderDetailPresenter: React.FC<OrderDetailPresenterProps> = ({
   order,
   isOpen,
   onClose,
-  onUpdateStatus,
-  onUpdatePaymentStatus,
 }) => {
   if (!isOpen || !order) return null;
 
@@ -46,8 +42,6 @@ export const OrderDetailPresenter: React.FC<OrderDetailPresenterProps> = ({
         return 'bg-green-50 text-green-700 border-green-200';
       case OrderStatus.UNFULFILLED:
         return 'bg-yellow-50 text-yellow-700 border-yellow-200';
-      case OrderStatus.PARTIALLY_FULFILLED:
-        return 'bg-blue-50 text-blue-700 border-blue-200';
       case OrderStatus.CANCELLED:
         return 'bg-red-50 text-red-700 border-red-200';
       case OrderStatus.RETURNED:
@@ -121,14 +115,6 @@ export const OrderDetailPresenter: React.FC<OrderDetailPresenterProps> = ({
                 >
                   {order.status}
                 </span>
-                {onUpdateStatus && order.status === OrderStatus.UNFULFILLED && (
-                  <button
-                    onClick={() => onUpdateStatus(order.id, OrderStatus.FULFILLED)}
-                    className="cursor-pointer px-3 py-1.5 text-sm bg-white text-black border border-black rounded hover:bg-gray-50 font-medium transition-colors"
-                  >
-                    Mark as Fulfilled
-                  </button>
-                )}
               </div>
             </div>
 
@@ -145,14 +131,6 @@ export const OrderDetailPresenter: React.FC<OrderDetailPresenterProps> = ({
                 >
                   {order.paymentStatus}
                 </span>
-                {onUpdatePaymentStatus && order.paymentStatus === PaymentStatus.UNPAID && (
-                  <button
-                    onClick={() => onUpdatePaymentStatus(order.id, PaymentStatus.PAID)}
-                    className="cursor-pointer px-3 py-1.5 text-sm bg-white text-black border border-black rounded hover:bg-gray-50 font-medium transition-colors"
-                  >
-                    Mark as Paid
-                  </button>
-                )}
               </div>
             </div>
           </div>
@@ -205,10 +183,10 @@ export const OrderDetailPresenter: React.FC<OrderDetailPresenterProps> = ({
                   className="flex items-start justify-between p-3 bg-gray-50 rounded-lg"
                 >
                   <div className="flex items-start gap-4 flex-1">
-                    {item.imageUrl && (
+                    {item.images && item.images.length > 0 && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={item.imageUrl}
+                        src={item.images[0]}
                         alt={item.title}
                         className="w-16 h-16 object-cover rounded-lg border border-gray-200"
                       />
@@ -337,7 +315,7 @@ export const OrderDetailPresenter: React.FC<OrderDetailPresenterProps> = ({
                       </div>
                       <div>
                         <p className="text-gray-600">Tracking Number</p>
-                        <p className="font-medium text-black">{shipment.trackingNumber}</p>
+                        <p className="font-medium text-black">{shipment.trackingNo}</p>
                       </div>
                       <div>
                         <p className="text-gray-600">Status</p>
@@ -367,16 +345,6 @@ export const OrderDetailPresenter: React.FC<OrderDetailPresenterProps> = ({
               <p className="text-base text-gray-700">{order.note}</p>
             </div>
           )}
-        </div>
-
-        {/* Footer */}
-        <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end">
-          <button
-            onClick={onClose}
-            className="cursor-pointer px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 font-medium transition-colors"
-          >
-            Close
-          </button>
         </div>
       </div>
     </div>

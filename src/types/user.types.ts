@@ -14,6 +14,7 @@ export interface User {
   lastName?: string;
   avatar?: string;
   username?: string;
+  rankName?: string;
 }
 
 // Backend User interface (from API response)
@@ -31,6 +32,8 @@ export interface BackendUser {
   emailVerified: boolean;
   phoneVerified: boolean;
   roles: string[];
+  rankId?: number | null;
+  rankName?: string | null;
   active: boolean;
 }
 
@@ -73,7 +76,7 @@ export const convertBackendUserToUser = (backendUser: BackendUser): User => {
     role: primaryRole,
     status: status,
     joinDate: backendUser.createdAt,
-    lastLogin: backendUser.lastLoginAt || backendUser.updatedAt,
+    lastLogin: backendUser.lastLoginAt || backendUser.createdAt,
     totalOrders: 0, // Not available in API response, default to 0
     totalSpent: 0, // Not available in API response, default to 0
     phone: backendUser.phone || '',
@@ -81,6 +84,7 @@ export const convertBackendUserToUser = (backendUser: BackendUser): User => {
     lastName: '', // Not available in API response
     avatar: backendUser.avatarUrl || '',
     username: backendUser.username || '',
+    rankName: backendUser.rankName || undefined,
   };
 };
 
@@ -88,6 +92,8 @@ export const convertBackendUserToUser = (backendUser: BackendUser): User => {
 export interface GetUsersRequest {
   page?: number;
   pageSize?: number;
+  search?: string;
+  isActive?: boolean;
 }
 
 export interface UpdateUserRequest {

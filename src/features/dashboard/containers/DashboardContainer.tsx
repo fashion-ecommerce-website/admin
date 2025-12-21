@@ -87,7 +87,7 @@ export const DashboardContainer: React.FC = () => {
       ];
 
       XLSX.utils.sheet_add_aoa(ws, [
-        ['FASHION ECOMMERCE ADMIN'],
+        ['FIT ECOMMERCE ADMIN'],
         ['DASHBOARD REPORT'],
         [`Export date: ${new Date().toLocaleDateString('en-US')}`],
         [`Period: ${currentPeriod}`],

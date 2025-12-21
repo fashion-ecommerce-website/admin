@@ -4,7 +4,6 @@
 export enum OrderStatus {
   UNFULFILLED = 'UNFULFILLED',
   FULFILLED = 'FULFILLED',
-  PARTIALLY_FULFILLED = 'PARTIALLY_FULFILLED',
   CANCELLED = 'CANCELLED',
   RETURNED = 'RETURNED'
 }
@@ -50,7 +49,7 @@ export interface OrderDetail {
   percentOff?: number;
   promotionId?: number;
   promotionName?: string;
-  imageUrl?: string;
+  images?: string[];
 }
 
 // Payment interface
@@ -68,7 +67,7 @@ export interface Payment {
 // Shipment interface
 export interface Shipment {
   id: number;
-  trackingNumber: string;
+  trackingNo: string;
   carrier: string;
   status: string;
   shippedAt: string | null;
@@ -107,6 +106,7 @@ export interface OrderQueryParams {
   userId?: number;
   status?: OrderStatus;
   paymentStatus?: PaymentStatus;
+  keyword?: string;
   sortBy?: string;
   direction?: 'asc' | 'desc';
   page?: number;
