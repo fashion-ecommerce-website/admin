@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Order, OrderStatus, PaymentStatus } from '../../../types/order.types';
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { SearchInput } from '../../../components/ui/SearchInput';
-import ExportExcelButton from '@/components/ui/ExportExcelButton';
+import { ConfirmModal } from '../../../components/modals/ConfirmModal';
 
 interface OrdersPresenterProps {
   orders: Order[];
@@ -23,7 +23,6 @@ interface OrdersPresenterProps {
   onSearch?: (query: string) => void;
   onFilterStatus?: (status: OrderStatus | null) => void;
   onFilterPaymentStatus?: (status: PaymentStatus | null) => void;
-  onExportExcel?: () => void;
 }
 
 export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
@@ -38,11 +37,12 @@ export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
   onSearch,
   onFilterStatus,
   onFilterPaymentStatus,
-  onExportExcel,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeStatusFilter, setActiveStatusFilter] = useState<string>('all');
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
 
   // Real-time search with 300ms debounce
   useEffect(() => {
@@ -75,9 +75,6 @@ export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
       if (onFilterPaymentStatus) onFilterPaymentStatus(null);
     } else if (status === OrderStatus.FULFILLED) {
       if (onFilterStatus) onFilterStatus(OrderStatus.FULFILLED);
-      if (onFilterPaymentStatus) onFilterPaymentStatus(null);
-    } else if (status === OrderStatus.PARTIALLY_FULFILLED) {
-      if (onFilterStatus) onFilterStatus(OrderStatus.PARTIALLY_FULFILLED);
       if (onFilterPaymentStatus) onFilterPaymentStatus(null);
     } else if (status === OrderStatus.CANCELLED) {
       if (onFilterStatus) onFilterStatus(OrderStatus.CANCELLED);
@@ -115,8 +112,6 @@ export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
         return 'bg-green-100 text-green-800 border-green-300';
       case OrderStatus.UNFULFILLED:
         return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-      case OrderStatus.PARTIALLY_FULFILLED:
-        return 'bg-blue-100 text-blue-800 border-blue-300';
       case OrderStatus.CANCELLED:
         return 'bg-red-100 text-red-800 border-red-300';
       case OrderStatus.RETURNED:
@@ -142,6 +137,27 @@ export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
     }
   };
 
+  // Handle cancel button click - open confirm modal
+  const handleCancelClick = (order: Order) => {
+    setOrderToCancel(order);
+    setCancelModalOpen(true);
+  };
+
+  // Handle confirm cancel
+  const handleConfirmCancel = () => {
+    if (orderToCancel) {
+      onCancelOrder(orderToCancel.id);
+      setCancelModalOpen(false);
+      setOrderToCancel(null);
+    }
+  };
+
+  // Handle close cancel modal
+  const handleCloseCancelModal = () => {
+    setCancelModalOpen(false);
+    setOrderToCancel(null);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -152,7 +168,6 @@ export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
             Manage and track all customer orders
           </p>
         </div>
-        {onExportExcel && <ExportExcelButton onClick={onExportExcel} />}
       </div>
 
       {/* Search */}
@@ -198,16 +213,6 @@ export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
             }`}
           >
             Fulfilled
-          </button>
-          <button
-            onClick={() => handleCombinedStatusFilter(OrderStatus.PARTIALLY_FULFILLED)}
-            className={`cursor-pointer px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeStatusFilter === OrderStatus.PARTIALLY_FULFILLED
-                ? 'bg-black text-white'
-                : 'bg-gray-200 text-black hover:bg-gray-300'
-            }`}
-          >
-            Partially Fulfilled
           </button>
           <button
             onClick={() => handleCombinedStatusFilter(OrderStatus.CANCELLED)}
@@ -447,7 +452,7 @@ export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
                             </svg>
                           </button>
                           <button
-                            onClick={() => onCancelOrder(order.id)}
+                            onClick={() => handleCancelClick(order)}
                             disabled={order.paymentStatus === PaymentStatus.PAID || order.paymentStatus === PaymentStatus.REFUNDED || order.paymentStatus === PaymentStatus.PARTIALLY_REFUNDED || order.status === OrderStatus.CANCELLED}
                             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
                               order.paymentStatus === PaymentStatus.PAID || order.paymentStatus === PaymentStatus.REFUNDED || order.paymentStatus === PaymentStatus.PARTIALLY_REFUNDED || order.status === OrderStatus.CANCELLED
@@ -481,14 +486,14 @@ export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
       {!loading && orders.length > 0 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white px-6 py-4 rounded-lg border border-gray-200">
           <div className="text-sm text-gray-700">
-            Showing <span className="font-medium text-black">{pagination.currentPage * pagination.pageSize + 1}</span> to{' '}
-            <span className="font-medium text-black">
+            Showing <span className="font-semibold text-gray-800">{pagination.currentPage * pagination.pageSize + 1}</span> to{' '}
+            <span className="font-semibold text-gray-800">
               {Math.min(
                 (pagination.currentPage + 1) * pagination.pageSize,
                 pagination.total
               )}
             </span>{' '}
-            of <span className="font-medium text-black">{pagination.total}</span> results
+            of <span className="font-semibold text-gray-900">{pagination.total}</span> results
           </div>
           
           <div className="flex items-center space-x-2">
@@ -563,6 +568,17 @@ export const OrdersPresenter: React.FC<OrdersPresenterProps> = ({
           </div>
         </div>
       )}
+
+      {/* Cancel Order Confirmation Modal */}
+      <ConfirmModal
+        isOpen={cancelModalOpen}
+        title="Cancel Order"
+        description={orderToCancel ? `Are you sure you want to cancel order #${orderToCancel.id}? This action cannot be undone.` : ''}
+        confirmLabel="Cancel Order"
+        cancelLabel="Keep Order"
+        onClose={handleCloseCancelModal}
+        onConfirm={handleConfirmCancel}
+      />
     </div>
   );
 };

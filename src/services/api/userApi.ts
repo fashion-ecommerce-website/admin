@@ -14,7 +14,7 @@ class UserApi {
 
   /**
    * Get all users with pagination
-   * Backend API: GET /api/users/all?page={page}&pageSize={pageSize}
+   * Backend API: GET /api/users/all?page={page}&pageSize={pageSize}&keyword={keyword}&active={active}
    * Returns: PageResult<UserResponse>
    */
   async getAllUsers(params?: GetUsersRequest): Promise<ApiResponse<UserListResponse>> {
@@ -24,6 +24,8 @@ class UserApi {
       // Backend uses 0-based page index
       if (params?.page !== undefined) queryParams.append('page', params.page.toString());
       if (params?.pageSize) queryParams.append('pageSize', params.pageSize.toString());
+      if (params?.search) queryParams.append('keyword', params.search);
+      if (params?.isActive !== undefined) queryParams.append('active', params.isActive.toString());
 
       const queryString = queryParams.toString();
       const endpoint = `${this.endpoint}/all${queryString ? `?${queryString}` : ''}`;

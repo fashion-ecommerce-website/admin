@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Fashion Admin Dashboard",
-  description: "Admin panel for Fashion E-commerce platform",
+  title: "FIT Admin Dashboard",
+  description: "Admin panel for FIT E-commerce platform",
 };
 
 export default function RootLayout({

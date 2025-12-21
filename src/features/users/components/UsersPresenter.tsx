@@ -33,7 +33,7 @@ interface UsersViewModel {
   isLoading: boolean;
   apiError: string | null;
   searchTerm: string;
-  statusFilter: string;
+  statusFilter: 'all' | 'active' | 'blocked';
   roleFilter: string;
   sortBy: string;
   sortOrder: 'asc' | 'desc';
@@ -41,7 +41,6 @@ interface UsersViewModel {
   itemsPerPage: number;
   addModalOpen: boolean;
   viewModalOpen: boolean;
-  editModalOpen: boolean;
   lockModalOpen: boolean;
   selectedUser: User | null;
   isFilteringData: boolean;
@@ -61,7 +60,7 @@ interface UsersViewModel {
 
 interface UsersHandlers {
   setSearchTerm: (v: string) => void;
-  setStatusFilter: (v: string) => void;
+  setStatusFilter: (v: 'all' | 'active' | 'blocked') => void;
   setRoleFilter: (v: string) => void;
   setSortBy: (v: string) => void;
   setSortOrder: (v: 'asc' | 'desc') => void;
@@ -69,7 +68,6 @@ interface UsersHandlers {
   setCurrentPage: (v: number) => void;
   setAddModalOpen: (v: boolean) => void;
   setViewModalOpen: (v: boolean) => void;
-  setEditModalOpen: (v: boolean) => void;
   setLockModalOpen: (v: boolean) => void;
   setSelectedUser: (u: User | null) => void;
   fetchUsers: () => void;
@@ -78,8 +76,6 @@ interface UsersHandlers {
   goToPage: (p: number) => void;
   handleExportExcel: () => void;
   handleAddUser: (u: User) => void;
-  handleEditUser: (id: number) => void;
-  handleSaveEdit: (u: User) => void;
   handleToggleUserStatus: (id: number) => void;
   handleDeleteUser: (id: number) => void;
 }
@@ -105,7 +101,6 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
     goToPrevPage,
     goToNextPage,
     goToPage,
-    handleEditUser,
     handleToggleUserStatus,
   } = handlers;
 
@@ -178,9 +173,9 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
           </label>
           <div className="flex space-x-2">
             <button
-              onClick={() => setStatusFilter('')}
+              onClick={() => setStatusFilter('all')}
               className={`cursor-pointer px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                statusFilter === ''
+                statusFilter === 'all'
                   ? 'bg-black text-white'
                   : 'bg-gray-200 text-black hover:bg-gray-300'
               }`}
@@ -290,8 +285,8 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
                           <h3 className="text-lg font-medium text-gray-900 mb-2">No users found</h3>
                           <p className="text-gray-500">Try adjusting filters or your search keywords.</p>
                         </div>
-                        {(searchTerm || statusFilter) && (
-                          <button onClick={() => { setSearchTerm(''); setStatusFilter(''); setRoleFilter(''); }} className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200">Clear all filters</button>
+                        {(searchTerm || statusFilter !== 'all') && (
+                          <button onClick={() => { setSearchTerm(''); setStatusFilter('all'); setRoleFilter(''); }} className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200">Clear all filters</button>
                         )}
                       </div>
                     </td>
@@ -338,11 +333,8 @@ export const UsersPresenter: React.FC<{ vm: UsersViewModel; handlers: UsersHandl
                       </td>
                       <td className="px-6 py-6">
                         <div className="flex items-center justify-center space-x-2">
-                          <button onClick={() => { handlers.setSelectedUser(user); handlers.setEditModalOpen(false); handlers.setViewModalOpen(true); }} className="cursor-pointer group relative w-10 h-10 flex items-center justify-center bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-md border border-blue-100 hover:border-blue-200">
+                          <button onClick={() => { handlers.setSelectedUser(user); handlers.setViewModalOpen(true); }} className="cursor-pointer group relative w-10 h-10 flex items-center justify-center bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-md border border-blue-100 hover:border-blue-200">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                          </button>
-                          <button onClick={() => handleEditUser(user.id)} className="cursor-pointer group relative w-10 h-10 flex items-center justify-center bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-md border border-indigo-100 hover:border-indigo-200">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                           </button>
                           <button onClick={() => handleToggleUserStatus(user.id)} className={`cursor-pointer group relative w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-md border ${user.status === 'Blocked' ? 'bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700 border-orange-100 hover:border-orange-200' : 'bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 border-green-100 hover:border-green-200'}`}>
                             {user.status === 'Blocked' ? (

@@ -633,7 +633,7 @@ const ProductsContainer: React.FC = () => {
       XLSX.utils.sheet_add_aoa(
         ws,
         [
-          ["FASHION ECOMMERCE ADMIN"],
+          ["FIT ECOMMERCE ADMIN"],
           ["PRODUCT DETAILS REPORT"],
           [`Export date: ${new Date().toLocaleDateString("en-US")}`],
           [`Total product variants: ${exportData.length}`],

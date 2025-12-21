@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import Image from 'next/image';
 import { useToast } from '@/providers/ToastProvider';
 import { CustomDropdown } from '../ui';
 import { User } from '@/types/user.types';
@@ -183,16 +184,38 @@ export const AddUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, onSave
 
 // View User Modal
 export const ViewUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
+  const [imgError, setImgError] = useState(false);
+
+  // Reset imgError when user changes or modal opens
+  React.useEffect(() => {
+    if (isOpen) {
+      setImgError(false);
+    }
+  }, [isOpen, user?.id]);
+
   if (!user) return null;
+
+  const showAvatar = user.avatar && !imgError;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="User details">
       <div className="space-y-6">
         {/* User Avatar & Basic Info */}
         <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl">
-          <div className={`h-16 w-16 bg-gray-800 rounded-full flex items-center justify-center shadow-lg`}>
-            <span className="text-white font-bold text-xl">{user.name.charAt(0)}</span>
-          </div>
+          {showAvatar && user.avatar ? (
+            <Image 
+              src={user.avatar} 
+              alt={user.name} 
+              width={64}
+              height={64}
+              className="h-16 w-16 rounded-full object-cover shadow-lg"
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <div className="h-16 w-16 bg-gray-800 rounded-full flex items-center justify-center shadow-lg">
+              <span className="text-white font-bold text-xl">{user.name.charAt(0).toUpperCase()}</span>
+            </div>
+          )}
           <div>
             <h4 className="text-xl font-semibold text-gray-900">{user.name}</h4>
             <p className="text-gray-600">{user.email}</p>
@@ -211,8 +234,18 @@ export const ViewUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user 
           </div>
         </div>
 
-        {/* Status & Dates */}
+        {/* Contact Info */}
         <div className="grid grid-cols-2 gap-4">
+          <div className="p-4 bg-gray-50 rounded-xl">
+            <div className="flex items-center space-x-2 mb-2">
+              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+              </svg>
+              <span className="text-sm font-medium text-gray-700">Phone</span>
+            </div>
+            <p className="text-lg font-semibold text-gray-900">{user.phone || 'Not provided'}</p>
+          </div>
+
           <div className="p-4 bg-gray-50 rounded-xl">
             <div className="flex items-center space-x-2 mb-2">
               <div className={`w-3 h-3 rounded-full ${
@@ -225,11 +258,14 @@ export const ViewUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user 
               {user.status === 'Active' ? 'Active' : user.status === 'Inactive' ? 'Inactive' : 'Blocked'}
             </p>
           </div>
+        </div>
 
+        {/* Dates */}
+        <div className="grid grid-cols-2 gap-4">
           <div className="p-4 bg-gray-50 rounded-xl">
             <div className="flex items-center space-x-2 mb-2">
               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               <span className="text-sm font-medium text-gray-700">Join date</span>
             </div>
@@ -237,42 +273,29 @@ export const ViewUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user 
               {new Date(user.joinDate).toLocaleDateString('en-US')}
             </p>
           </div>
-        </div>
 
-        {/* Statistics */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+          <div className="p-4 bg-gray-50 rounded-xl">
             <div className="flex items-center space-x-2 mb-2">
-              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
-              <span className="text-sm font-medium text-blue-700">Total orders</span>
+              <span className="text-sm font-medium text-gray-700">Last login</span>
             </div>
-            <p className="text-2xl font-bold text-blue-900">{user.totalOrders}</p>
-          </div>
-
-          <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-100">
-            <div className="flex items-center space-x-2 mb-2">
-              <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-              <span className="text-sm font-medium text-green-700">Total spent</span>
-            </div>
-            <p className="text-2xl font-bold text-green-900">{user.totalSpent.toLocaleString('en-US')} VND</p>
+            <p className="text-lg font-semibold text-gray-900">
+              {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('en-US') : 'Never'}
+            </p>
           </div>
         </div>
 
-        {/* Last Login */}
-        <div className="p-4 bg-gray-50 rounded-xl">
+        {/* Rank */}
+        <div className="p-4 bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl border border-amber-100">
           <div className="flex items-center space-x-2 mb-2">
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            <svg className="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
             </svg>
-            <span className="text-sm font-medium text-gray-700">Last activity</span>
+            <span className="text-sm font-medium text-amber-700">Member Rank</span>
           </div>
-          <p className="text-lg font-semibold text-gray-900">
-            {new Date(user.lastLogin).toLocaleDateString('en-US')} at {new Date(user.lastLogin).toLocaleTimeString('en-US')}
-          </p>
+          <p className="text-xl font-bold text-amber-900">{user.rankName || 'No rank'}</p>
         </div>
 
         <div className="flex justify-end pt-4">
@@ -284,126 +307,6 @@ export const ViewUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user 
           </button>
         </div>
       </div>
-    </Modal>
-  );
-};
-
-// Edit User Modal
-export const EditUserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, onSave }) => {
-  const { showSuccess, showError } = useToast();
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    role: 'Customer',
-  });
-
-  useEffect(() => {
-    if (user && isOpen) {
-      const userData = {
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      };
-      setFormData(userData);
-    }
-  }, [user, isOpen]);
-
-  const handleCancel = () => {
-    // Reset form data to original user values
-    if (user) {
-      setFormData({
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      });
-    }
-    onClose();
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      if (onSave && user) {
-        const updatedUser: User = {
-          ...user,
-          ...formData,
-        };
-        onSave(updatedUser);
-        showSuccess(
-          'Updated successfully!',
-          `Updated information for ${formData.name}.`
-        );
-      }
-      onClose();
-    } catch {
-      showError(
-        'Update error',
-        'An error occurred while updating the user.'
-      );
-    }
-  };
-
-  if (!user) return null;
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Edit user information">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            User name
-          </label>
-          <input
-            type="text"
-            required
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-gray-900"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Email
-          </label>
-          <input
-            type="email"
-            required
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-gray-900"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Role
-          </label>
-          <select
-            value={formData.role}
-            onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-gray-900"
-          >
-            <option value="Customer">Customer</option>
-
-          </select>
-        </div>
-
-        <div className="flex justify-end space-x-3 pt-4">
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="cursor-pointer px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 font-medium transition-colors duration-200"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="cursor-pointer px-6 py-3 bg-gray-800 text-white rounded-xl hover:bg-gray-900 font-medium transition-all duration-200 transform hover:scale-105"
-          >
-            Save changes
-          </button>
-        </div>
-      </form>
     </Modal>
   );
 };

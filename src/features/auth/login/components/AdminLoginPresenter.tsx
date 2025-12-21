@@ -61,7 +61,7 @@ export const AdminLoginPresenter: React.FC<AdminLoginPresenterProps> = ({
             FIT Admin
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Fashion Administration System
+            FIT Administration System
           </p>
         </div>
 
