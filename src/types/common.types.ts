@@ -3,13 +3,35 @@
  */
 
 /**
+ * Color data structure
+ */
+export interface Color {
+  id: number;
+  name: string;
+  hexCode?: string;
+  isActive?: boolean;
+}
+
+/**
+ * Size data structure
+ */
+export interface Size {
+  id: number;
+  code: string;
+  label?: string;
+  isActive?: boolean;
+}
+
+/**
  * Common enums response from API
  */
 export interface CommonEnumsResponse {
   orderStatuses?: string[];
   paymentStatuses?: string[];
   paymentMethods?: string[];
-  [key: string]: string[] | undefined;
+  colors?: Color[];
+  sizes?: Size[];
+  [key: string]: string[] | Color[] | Size[] | undefined;
 }
 
 /**

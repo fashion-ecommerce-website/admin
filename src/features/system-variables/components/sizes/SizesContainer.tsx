@@ -40,6 +40,8 @@ export const SizesContainer: React.FC<SizesContainerProps> = ({ onPaginationChan
         const res = await sizeApi.getAllSizes();
         if (res.success && res.data) {
             const data = res.data as SizeListResponse;
+            console.log('📏 Fetched sizes:', data.items);
+            console.log('📏 Sample size structure:', data.items[0]);
             setAllItems(data.items);
             applyFiltersAndPagination();
         } else {

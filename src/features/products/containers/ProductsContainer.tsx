@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useCallback, useState } from "react";
+import React, { useEffect, useCallback, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
@@ -78,6 +78,9 @@ const ProductsContainer: React.FC = () => {
     (state: RootState) => state.product
   );
 
+  // Track previous loading state to detect successful toggle completion
+  const prevLoading = useRef(loading);
+
   // Use minimum loading time hook to ensure skeleton shows for at least 500ms
   const displayLoading = useMinimumLoadingTime(loading, 500);
 
@@ -95,6 +98,8 @@ const ProductsContainer: React.FC = () => {
     useState(false);
   const [productForDetailCreation, setProductForDetailCreation] =
     useState<Product | null>(null);
+  // Track if a toggle operation is in progress
+  const [isTogglingStatus, setIsTogglingStatus] = useState(false);
   // type VariantListItem = {
   //   detailId: number;
   //   colorName?: string;
@@ -132,6 +137,23 @@ const ProductsContainer: React.FC = () => {
     },
     [dispatch]
   );
+
+  // Show success toast when toggle operation completes successfully
+  useEffect(() => {
+    if (isTogglingStatus && prevLoading.current && !loading && !error) {
+      showSuccess("Status Updated", "Product detail status has been updated successfully");
+      setIsTogglingStatus(false);
+    }
+    prevLoading.current = loading;
+  }, [loading, error, showSuccess, isTogglingStatus]);
+
+  // Show error toast when error occurs
+  useEffect(() => {
+    if (error) {
+      showError("Error", error);
+      dispatch(clearError());
+    }
+  }, [error, showError, dispatch]);
 
   // Fetch products when filters change
   useEffect(() => {
@@ -360,10 +382,10 @@ const ProductsContainer: React.FC = () => {
 
   const handleToggleProductDetailStatus = useCallback(
     (productDetailId: number) => {
+      setIsTogglingStatus(true);
       dispatch(toggleProductDetailStatusRequest({ productDetailId }));
-      showSuccess("Toggling product detail status...");
     },
-    [dispatch, showSuccess]
+    [dispatch]
   );
 
   const handleExportExcel = useCallback(async () => {
@@ -775,7 +797,7 @@ const ProductsContainer: React.FC = () => {
       {/* Export Progress Modal */}
       {isExporting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/50" />
+          <div className="fixed inset-0 backdrop-blur-sm bg-black/20" />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
             <div className="text-center">
               <div className="mb-4">
@@ -849,7 +871,7 @@ const ProductsContainer: React.FC = () => {
       {isVariantPickerOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
-            className="fixed inset-0 bg-black/50"
+            className="fixed inset-0 backdrop-blur-sm bg-black/20"
             onClick={() => setIsVariantPickerOpen(false)}
           />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-auto">

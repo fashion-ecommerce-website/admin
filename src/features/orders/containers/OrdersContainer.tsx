@@ -1,12 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { useAppDispatch, useAppSelector } from '../../../hooks/redux';
 import { useMinimumLoadingTime } from '../../../hooks/useMinimumLoadingTime';
 import { useToast } from '../../../providers/ToastProvider';
-import { ConfirmModal } from '../../../components/modals/ConfirmModal';
 import {
   fetchOrdersRequest,
   fetchOrderByIdRequest,
@@ -27,8 +26,7 @@ export const OrdersContainer: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | null>(null);
   const [paymentFilter, setPaymentFilter] = useState<PaymentStatus | null>(null);
-  const [cancelModalOpen, setCancelModalOpen] = useState(false);
-  const [orderToCancel, setOrderToCancel] = useState<number | null>(null);
+  const [cancellingOrderId, setCancellingOrderId] = useState<number | null>(null);
 
   // Selectors
   const orders = useAppSelector((state) => state.orders.orders);
@@ -84,6 +82,34 @@ export const OrdersContainer: React.FC = () => {
     }
   }, [error, showToast, dispatch]);
 
+  // Define handleCloseDetail early so it can be used in useEffect
+  const handleCloseDetail = useCallback(() => {
+    setIsDetailOpen(false);
+    setSelectedOrderId(null);
+    dispatch(clearSelectedOrder());
+  }, [dispatch]);
+
+  // Handle successful order cancellation
+  useEffect(() => {
+    // Check if we were cancelling an order and it's now cancelled
+    if (cancellingOrderId && !loading) {
+      const cancelledOrder = orders.find(o => o.id === cancellingOrderId);
+      if (cancelledOrder && cancelledOrder.status === OrderStatus.CANCELLED) {
+        showToast({
+          type: 'success',
+          title: 'Order Cancelled',
+          message: 'Order has been cancelled successfully',
+        });
+        setCancellingOrderId(null);
+        
+        // Close detail modal if the cancelled order is currently being viewed
+        if (selectedOrderId === cancellingOrderId) {
+          handleCloseDetail();
+        }
+      }
+    }
+  }, [cancellingOrderId, loading, orders, selectedOrderId, showToast, handleCloseDetail]);
+
   // Fetch order detail when selected
   useEffect(() => {
     if (selectedOrderId) {
@@ -137,12 +163,6 @@ export const OrdersContainer: React.FC = () => {
     setIsDetailOpen(true);
   };
 
-  const handleCloseDetail = () => {
-    setIsDetailOpen(false);
-    setSelectedOrderId(null);
-    dispatch(clearSelectedOrder());
-  };
-
   const handleUpdateStatus = (orderId: number, status: OrderStatus) => {
     dispatch(updateOrderRequest({ 
       orderId, 
@@ -171,7 +191,7 @@ export const OrdersContainer: React.FC = () => {
     });
   };
 
-  const handleCancelOrder = (orderId: number) => {
+  const handleCancelOrder = async (orderId: number) => {
     // Find the order to check payment status
     const order = orders.find(o => o.id === orderId);
     
@@ -214,27 +234,9 @@ export const OrdersContainer: React.FC = () => {
       return;
     }
 
-    setOrderToCancel(orderId);
-    setCancelModalOpen(true);
-  };
-
-  const handleConfirmCancel = async () => {
-    if (orderToCancel) {
-      dispatch(cancelOrderRequest({ orderId: orderToCancel }));
-      showToast({
-        type: 'success',
-        title: 'Order Cancelled',
-        message: 'Order has been cancelled successfully',
-      });
-      setCancelModalOpen(false);
-      setOrderToCancel(null);
-      handleCloseDetail();
-    }
-  };
-
-  const handleCloseCancelModal = () => {
-    setCancelModalOpen(false);
-    setOrderToCancel(null);
+    // Set cancelling state and call API
+    setCancellingOrderId(orderId);
+    dispatch(cancelOrderRequest({ orderId }));
   };
 
   const handleRefresh = () => {
@@ -475,16 +477,6 @@ export const OrdersContainer: React.FC = () => {
         onClose={handleCloseDetail}
         onUpdateStatus={handleUpdateStatus}
         onUpdatePaymentStatus={handleUpdatePaymentStatus}
-      />
-
-      <ConfirmModal
-        isOpen={cancelModalOpen}
-        title="Cancel Order"
-        description="Are you sure you want to cancel this order? This action cannot be undone."
-        confirmLabel="Cancel Order"
-        cancelLabel="Keep Order"
-        onClose={handleCloseCancelModal}
-        onConfirm={handleConfirmCancel}
       />
     </>
   );

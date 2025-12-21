@@ -396,7 +396,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       {/* Mobile Overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-gray-900 bg-opacity-50 backdrop-blur-sm lg:hidden transition-opacity"
+          className="fixed inset-0 z-40 backdrop-blur-md bg-black/20 lg:hidden transition-opacity"
           onClick={() => setSidebarOpen(false)}
         />
       )}

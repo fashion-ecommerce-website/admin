@@ -3,7 +3,7 @@ import { takeEvery, takeLeading } from "@redux-saga/core/effects";
 import { PayloadAction } from "@reduxjs/toolkit";
 import { productApi } from "../../../services/api/productApi";
 import type { ApiResponse } from "../../../services/api/baseApi";
-import type { ProductListResponse, ProductDetail } from "../../../types/product.types";
+import type { ProductListResponse } from "../../../types/product.types";
 import * as productSlice from "./productSlice";
 
 // Fetch products saga

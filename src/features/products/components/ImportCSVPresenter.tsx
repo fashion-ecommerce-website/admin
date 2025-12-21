@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 import { CustomDropdown } from '../../../components/ui/CustomDropdown';
 import { Spinner, LoadingOverlay } from '../../../components/ui/Spinner';
 import { AddColorModal, AddSizeModal, AddCategoryModal } from '../../../components/modals/QuickAddModals';
@@ -127,28 +128,31 @@ const ImportCSVPresenter: React.FC<ImportCSVPresenterProps> = ({
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
 
   const expectedHeaders = [
-    'Product Title', 'Description', 'Category', 'Color', 'IMG', 'Size', 'Quantity', 'Price'
+    'Product Title', 'Description', 'Category', 'Color', 'Size', 'Quantity', 'Price'
   ];
 
   const downloadTemplate = () => {
-    const headers = expectedHeaders;
-    const csvContent = Papa.unparse([headers], {
-      delimiter: ';',
-      quotes: false,
-      newline: '\r\n'
-    });
-
-    const BOM = '\uFEFF';
-    const csvWithBOM = BOM + csvContent;
-    const blob = new Blob([csvWithBOM], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'product_import_template.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // Create a proper Excel file using xlsx library
+    const worksheet = XLSX.utils.aoa_to_sheet([expectedHeaders]);
+    
+    // Set column widths for better readability
+    worksheet['!cols'] = [
+      { wch: 25 }, // Product Title
+      { wch: 40 }, // Description
+      { wch: 15 }, // Category
+      { wch: 12 }, // Color
+      { wch: 8 },  // Size
+      { wch: 10 }, // Quantity
+      { wch: 12 }, // Price
+    ];
+    
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Products');
+    
+    // Generate Excel file buffer
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(blob, 'product_import_template.xlsx');
   };
 
   const allDetails = previewData.flatMap((group) => {
@@ -184,23 +188,23 @@ const ImportCSVPresenter: React.FC<ImportCSVPresenterProps> = ({
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           Back
         </button>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-black">Import Products from CSV</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-black">Import Products from Excel</h1>
       </div>
 
       <div className="flex flex-1 flex-row gap-4 p-4 w-full items-start">
         {/* Left: Upload */}
         <div className="w-[240px] flex-shrink-0 bg-white rounded-2xl shadow-xl p-3 flex flex-col items-center border border-gray-200 self-start">
-          {/* CSV Upload */}
+          {/* Excel Upload */}
           <div className="w-full mb-3">
-            <h3 className="text-xs font-semibold text-gray-700 mb-1">1. Upload CSV File</h3>
-            <label htmlFor="csv-upload" className="flex flex-col items-center justify-center border-2 border-dashed border-gray-400 rounded-lg p-2 cursor-pointer hover:border-black transition-colors bg-white w-full min-h-[60px] group">
+            <h3 className="text-xs font-semibold text-gray-700 mb-1">1. Upload Excel File</h3>
+            <label htmlFor="excel-upload" className="flex flex-col items-center justify-center border-2 border-dashed border-gray-400 rounded-lg p-2 cursor-pointer hover:border-black transition-colors bg-white w-full min-h-[60px] group">
               <span className="text-xl text-gray-400 group-hover:text-black select-none">📄</span>
-              <span className="font-medium text-gray-700 text-center text-xs">Select CSV</span>
+              <span className="font-medium text-gray-700 text-center text-xs">Select Excel (.xlsx)</span>
               <input
-                id="csv-upload"
+                id="excel-upload"
                 ref={fileInputRef}
                 type="file"
-                accept=".csv"
+                accept=".xlsx,.xls"
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
@@ -333,7 +337,7 @@ const ImportCSVPresenter: React.FC<ImportCSVPresenterProps> = ({
             <div className="flex-1 flex flex-col items-center justify-center min-h-[560px] text-gray-500">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/file.svg" alt="No data" className="w-10 h-10 mb-2 opacity-70" />
-              <span className="text-base">No preview data. Please upload a CSV file.</span>
+              <span className="text-base">No preview data. Please upload an Excel file.</span>
             </div>
           ) : (
             <div className="overflow-x-auto max-h-[600px] overflow-y-auto rounded-lg border border-gray-100 bg-white">
@@ -415,7 +419,7 @@ const ImportCSVPresenter: React.FC<ImportCSVPresenterProps> = ({
 
       {/* Edit Modal */}
       {isEditOpen && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+        <div className="fixed inset-0 backdrop-blur-sm bg-black/20 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md border-2 border-gray-200">
             <h3 className="text-lg font-bold text-black mb-4">Edit Row</h3>
 
