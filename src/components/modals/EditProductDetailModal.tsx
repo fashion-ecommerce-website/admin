@@ -153,17 +153,14 @@ export const EditProductDetailModal: React.FC<EditProductDetailModalProps> = ({
           setProductDetail(response.data);
           setSelectedColor(newColor);
 
-          // Reset size selection and set first available size if exists
-          const availableSizes = Object.keys(
-            response.data.mapSizeToQuantity || {}
-          );
-          const firstSize = availableSizes[0] || "";
-          setSelectedSize(firstSize);
+          // Use activeSize from response to keep price/quantity in sync
+          const activeSize = response.data.activeSize || "";
+          setSelectedSize(activeSize);
 
-          // Update price and quantity based on first available size
+          // Update price and quantity based on activeSize from response
           setPrice(response.data.price || 0);
-          const quantityForSize = firstSize
-            ? response.data.mapSizeToQuantity?.[firstSize]
+          const quantityForSize = activeSize
+            ? response.data.mapSizeToQuantity?.[activeSize]
             : 0;
           setQuantity(quantityForSize || 0);
 
